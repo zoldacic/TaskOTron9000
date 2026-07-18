@@ -1,0 +1,50 @@
+using TaskOTron.Api.Models;
+
+namespace TaskOTron.Api.Dtos;
+
+// ---- Tasks ----
+public record TodoDto(
+    int Id,
+    string Title,
+    bool Done,
+    string? Due,           // ISO yyyy-MM-dd
+    decimal? Amount,
+    DateKind DateKind,
+    List<string> CatIds);
+
+public record TodoWriteDto(
+    string Title,
+    string? Due,
+    decimal? Amount,
+    DateKind DateKind = DateKind.Due,
+    List<string>? CatIds = null);
+
+// ---- Categories ----
+public record MainDto(string Id, string Name);
+public record SubDto(string Id, string MainId, string Name, int TaskCount);
+public record CategoriesDto(List<MainDto> Mains, List<SubDto> Subs);
+
+public record MainWriteDto(string Name);
+public record SubWriteDto(string MainId, string Name);
+public record CategoryRenameDto(string Name);
+
+// ---- Title defaults ----
+public record TitleDefaultDto(string NormalizedTitle, List<string> CatIds);
+public record TitleDefaultWriteDto(List<string> CatIds);
+
+// ---- Import ----
+public record ImportParseRequest(string Text);
+public record ImportRowDto(int Key, string Title, string? Date, decimal? Amount, bool Ok, List<string> CatIds);
+public record ImportCommitRow(string Title, string? Date, decimal? Amount, List<string>? CatIds);
+public record ImportCommitRequest(List<ImportCommitRow> Rows);
+
+// ---- Reports ----
+public record BucketDto(string Label, decimal Net);
+public record CategoryNetDto(string Name, decimal Net);
+public record ReportDto(
+    decimal MoneyIn,
+    decimal MoneyOut,
+    decimal Net,
+    string Granularity,
+    List<BucketDto> Buckets,
+    List<CategoryNetDto> CategoryBreakdown);

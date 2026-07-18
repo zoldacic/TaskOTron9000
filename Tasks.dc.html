@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<style>
+  html,body{height:100%;margin:0}
+  #root{height:100%}
+  :root{
+    --color-bg:#0a0c12;
+    --color-surface:#141826;
+    --color-text:#e8ebf5;
+    --color-divider:color-mix(in srgb,#93a4cc 24%,transparent);
+    --color-accent:#ff3b1e;
+    --font-mono:"Space Mono",ui-monospace,SFMono-Regular,monospace;
+  }
+  body{background:var(--color-bg);color:var(--color-text)}
+  .btn-primary{color:#fff;box-shadow:0 0 0 1px color-mix(in srgb,var(--color-accent) 55%,transparent),0 0 20px -6px var(--color-accent)}
+  .btn-primary:hover{background:var(--color-accent-500);box-shadow:0 0 0 1px var(--color-accent),0 0 26px -4px var(--color-accent)}
+  .seg-opt:has(input:checked){color:#fff}
+  .tag-neutral{background:color-mix(in srgb,#93a4cc 14%,transparent);color:var(--color-text);text-transform:uppercase;letter-spacing:0.06em;font-family:var(--font-mono);font-size:10px}
+  .input{background:color-mix(in srgb,#ffffff 4%,transparent)}
+  .input::placeholder{color:color-mix(in srgb,var(--color-text) 38%,transparent)}
+  .dialog{border:1px solid var(--color-divider)}
+  @keyframes omFade{from{opacity:0}to{opacity:1}}
+  @keyframes omPop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes omBlink{0%,100%{opacity:1}50%{opacity:.2}}
+  .om-scroll{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--color-accent) 50%,transparent) transparent}
+</style>
+</helmet>
+<div style="height:100%;display:flex;flex-direction:column;background:var(--color-bg);overflow:hidden">
+
+  <!-- ═══ Windows 11 title bar ═══ -->
+  <div style="height:40px;flex:none;display:flex;align-items:center;border-bottom:2px solid var(--color-divider);background:var(--color-surface);-webkit-user-select:none;user-select:none">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 14px;flex:1;min-width:0">
+      <div style="width:16px;height:16px;background:var(--color-accent);flex:none;box-shadow:0 0 12px -1px var(--color-accent)"></div>
+      <span style="font-family:var(--font-heading);font-weight:800;font-size:13px;letter-spacing:0.05em;text-transform:uppercase">{{ appName }}</span>
+      <span style="display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-size:11px;white-space:nowrap;color:color-mix(in srgb,var(--color-text) 50%,transparent)">
+        <span style="width:7px;height:7px;background:#37e07a;box-shadow:0 0 8px #37e07a;animation:omBlink 1.8s ease-in-out infinite"></span>{{ headerCount }} PENDING · SYSTEM ONLINE
+      </span>
+    </div>
+    <div style="display:flex;height:100%">
+      <button aria-label="Minimize" style="width:46px;height:100%;border:0;background:transparent;color:var(--color-text);cursor:pointer;display:grid;place-items:center" style-hover="background:color-mix(in srgb,var(--color-text) 9%,transparent)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+      </button>
+      <button aria-label="Maximize" style="width:46px;height:100%;border:0;background:transparent;color:var(--color-text);cursor:pointer;display:grid;place-items:center" style-hover="background:color-mix(in srgb,var(--color-text) 9%,transparent)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16"/></svg>
+      </button>
+      <button aria-label="Close" style="width:46px;height:100%;border:0;background:transparent;color:var(--color-text);cursor:pointer;display:grid;place-items:center" style-hover="background:var(--color-accent);color:var(--color-bg)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ Body: sidebar + main ═══ -->
+  <div style="flex:1;min-height:0;display:flex">
+
+    <!-- ── Sidebar ── -->
+    <aside class="om-scroll" style="width:248px;flex:none;border-right:2px solid var(--color-divider);background:var(--color-surface);overflow-y:auto;display:flex;flex-direction:column">
+      <nav style="display:flex;flex-direction:column;padding:var(--space-3) var(--space-2) var(--space-2)">
+        <button onClick="{{ goTasks }}" style="{{ navTasksStyle }}" style-hover="background:color-mix(in srgb,var(--color-text) 6%,transparent)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18"/><path d="m8 12 3 3 5-6"/></svg>
+          <span style="flex:1;text-align:left">Tasks</span>
+        </button>
+        <button onClick="{{ goCats }}" style="{{ navCatsStyle }}" style-hover="background:color-mix(in srgb,var(--color-text) 6%,transparent)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+          <span style="flex:1;text-align:left">Manage categories</span>
+        </button>
+        <button onClick="{{ goImport }}" style="{{ navImportStyle }}" style-hover="background:color-mix(in srgb,var(--color-text) 6%,transparent)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>
+          <span style="flex:1;text-align:left">Import bank file</span>
+        </button>
+        <button onClick="{{ goReports }}" style="{{ navReportsStyle }}" style-hover="background:color-mix(in srgb,var(--color-text) 6%,transparent)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7"/><rect x="12" y="6" width="3" height="11"/><rect x="17" y="13" width="3" height="4"/></svg>
+          <span style="flex:1;text-align:left">Spending report</span>
+        </button>
+      </nav>
+
+      <div style="height:2px;background:var(--color-divider);margin:0 var(--space-3)"></div>
+
+      <div style="padding:var(--space-3) var(--space-2)">
+        <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent);padding:0 8px var(--space-2)">Lists</div>
+        <sc-for list="{{ smartFilters }}" as="f" hint-placeholder-count="4">
+          <button onClick="{{ f.onClick }}" style="{{ f.style }}" style-hover="background:color-mix(in srgb,var(--color-text) 6%,transparent)">
+            <span style="{{ f.dotStyle }}"></span>
+            <span style="flex:1;text-align:left">{{ f.label }}</span>
+            <span style="{{ f.countStyle }}">{{ f.count }}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="height:2px;background:var(--color-divider);margin:0 var(--space-3)"></div>
+
+      <div style="padding:var(--space-3) var(--space-2);flex:1">
+        <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent);padding:0 8px var(--space-2)">Categories</div>
+        <sc-for list="{{ sidebarMains }}" as="m" hint-placeholder-count="3">
+          <div style="margin-bottom:var(--space-2)">
+            <div style="font-size:12px;font-family:var(--font-heading);font-weight:800;padding:4px 8px;color:color-mix(in srgb,var(--color-text) 80%,transparent)">{{ m.name }}</div>
+            <sc-for list="{{ m.subs }}" as="s" hint-placeholder-count="3">
+              <button onClick="{{ s.onClick }}" style="{{ s.style }}" style-hover="background:color-mix(in srgb,var(--color-text) 6%,transparent)">
+                <span style="flex:1;text-align:left">{{ s.name }}</span>
+                <span style="{{ s.countStyle }}">{{ s.count }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </aside>
+
+    <!-- ── Main ── -->
+    <main style="flex:1;min-width:0;display:flex;flex-direction:column">
+
+      <!-- ===== TASKS VIEW ===== -->
+      <sc-if value="{{ isTasks }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+        <header style="flex:none;padding:var(--space-4) var(--space-6) var(--space-3);border-bottom:2px solid var(--color-divider)">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-4)">
+            <div>
+              <h2 style="margin:0;text-transform:uppercase;letter-spacing:0.005em">{{ filterTitle }}</h2>
+              <div style="font-size:12px;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 52%,transparent);margin-top:4px">{{ filterSubtitle }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--space-3)">
+              <div class="seg">
+                <label class="seg-opt"><input type="radio" name="layout" checked="{{ isList }}" onChange="{{ setListLayout }}">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>List</label>
+                <label class="seg-opt"><input type="radio" name="layout" checked="{{ isGrouped }}" onChange="{{ setGroupedLayout }}">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="7"/><rect x="3" y="14" width="18" height="7"/></svg>Grouped</label>
+              </div>
+              <button class="btn btn-primary" onClick="{{ newTask }}" style="justify-content:flex-start;white-space:nowrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M12 5v14"/></svg>New task
+              </button>
+            </div>
+          </div>
+          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-3)">
+            <input class="input" placeholder="Log a task before it logs you…" value="{{ quickAdd }}" onInput="{{ onQuickInput }}" onKeyDown="{{ onQuickKey }}" style="flex:1">
+            <button class="btn btn-secondary" onClick="{{ addQuick }}" disabled="{{ quickAddDisabled }}">Add</button>
+          </div>
+        </header>
+
+        <div class="om-scroll" style="flex:1;min-height:0;overflow-y:auto;padding:0 var(--space-6) var(--space-6);background-image:linear-gradient(color-mix(in srgb,#93a4cc 5%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,#93a4cc 5%,transparent) 1px,transparent 1px);background-size:26px 26px">
+
+          <!-- List layout -->
+          <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+            <sc-if value="{{ hasVisible }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <sc-for list="{{ visibleTodos }}" as="t" hint-placeholder-count="6">
+                  <div style="display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) 6px;border-bottom:1px solid var(--color-divider)" style-hover="background:color-mix(in srgb,var(--color-text) 3%,transparent)">
+                    <button aria-label="Toggle" onClick="{{ t.toggle }}" style="{{ t.checkStyle }}">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="{{ t.checkIconStyle }}"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                    <button onClick="{{ t.openEdit }}" style="flex:1;min-width:0;text-align:left;background:transparent;border:0;cursor:pointer;padding:0;font:inherit;color:inherit">
+                      <div style="{{ t.titleStyle }}">{{ t.title }}</div>
+                      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:5px">
+                        <sc-if value="{{ t.due }}" hint-placeholder-val="{{ true }}">
+                          <span style="{{ t.dueStyle }}">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>{{ t.dueLabel }}
+                          </span>
+                        </sc-if>
+                        <sc-for list="{{ t.tags }}" as="tag" hint-placeholder-count="2">
+                          <span class="tag tag-neutral">{{ tag.name }}</span>
+                        </sc-for>
+                      </div>
+                    </button>
+                    <sc-if value="{{ t.hasAmount }}" hint-placeholder-val="{{ false }}">
+                      <span style="{{ t.amountStyle }}">{{ t.amountLabel }}</span>
+                    </sc-if>
+                    <button aria-label="Edit" onClick="{{ t.openEdit }}" class="btn btn-icon" style="flex:none;width:30px;height:30px">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    </button>
+                    <button aria-label="Delete" onClick="{{ t.remove }}" class="btn btn-icon" style="flex:none;width:30px;height:30px" style-hover="background:var(--color-accent-100);color:var(--color-accent-700)">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+                    </button>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isListEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:var(--space-8) var(--space-4);text-align:center;color:color-mix(in srgb,var(--color-text) 45%,transparent)">
+                <div style="width:56px;height:56px;margin:0 auto var(--space-3);display:grid;place-items:center;border:2px solid var(--color-divider)">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18"/><path d="m8 12 3 3 5-6"/></svg>
+                </div>
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;color:var(--color-text)">{{ emptyTitle }}</div>
+                <div style="font-size:13px;margin-top:4px">{{ emptyBody }}</div>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <!-- Grouped layout -->
+          <sc-if value="{{ isGrouped }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ hasVisible }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+                  <section style="margin-top:var(--space-4)">
+                    <div style="display:flex;align-items:baseline;gap:8px;padding-bottom:var(--space-2);border-bottom:2px solid var(--color-divider)">
+                      <h4 style="margin:0">{{ g.title }}</h4>
+                      <span style="font-size:12px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">{{ g.count }}</span>
+                    </div>
+                    <sc-for list="{{ g.items }}" as="t" hint-placeholder-count="3">
+                      <div style="display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) 6px;border-bottom:1px solid var(--color-divider)" style-hover="background:color-mix(in srgb,var(--color-text) 3%,transparent)">
+                        <button aria-label="Toggle" onClick="{{ t.toggle }}" style="{{ t.checkStyle }}">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="{{ t.checkIconStyle }}"><polyline points="20 6 9 17 4 12"/></svg>
+                        </button>
+                        <button onClick="{{ t.openEdit }}" style="flex:1;min-width:0;text-align:left;background:transparent;border:0;cursor:pointer;padding:0;font:inherit;color:inherit">
+                          <div style="{{ t.titleStyle }}">{{ t.title }}</div>
+                          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:5px">
+                            <sc-if value="{{ t.due }}" hint-placeholder-val="{{ true }}">
+                              <span style="{{ t.dueStyle }}">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>{{ t.dueLabel }}
+                              </span>
+                            </sc-if>
+                            <sc-for list="{{ t.tags }}" as="tag" hint-placeholder-count="2">
+                              <span class="tag tag-neutral">{{ tag.name }}</span>
+                            </sc-for>
+                          </div>
+                        </button>
+                        <sc-if value="{{ t.hasAmount }}" hint-placeholder-val="{{ false }}">
+                          <span style="{{ t.amountStyle }}">{{ t.amountLabel }}</span>
+                        </sc-if>
+                        <button aria-label="Edit" onClick="{{ t.openEdit }}" class="btn btn-icon" style="flex:none;width:30px;height:30px">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        </button>
+                        <button aria-label="Delete" onClick="{{ t.remove }}" class="btn btn-icon" style="flex:none;width:30px;height:30px" style-hover="background:var(--color-accent-100);color:var(--color-accent-700)">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+                        </button>
+                      </div>
+                    </sc-for>
+                  </section>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isGroupedEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:var(--space-8) var(--space-4);text-align:center;color:color-mix(in srgb,var(--color-text) 45%,transparent)">
+                <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;color:var(--color-text)">{{ emptyTitle }}</div>
+                <div style="font-size:13px;margin-top:4px">{{ emptyBody }}</div>
+              </div>
+            </sc-if>
+          </sc-if>
+
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== CATEGORIES VIEW ===== -->
+      <sc-if value="{{ isCats }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+        <header style="flex:none;padding:var(--space-4) var(--space-6) var(--space-3);border-bottom:2px solid var(--color-divider)">
+          <h2 style="margin:0;text-transform:uppercase;letter-spacing:0.005em">Categories</h2>
+          <div style="font-size:12px;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 52%,transparent);margin-top:4px">Organise tasks into main categories and sub categories.</div>
+        </header>
+        <div style="flex:1;min-height:0;display:flex">
+          <!-- Main categories column -->
+          <div class="om-scroll" style="width:300px;flex:none;border-right:2px solid var(--color-divider);overflow-y:auto;padding:var(--space-4)">
+            <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent);margin-bottom:var(--space-2)">Main categories</div>
+            <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:var(--space-3)">
+              <sc-for list="{{ catMains }}" as="m" hint-placeholder-count="3">
+                <div onClick="{{ m.select }}" style="{{ m.rowStyle }}" style-hover="background:color-mix(in srgb,var(--color-text) 5%,transparent)">
+                  <span style="flex:1;text-align:left;font-family:var(--font-heading);font-weight:800;font-size:14px">{{ m.name }}</span>
+                  <span style="font-size:11px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">{{ m.count }}</span>
+                  <button aria-label="Rename" onClick="{{ m.rename }}" class="btn btn-icon" style="width:26px;height:26px">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  </button>
+                  <button aria-label="Delete" onClick="{{ m.remove }}" class="btn btn-icon" style="width:26px;height:26px" style-hover="background:var(--color-accent-100);color:var(--color-accent-700)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+                  </button>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:var(--space-2)">
+              <input class="input" placeholder="New main category…" value="{{ newMain }}" onInput="{{ onNewMainInput }}" onKeyDown="{{ onNewMainKey }}">
+              <button class="btn btn-secondary" onClick="{{ addMain }}" disabled="{{ addMainDisabled }}" style="justify-content:center">Add</button>
+            </div>
+          </div>
+          <!-- Sub categories column -->
+          <div class="om-scroll" style="flex:1;min-width:0;overflow-y:auto;padding:var(--space-4)">
+            <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent);margin-bottom:var(--space-2)">Sub categories of <span style="color:var(--color-accent)">{{ selectedMainName }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:var(--space-3)">
+              <sc-for list="{{ selectedSubs }}" as="s" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--color-divider)">
+                  <span style="width:8px;height:8px;background:var(--color-accent);flex:none"></span>
+                  <span style="flex:1;font-size:14px">{{ s.name }}</span>
+                  <span style="font-size:11px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">{{ s.count }} tasks</span>
+                  <button aria-label="Rename" onClick="{{ s.rename }}" class="btn btn-icon" style="width:26px;height:26px">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  </button>
+                  <button aria-label="Delete" onClick="{{ s.remove }}" class="btn btn-icon" style="width:26px;height:26px" style-hover="background:var(--color-accent-100);color:var(--color-accent-700)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+                  </button>
+                </div>
+              </sc-for>
+              <sc-if value="{{ noSubs }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:var(--space-4);font-size:13px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">No sub categories yet — add one below.</div>
+              </sc-if>
+            </div>
+            <div style="display:flex;gap:var(--space-2);max-width:420px">
+              <input class="input" placeholder="New sub category…" value="{{ newSub }}" onInput="{{ onNewSubInput }}" onKeyDown="{{ onNewSubKey }}">
+              <button class="btn btn-secondary" onClick="{{ addSub }}" disabled="{{ addSubDisabled }}" style="justify-content:center">Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== IMPORT VIEW ===== -->
+      <sc-if value="{{ isImport }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+        <header style="flex:none;padding:var(--space-4) var(--space-6) var(--space-3);border-bottom:2px solid var(--color-divider)">
+          <h2 style="margin:0;text-transform:uppercase;letter-spacing:0.005em">Import bank file</h2>
+          <div style="font-size:12px;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 52%,transparent);margin-top:4px">Paste a statement — one transaction per line. Each row becomes a task.</div>
+        </header>
+        <div class="om-scroll" style="flex:1;min-height:0;overflow-y:auto;padding:var(--space-4) var(--space-6) var(--space-6)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);align-items:start">
+            <div>
+              <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent);margin-bottom:var(--space-2)">Paste transactions</div>
+              <textarea class="input" placeholder="2026-07-15    ACME CORP PAYROLL    +4200.00" value="{{ importText }}" onInput="{{ onImportInput }}" style="width:100%;height:300px;font-family:var(--font-mono);font-size:12px;line-height:1.7;resize:vertical"></textarea>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+                <button class="btn btn-primary" onClick="{{ parseImport }}" disabled="{{ parseDisabled }}" style="justify-content:center">Parse rows</button>
+                <button class="btn btn-secondary" onClick="{{ loadSample }}" style="justify-content:center">Load sample</button>
+                <button class="btn btn-ghost" onClick="{{ clearImport }}" style="justify-content:center">Clear</button>
+              </div>
+              <div style="font-size:12px;color:color-mix(in srgb,var(--color-text) 50%,transparent);margin-top:14px;line-height:1.5;text-wrap:pretty">We auto-detect a date and an amount on each line; whatever is left becomes the task title. The exact bank layout can be mapped precisely later.</div>
+            </div>
+            <div>
+              <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent);margin-bottom:var(--space-2)">Preview</div>
+              <sc-if value="{{ importParsed }}" hint-placeholder-val="{{ false }}">
+                <div style="border:1px solid var(--color-divider)">
+                  <div style="display:grid;grid-template-columns:1fr 92px 96px;gap:12px;padding:8px 10px;border-bottom:2px solid var(--color-divider);font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 50%,transparent)">
+                    <span>Title</span><span>Date</span><span style="text-align:right">Amount</span>
+                  </div>
+                  <sc-for list="{{ importRows }}" as="r" hint-placeholder-count="5">
+                    <div style="{{ r.rowStyle }}">
+                      <div style="display:grid;grid-template-columns:1fr 92px 96px;gap:12px;align-items:center">
+                        <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.title }}</span>
+                        <span style="{{ r.dateStyle }}">{{ r.dateLabel }}</span>
+                        <span style="{{ r.amountStyle }}">{{ r.amountLabel }}</span>
+                      </div>
+                      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px">
+                        <button onClick="{{ r.editCats }}" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.05em;padding:3px 9px;cursor:pointer;border:1px dashed var(--color-divider);background:transparent;color:color-mix(in srgb,var(--color-text) 70%,transparent)" style-hover="border-color:var(--color-accent);color:var(--color-accent)">{{ r.editLabel }}</button>
+                        <sc-for list="{{ r.catTags }}" as="c" hint-placeholder-count="1">
+                          <span class="tag tag-neutral">{{ c.name }}</span>
+                        </sc-for>
+                        <sc-if value="{{ r.isDefault }}" hint-placeholder-val="{{ false }}">
+                          <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-accent)">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3 7h7l-5.5 4.5 2 7L12 17l-6.5 4.5 2-7L2 9h7z"/></svg>saved
+                          </span>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px">
+                  <span style="font-family:var(--font-mono);font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent)">{{ importOkCount }} / {{ importTotalCount }} rows ready</span>
+                  <button class="btn btn-primary" onClick="{{ commitImport }}" disabled="{{ commitDisabled }}" style="justify-content:center">Import as tasks</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ importNotParsed }}" hint-placeholder-val="{{ true }}">
+                <div style="border:1px dashed var(--color-divider);padding:var(--space-6) var(--space-4);text-align:center;font-size:13px;color:color-mix(in srgb,var(--color-text) 45%,transparent)">Nothing parsed yet. Paste some lines (or load the sample) and hit <b style="color:var(--color-text)">Parse rows</b>.</div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== REPORTS VIEW ===== -->
+      <sc-if value="{{ isReports }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+        <header style="flex:none;padding:var(--space-4) var(--space-6) var(--space-3);border-bottom:2px solid var(--color-divider)">
+          <h2 style="margin:0;text-transform:uppercase;letter-spacing:0.005em">Spending report</h2>
+          <div style="font-size:12px;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 52%,transparent);margin-top:4px">Money in and out across a date range and selected categories.</div>
+        </header>
+        <div class="om-scroll" style="flex:1;min-height:0;overflow-y:auto;padding:0 var(--space-6) var(--space-6)">
+          <!-- Range controls -->
+          <div style="display:flex;flex-wrap:wrap;gap:var(--space-4);align-items:flex-end;padding:var(--space-4) 0;border-bottom:2px solid var(--color-divider)">
+            <div>
+              <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent);margin-bottom:6px">From</div>
+              <input type="date" class="input" value="{{ repStart }}" onInput="{{ onRepStart }}" style="max-width:180px;font-family:var(--font-mono)">
+            </div>
+            <div>
+              <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent);margin-bottom:6px">To</div>
+              <input type="date" class="input" value="{{ repEnd }}" onInput="{{ onRepEnd }}" style="max-width:180px;font-family:var(--font-mono)">
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-secondary" onClick="{{ repThisMonth }}" style="justify-content:center;font-size:12px">This month</button>
+              <button class="btn btn-secondary" onClick="{{ repLast30 }}" style="justify-content:center;font-size:12px">Last 30 days</button>
+              <button class="btn btn-secondary" onClick="{{ repYear }}" style="justify-content:center;font-size:12px">Year</button>
+            </div>
+          </div>
+          <!-- Category selection -->
+          <div style="padding:var(--space-4) 0;border-bottom:2px solid var(--color-divider)">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent)">Categories</div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-ghost" onClick="{{ repAll }}" style="justify-content:center;font-size:12px;padding:4px 10px">All</button>
+                <button class="btn btn-ghost" onClick="{{ repNone }}" style="justify-content:center;font-size:12px;padding:4px 10px">None</button>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+              <sc-for list="{{ repChips }}" as="m" hint-placeholder-count="4">
+                <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+                  <span style="width:84px;flex:none;font-size:11px;font-family:var(--font-heading);font-weight:800;color:color-mix(in srgb,var(--color-text) 60%,transparent)">{{ m.name }}</span>
+                  <sc-for list="{{ m.subs }}" as="s" hint-placeholder-count="3">
+                    <button onClick="{{ s.toggle }}" style="{{ s.style }}">{{ s.name }}</button>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <sc-if value="{{ repHasData }}" hint-placeholder-val="{{ true }}">
+            <!-- Stat cards -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--color-divider);border:1px solid var(--color-divider);margin:var(--space-6) 0">
+              <div style="background:var(--color-surface);padding:var(--space-4)">
+                <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent)">Money in</div>
+                <div style="font-family:var(--font-mono);font-weight:700;font-size:26px;margin-top:6px;color:#37e07a">+{{ inLabel }}</div>
+              </div>
+              <div style="background:var(--color-surface);padding:var(--space-4)">
+                <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent)">Money out</div>
+                <div style="font-family:var(--font-mono);font-weight:700;font-size:26px;margin-top:6px;color:var(--color-accent)">−{{ outLabel }}</div>
+              </div>
+              <div style="background:var(--color-surface);padding:var(--space-4)">
+                <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent)">Net change</div>
+                <div style="font-family:var(--font-mono);font-weight:700;font-size:26px;margin-top:6px;color:{{ netColor }}">{{ netLabel }}</div>
+              </div>
+            </div>
+
+            <!-- Time chart -->
+            <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent);margin-bottom:8px">Net over time · {{ granLabel }}</div>
+            <div style="display:flex;align-items:stretch;gap:5px;height:220px;padding:14px 12px;border:1px solid var(--color-divider);margin-bottom:var(--space-6)">
+              <sc-for list="{{ bucketBars }}" as="b" hint-placeholder-count="10">
+                <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+                  <div style="flex:1;display:flex;align-items:flex-end;justify-content:center">
+                    <div style="{{ b.posStyle }}"></div>
+                  </div>
+                  <div style="height:2px;background:var(--color-divider)"></div>
+                  <div style="flex:1;display:flex;align-items:flex-start;justify-content:center">
+                    <div style="{{ b.negStyle }}"></div>
+                  </div>
+                  <div style="text-align:center;font-family:var(--font-mono);font-size:9px;color:color-mix(in srgb,var(--color-text) 45%,transparent);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- Category breakdown -->
+            <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-family:var(--font-mono);color:color-mix(in srgb,var(--color-text) 50%,transparent);margin-bottom:10px">Net by category</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ catBars }}" as="c" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="width:110px;flex:none;font-size:13px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span>
+                  <div style="flex:1;position:relative;height:26px;background:color-mix(in srgb,#93a4cc 6%,transparent)">
+                    <div style="position:absolute;top:0;bottom:0;left:50%;width:2px;background:var(--color-divider)"></div>
+                    <div style="{{ c.barStyle }}"></div>
+                  </div>
+                  <span style="{{ c.netStyle }}">{{ c.netLabel }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ repNoData }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:var(--space-8) var(--space-4);text-align:center;color:color-mix(in srgb,var(--color-text) 45%,transparent)">
+              <div style="width:56px;height:56px;margin:0 auto var(--space-3);display:grid;place-items:center;border:2px solid var(--color-divider)">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 4-5"/></svg>
+              </div>
+              <div style="font-family:var(--font-heading);font-weight:800;font-size:17px;color:var(--color-text)">No money in this window</div>
+              <div style="font-size:13px;margin-top:4px;text-wrap:pretty">Widen the dates, select more categories, or import a bank file to see the damage.</div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+      </sc-if>
+
+    </main>
+  </div>
+</div>
+
+<!-- ═══ Task edit dialog ═══ -->
+<sc-if value="{{ dialogOpen }}" hint-placeholder-val="{{ false }}">
+<div class="dialog-backdrop" style="animation:omFade .12s ease" onClick="{{ cancelDialog }}">
+  <div class="dialog" style="width:min(520px,100%);animation:omPop .16s ease" onClick="{{ stop }}">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="dialog-title">{{ dialogTitle }}</div>
+      <button aria-label="Close" onClick="{{ cancelDialog }}" class="btn btn-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="field">
+      <label>Task</label>
+      <input class="input" placeholder="What must be conquered?" value="{{ dTitle }}" onInput="{{ onTitleInput }}">
+    </div>
+    <div class="field">
+      <label>{{ dateFieldLabel }}</label>
+      <div class="seg" style="margin-bottom:10px">
+        <label class="seg-opt"><input type="radio" name="datekind" checked="{{ isDueKind }}" onChange="{{ setKindDue }}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Do it by</label>
+        <label class="seg-opt"><input type="radio" name="datekind" checked="{{ isTxnKind }}" onChange="{{ setKindTxn }}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3h16v18l-3-2-2 2-3-2-3 2-2-2-3 2Z"/><path d="M8 8h8M8 12h5"/></svg>Transaction</label>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <sc-for list="{{ datePresets }}" as="p" hint-placeholder-count="4">
+          <button onClick="{{ p.onClick }}" style="{{ p.style }}" style-hover="border-color:var(--color-accent)">{{ p.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="date" class="input" value="{{ dDue }}" onInput="{{ onDateInput }}" style="max-width:200px">
+        <span style="font-size:13px;color:var(--color-text)">{{ dDueLabel }}</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Amount <span style="font-family:var(--font-mono);font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:color-mix(in srgb,var(--color-text) 45%,transparent)">optional · negative = money out</span></label>
+      <input class="input" type="text" inputmode="decimal" placeholder="e.g. -84.50" value="{{ dAmount }}" onInput="{{ onAmountInput }}" style="max-width:200px;font-family:var(--font-mono)">
+    </div>
+    <div class="field">
+      <label>Categories</label>
+      <div style="display:flex;flex-direction:column;gap:var(--space-3);margin-top:4px">
+        <sc-for list="{{ draftCats }}" as="m" hint-placeholder-count="3">
+          <div>
+            <div style="font-size:11px;font-family:var(--font-heading);font-weight:800;color:color-mix(in srgb,var(--color-text) 65%,transparent);margin-bottom:6px">{{ m.name }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ m.chips }}" as="c" hint-placeholder-count="3">
+                <button onClick="{{ c.toggle }}" style="{{ c.style }}">{{ c.name }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div class="dialog-actions" style="justify-content:space-between">
+      <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}">
+        <button class="btn btn-ghost" onClick="{{ deleteFromDialog }}">Delete task</button>
+      </sc-if>
+      <sc-if value="{{ isCreating }}" hint-placeholder-val="{{ true }}"><span></span></sc-if>
+      <div style="display:flex;gap:var(--space-2)">
+        <button class="btn btn-secondary" onClick="{{ cancelDialog }}">Cancel</button>
+        <button class="btn btn-primary" onClick="{{ saveTask }}" disabled="{{ saveDisabled }}" style="justify-content:center">Save task</button>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══ Import row category editor ═══ -->
+<sc-if value="{{ importCatOpen }}" hint-placeholder-val="{{ false }}">
+<div class="dialog-backdrop" style="animation:omFade .12s ease" onClick="{{ cancelImportCat }}">
+  <div class="dialog" style="width:min(520px,100%);animation:omPop .16s ease" onClick="{{ stop }}">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="dialog-title">Assign categories</div>
+      <button aria-label="Close" onClick="{{ cancelImportCat }}" class="btn btn-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:12px;color:color-mix(in srgb,var(--color-text) 60%,transparent);margin:2px 0 var(--space-3)">{{ importCatTitle }}</div>
+    <div class="field">
+      <label>Categories</label>
+      <div style="display:flex;flex-direction:column;gap:var(--space-3);margin-top:4px">
+        <sc-for list="{{ importCatChips }}" as="m" hint-placeholder-count="3">
+          <div>
+            <div style="font-size:11px;font-family:var(--font-heading);font-weight:800;color:color-mix(in srgb,var(--color-text) 65%,transparent);margin-bottom:6px">{{ m.name }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ m.chips }}" as="c" hint-placeholder-count="3">
+                <button onClick="{{ c.toggle }}" style="{{ c.style }}">{{ c.name }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:var(--space-3) 0;border-top:1px solid var(--color-divider);margin-top:var(--space-2)">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px">
+        <input type="checkbox" checked="{{ importCatApplyAll }}" onChange="{{ onImportApplyAll }}" style="width:17px;height:17px;margin-top:1px;accent-color:var(--color-accent);flex:none">
+        <span>Apply to all <b>{{ importSameCount }}</b> rows titled "{{ importCatTitle }}"</span>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px">
+        <input type="checkbox" checked="{{ importCatRemember }}" onChange="{{ onImportRemember }}" style="width:17px;height:17px;margin-top:1px;accent-color:var(--color-accent);flex:none">
+        <span>Remember as default for this title in future imports</span>
+      </label>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn btn-secondary" onClick="{{ cancelImportCat }}">Cancel</button>
+      <button class="btn btn-primary" onClick="{{ saveImportCat }}" style="justify-content:center">Apply</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══ Category rename dialog ═══ -->
+<sc-if value="{{ catDialogOpen }}" hint-placeholder-val="{{ false }}">
+<div class="dialog-backdrop" style="animation:omFade .12s ease" onClick="{{ catCancel }}">
+  <div class="dialog" style="animation:omPop .16s ease" onClick="{{ stop }}">
+    <div class="dialog-title">{{ catDialogTitle }}</div>
+    <div class="field">
+      <label>Name</label>
+      <input class="input" value="{{ catDraftValue }}" onInput="{{ onCatDraftInput }}" onKeyDown="{{ onCatDraftKey }}">
+    </div>
+    <div class="dialog-actions">
+      <button class="btn btn-secondary" onClick="{{ catCancel }}">Cancel</button>
+      <button class="btn btn-primary" onClick="{{ catSave }}" disabled="{{ catSaveDisabled }}" style="justify-content:center">Save</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;appName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;TASK-O-TRON 9000&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;General&quot;},&quot;firstScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;tasks&quot;,&quot;options&quot;:[&quot;tasks&quot;,&quot;categories&quot;,&quot;import&quot;,&quot;reports&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;General&quot;},&quot;defaultLayout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;list&quot;,&quot;options&quot;:[&quot;list&quot;,&quot;grouped&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;General&quot;}}">
+const NOW = new Date(2026, 6, 17);
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WDAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const dOnly = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const parseISO = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const toISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const diffDays = iso => Math.round((parseISO(iso) - dOnly(NOW)) / 86400000);
+const fmtMoney = n => (n < 0 ? '\u2212' : '+') + '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtAbs = n => '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function dueLabel(iso) {
+  const n = diffDays(iso), d = parseISO(iso);
+  if (n < 0) return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+  if (n === 0) return 'Today';
+  if (n === 1) return 'Tomorrow';
+  if (n <= 6) return WDAYS[d.getDay()];
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
+function dueTone(iso, done) {
+  if (done) return 'muted';
+  const n = diffDays(iso);
+  if (n < 0) return 'over';
+  if (n === 0) return 'today';
+  return 'muted';
+}
+
+class Component extends DCLogic {
+  state = {
+    view: this.props.firstScreen ?? 'tasks',
+    layout: this.props.defaultLayout ?? 'list',
+    filter: 'all',
+    quickAdd: '',
+    dialog: null,          // {id|null, title, due, catIds:[]}
+    catDialog: null,       // {kind:'main'|'sub', id, value}
+    selectedMain: 'work',
+    newMain: '',
+    newSub: '',
+    importText: '',
+    importRows: null,       // null until parsed; else [{title,date,amount,ok}]
+    repStart: '2026-07-01',
+    repEnd: '2026-07-31',
+    repSel: null,           // null = all categories; else array of sub ids (+ '__none__')
+    importCat: null,        // category editor for one import row: {key,title,catIds,applyAll,remember}
+    titleDefaults: {        // remembered category assignments keyed by lowercased title
+      'whole foods market': ['he'],
+      'city power & light': ['pf'],
+      'acme corp payroll': ['pf'],
+    },
+    mains: [
+      { id: 'work', name: 'Work' },
+      { id: 'home', name: 'Home' },
+      { id: 'personal', name: 'Personal' },
+    ],
+    subs: [
+      { id: 'wr', mainId: 'work', name: 'Reports' },
+      { id: 'wm', mainId: 'work', name: 'Meetings' },
+      { id: 'we', mainId: 'work', name: 'Email' },
+      { id: 'wp', mainId: 'work', name: 'Planning' },
+      { id: 'he', mainId: 'home', name: 'Errands' },
+      { id: 'hc', mainId: 'home', name: 'Cleaning' },
+      { id: 'hr', mainId: 'home', name: 'Repairs' },
+      { id: 'ph', mainId: 'personal', name: 'Health' },
+      { id: 'pf', mainId: 'personal', name: 'Finance' },
+      { id: 'pl', mainId: 'personal', name: 'Learning' },
+    ],
+    todos: [
+      { id: 1, title: 'Finish Q3 revenue report', done: false, due: '2026-07-17', catIds: ['wr'], amount: null },
+      { id: 2, title: 'Review team OKRs', done: false, due: '2026-07-18', catIds: ['wp','wm'], amount: null },
+      { id: 3, title: 'Reply to vendor contract email', done: false, due: '2026-07-16', catIds: ['we'], amount: null },
+      { id: 4, title: 'Book dentist appointment', done: false, due: '2026-07-22', catIds: ['ph'], amount: -120 },
+      { id: 5, title: 'Pay electricity bill', done: false, due: '2026-07-20', catIds: ['pf'], amount: -84.5 },
+      { id: 6, title: 'Weekly grocery run', done: false, due: '2026-07-17', catIds: ['he'], amount: -76.2 },
+      { id: 7, title: 'Fix leaking kitchen tap', done: false, due: null, catIds: ['hr'], amount: -45 },
+      { id: 8, title: 'Read "Designing Data-Intensive Applications"', done: false, due: '2026-07-31', catIds: ['pl'], amount: -18.99 },
+      { id: 9, title: 'Deep clean the garage', done: true, due: '2026-07-14', catIds: ['hc'], amount: null },
+      { id: 10, title: 'Prepare slides for all-hands', done: false, due: '2026-07-19', catIds: ['wm','wp'], amount: null },
+      { id: 11, title: 'Renew car insurance', done: false, due: '2026-08-03', catIds: ['pf'], amount: -320 },
+      { id: 12, title: 'Morning run', done: true, due: '2026-07-17', catIds: ['ph'], amount: null },
+      { id: 13, title: 'Salary deposit', done: true, due: '2026-07-01', catIds: ['pf'], amount: 4200, dateKind: 'transaction' },
+      { id: 14, title: 'Freelance invoice paid', done: true, due: '2026-07-09', catIds: ['pf','wr'], amount: 650, dateKind: 'transaction' },
+      { id: 15, title: 'Store refund', done: true, due: '2026-07-11', catIds: ['he'], amount: 32.4, dateKind: 'transaction' },
+      { id: 16, title: 'Netflix subscription', done: true, due: '2026-07-05', catIds: ['pl'], amount: -15.99, dateKind: 'transaction' },
+      { id: 17, title: 'Fuel top-up', done: true, due: '2026-07-08', catIds: ['he'], amount: -52.4, dateKind: 'transaction' },
+      { id: 18, title: 'Gym membership', done: true, due: '2026-07-03', catIds: ['ph'], amount: -39, dateKind: 'transaction' },
+    ],
+    nextId: 19,
+  };
+
+  set(patch) { this.setState(patch); }
+
+  subName(id) { const s = this.state.subs.find(x => x.id === id); return s ? s.name : ''; }
+
+  // ---- filtering ----
+  matches(t, filter) {
+    if (filter === 'all') return true;
+    if (filter === 'today') return !t.done && t.due && t.dateKind !== 'transaction' && diffDays(t.due) <= 0;
+    if (filter === 'upcoming') return !t.done && t.due && t.dateKind !== 'transaction' && diffDays(t.due) > 0;
+    if (filter === 'done') return t.done;
+    return t.catIds.includes(filter); // sub-category id
+  }
+  sortTodos(list) {
+    const key = t => { const act = t.due && t.dateKind !== 'transaction'; return [t.done ? 2 : (act ? 0 : 1), act ? diffDays(t.due) : 1e9, t.id]; };
+    return [...list].sort((a,b) => {
+      const ka = key(a), kb = key(b);
+      for (let i=0;i<ka.length;i++){ if (ka[i]!==kb[i]) return ka[i]-kb[i]; }
+      return 0;
+    });
+  }
+
+  rowVM(t) {
+    const isTxn = t.dateKind === 'transaction';
+    const tone = !t.due ? 'muted' : isTxn ? 'txn' : dueTone(t.due, t.done);
+    const dueColor = tone === 'over' ? 'var(--color-accent)' : tone === 'today' ? '#ffb020' : 'color-mix(in srgb,var(--color-text) 50%,transparent)';
+    return {
+      id: t.id, title: t.title, due: t.due,
+      dueLabel: t.due ? (isTxn ? 'Txn ' + dueLabel(t.due) : (dueTone(t.due,t.done)==='over' ? dueLabel(t.due)+' · overdue' : dueLabel(t.due))) : '',
+      dueStyle: `display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:${dueColor}`,
+      titleStyle: `font-size:15px;line-height:1.3;${t.done ? 'text-decoration:line-through;color:color-mix(in srgb,var(--color-text) 42%,transparent)' : ''}`,
+      checkStyle: `flex:none;width:22px;height:22px;margin-top:1px;display:grid;place-items:center;cursor:pointer;border:2px solid ${t.done ? 'var(--color-accent)' : 'var(--color-divider)'};background:${t.done ? 'var(--color-accent)' : 'transparent'};color:#fff;box-shadow:${t.done ? '0 0 10px -2px var(--color-accent)' : 'none'}`,
+      checkIconStyle: t.done ? 'opacity:1' : 'opacity:0',
+      tags: t.catIds.map(id => ({ name: this.subName(id) })).filter(x => x.name),
+      hasAmount: t.amount != null,
+      amountLabel: t.amount != null ? fmtMoney(t.amount) : '',
+      amountStyle: `flex:none;font-family:var(--font-mono);font-size:14px;font-weight:700;white-space:nowrap;color:${t.amount >= 0 ? '#37e07a' : 'var(--color-accent)'}`,
+      toggle: () => this.toggle(t.id),
+      remove: () => this.remove(t.id),
+      openEdit: () => this.openEdit(t.id),
+    };
+  }
+
+  toggle(id) { this.set({ todos: this.state.todos.map(t => t.id===id ? {...t, done:!t.done} : t) }); }
+  remove(id) { this.set({ todos: this.state.todos.filter(t => t.id!==id) }); }
+
+  addQuick() {
+    const title = this.state.quickAdd.trim();
+    if (!title) return;
+    const catIds = ['today','upcoming','done','all'].includes(this.state.filter) ? [] : [this.state.filter];
+    this.set({ todos: [...this.state.todos, { id: this.state.nextId, title, done:false, due:null, catIds, amount:null, dateKind:'due' }], nextId: this.state.nextId+1, quickAdd: '' });
+  }
+
+  openNew() {
+    const catIds = ['today','upcoming','done','all'].includes(this.state.filter) ? [] : [this.state.filter];
+    const due = this.state.filter === 'today' ? toISO(NOW) : null;
+    this.set({ dialog: { id: null, title: '', due, catIds, amountStr: '', dateKind: 'due' } });
+  }
+  openEdit(id) {
+    const t = this.state.todos.find(x => x.id===id);
+    this.set({ dialog: { id, title: t.title, due: t.due, catIds: [...t.catIds], amountStr: t.amount == null ? '' : String(t.amount), dateKind: t.dateKind || 'due' } });
+  }
+  updateDialog(patch) { this.set({ dialog: { ...this.state.dialog, ...patch } }); }
+  toggleDraftCat(subId) {
+    const has = this.state.dialog.catIds.includes(subId);
+    this.updateDialog({ catIds: has ? this.state.dialog.catIds.filter(x=>x!==subId) : [...this.state.dialog.catIds, subId] });
+  }
+  saveTask() {
+    const d = this.state.dialog;
+    if (!d.title.trim()) return;
+    const parsed = d.amountStr != null && d.amountStr.trim() !== '' ? parseFloat(d.amountStr) : null;
+    const amount = (parsed == null || isNaN(parsed)) ? null : parsed;
+    const dateKind = d.dateKind || 'due';
+    if (d.id == null) {
+      this.set({ todos: [...this.state.todos, { id: this.state.nextId, title: d.title.trim(), done:false, due:d.due, catIds:d.catIds, amount, dateKind }], nextId: this.state.nextId+1, dialog: null });
+    } else {
+      this.set({ todos: this.state.todos.map(t => t.id===d.id ? {...t, title:d.title.trim(), due:d.due, catIds:d.catIds, amount, dateKind} : t), dialog: null });
+    }
+  }
+  deleteFromDialog() { this.remove(this.state.dialog.id); this.set({ dialog: null }); }
+
+  // ---- category management ----
+  addMain() {
+    const name = this.state.newMain.trim(); if (!name) return;
+    const id = 'm' + Date.now();
+    this.set({ mains: [...this.state.mains, { id, name }], selectedMain: id, newMain: '' });
+  }
+  addSub() {
+    const name = this.state.newSub.trim(); if (!name) return;
+    const id = 's' + Date.now();
+    this.set({ subs: [...this.state.subs, { id, mainId: this.state.selectedMain, name }], newSub: '' });
+  }
+  removeMain(id) {
+    const subIds = this.state.subs.filter(s => s.mainId===id).map(s=>s.id);
+    this.set({
+      mains: this.state.mains.filter(m => m.id!==id),
+      subs: this.state.subs.filter(s => s.mainId!==id),
+      todos: this.state.todos.map(t => ({ ...t, catIds: t.catIds.filter(c => !subIds.includes(c)) })),
+      selectedMain: this.state.selectedMain===id ? (this.state.mains.find(m=>m.id!==id)?.id ?? null) : this.state.selectedMain,
+      filter: subIds.includes(this.state.filter) ? 'all' : this.state.filter,
+    });
+  }
+  removeSub(id) {
+    this.set({
+      subs: this.state.subs.filter(s => s.id!==id),
+      todos: this.state.todos.map(t => ({ ...t, catIds: t.catIds.filter(c => c!==id) })),
+      filter: this.state.filter===id ? 'all' : this.state.filter,
+    });
+  }
+  saveCat() {
+    const c = this.state.catDialog; const v = c.value.trim(); if (!v) return;
+    if (c.kind==='main') this.set({ mains: this.state.mains.map(m => m.id===c.id ? {...m, name:v} : m), catDialog: null });
+    else this.set({ subs: this.state.subs.map(s => s.id===c.id ? {...s, name:v} : s), catDialog: null });
+  }
+
+  // ---- import ----
+  detectDate(tok) {
+    let m = tok.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return `${m[1]}-${String(+m[2]).padStart(2,'0')}-${String(+m[3]).padStart(2,'0')}`;
+    m = tok.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{2,4})$/);
+    if (m) { let y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${String(+m[2]).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`; }
+    return null;
+  }
+  detectAmount(tok) {
+    const cleaned = tok.replace(/[$\u20ac\u00a3]/g, '');
+    if (/^[+-]?\d{1,3}(,\d{3})*(\.\d+)?$/.test(cleaned) || /^[+-]?\d+(\.\d+)?$/.test(cleaned)) {
+      const moneyish = /^[+-]/.test(cleaned) || /\.\d+$/.test(cleaned) || /[$\u20ac\u00a3]/.test(tok);
+      if (moneyish) return parseFloat(cleaned.replace(/,/g, ''));
+    }
+    return null;
+  }
+  parseImport() {
+    const lines = this.state.importText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const rows = lines.map((line, i) => {
+      const parts = line.split(/\t|,|\s{2,}/).map(p => p.trim()).filter(Boolean);
+      let date = null, amount = null; const rest = [];
+      parts.forEach(p => {
+        const iso = this.detectDate(p);
+        const amt = this.detectAmount(p);
+        if (iso && !date) date = iso;
+        else if (amt != null && amount == null) amount = amt;
+        else rest.push(p);
+      });
+      const title = rest.join(' ') || 'Untitled row';
+      const def = this.state.titleDefaults[title.trim().toLowerCase()];
+      return { key: i, title, date, amount, ok: amount != null, catIds: def ? [...def] : [] };
+    });
+    this.set({ importRows: rows });
+  }
+  commitImport() {
+    const rows = (this.state.importRows || []).filter(r => r.ok);
+    if (!rows.length) return;
+    let id = this.state.nextId;
+    const added = rows.map(r => ({ id: id++, title: r.title, done: false, due: r.date, catIds: r.catIds ? [...r.catIds] : [], amount: r.amount, dateKind: 'transaction' }));
+    this.set({ todos: [...this.state.todos, ...added], nextId: id, importText: '', importRows: null, view: 'tasks', filter: 'all' });
+  }
+  loadSampleImport() {
+    const sample = [
+      '2026-07-15\tACME CORP PAYROLL\t+4200.00',
+      '2026-07-14\tWHOLE FOODS MARKET\t-76.20',
+      '2026-07-13\tSHELL FUEL 22817\t-52.40',
+      '2026-07-12\tNETFLIX.COM\t-15.99',
+      '2026-07-11\tTRANSFER FROM SAVINGS\t+500.00',
+      '2026-07-10\tCITY POWER & LIGHT\t-84.50',
+      '2026-07-08\tSTARBUCKS #4471\t-6.75',
+      '2026-07-06\tAPARTMENT RENT\t-1650.00',
+    ].join('\n');
+    this.set({ importText: sample, importRows: null });
+  }
+
+  openImportCat(key) {
+    const r = (this.state.importRows || []).find(x => x.key === key);
+    if (!r) return;
+    const norm = r.title.trim().toLowerCase();
+    this.set({ importCat: { key, title: r.title, catIds: [...(r.catIds || [])], applyAll: false, remember: !!this.state.titleDefaults[norm] } });
+  }
+  toggleImportCat(id) {
+    const c = this.state.importCat; if (!c) return;
+    const has = c.catIds.includes(id);
+    this.set({ importCat: { ...c, catIds: has ? c.catIds.filter(x => x !== id) : [...c.catIds, id] } });
+  }
+  setImportCatFlag(k, v) { this.set({ importCat: { ...this.state.importCat, [k]: v } }); }
+  saveImportCat() {
+    const c = this.state.importCat; if (!c) return;
+    const norm = c.title.trim().toLowerCase();
+    const rows = (this.state.importRows || []).map(r =>
+      (r.key === c.key || (c.applyAll && r.title.trim().toLowerCase() === norm)) ? { ...r, catIds: [...c.catIds] } : r);
+    const defaults = { ...this.state.titleDefaults };
+    if (c.remember) defaults[norm] = [...c.catIds]; else delete defaults[norm];
+    this.set({ importRows: rows, titleDefaults: defaults, importCat: null });
+  }
+
+  // ---- reports ----
+  repToggleSub(id, base) {
+    const cur = this.state.repSel == null ? [...base] : [...this.state.repSel];
+    const i = cur.indexOf(id);
+    if (i >= 0) cur.splice(i, 1); else cur.push(id);
+    this.set({ repSel: cur });
+  }
+
+  navBtn(active) {
+    return `display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:0;cursor:pointer;font-family:var(--font-heading);font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:0.04em;border-radius:0;background:${active?'color-mix(in srgb,var(--color-accent) 14%,transparent)':'transparent'};color:${active?'var(--color-accent)':'var(--color-text)'};box-shadow:${active?'inset 3px 0 0 var(--color-accent)':'none'}`;
+  }
+  filterBtn(active) {
+    return `display:flex;align-items:center;gap:8px;width:100%;padding:7px 8px;border:0;cursor:pointer;font-size:13px;text-align:left;background:${active?'color-mix(in srgb,var(--color-accent) 14%,transparent)':'transparent'};color:${active?'var(--color-accent)':'var(--color-text)'};box-shadow:${active?'inset 3px 0 0 var(--color-accent)':'none'}`;
+  }
+  countBadge(active) {
+    return `font-family:var(--font-mono);font-size:11px;min-width:20px;text-align:right;color:${active?'var(--color-accent)':'color-mix(in srgb,var(--color-text) 45%,transparent)'}`;
+  }
+
+  renderVals() {
+    const st = this.state;
+    const visible = this.sortTodos(st.todos.filter(t => this.matches(t, st.filter)));
+
+    // smart filters
+    const cAll = st.todos.length;
+    const cToday = st.todos.filter(t => !t.done && t.due && t.dateKind!=='transaction' && diffDays(t.due)<=0).length;
+    const cUpcoming = st.todos.filter(t => !t.done && t.due && t.dateKind!=='transaction' && diffDays(t.due)>0).length;
+    const cDone = st.todos.filter(t => t.done).length;
+    const smart = [
+      { key:'all', label:'All tasks', count:cAll, dot:'var(--color-neutral-500)' },
+      { key:'today', label:'Today', count:cToday, dot:'var(--color-accent)' },
+      { key:'upcoming', label:'Upcoming', count:cUpcoming, dot:'var(--color-accent-400)' },
+      { key:'done', label:'Completed', count:cDone, dot:'var(--color-neutral-400)' },
+    ].map(f => ({
+      ...f,
+      onClick: () => this.set({ filter: f.key, view: 'tasks' }),
+      style: this.filterBtn(st.filter===f.key),
+      dotStyle: `width:9px;height:9px;flex:none;background:${f.dot}`,
+      countStyle: this.countBadge(st.filter===f.key),
+    }));
+
+    // sidebar category tree
+    const sidebarMains = st.mains.map(m => ({
+      name: m.name,
+      subs: st.subs.filter(s => s.mainId===m.id).map(s => ({
+        name: s.name,
+        count: st.todos.filter(t => t.catIds.includes(s.id)).length,
+        onClick: () => this.set({ filter: s.id, view: 'tasks' }),
+        style: this.filterBtn(st.filter===s.id),
+        countStyle: this.countBadge(st.filter===s.id),
+      })),
+    }));
+
+    // filter title
+    let filterTitle = 'All tasks', filterSubtitle = 'Everything on your plate (and then some)';
+    if (st.filter==='today') { filterTitle='Today'; filterSubtitle='Due today + everything you\u2019re avoiding'; }
+    else if (st.filter==='upcoming') { filterTitle='Upcoming'; filterSubtitle='A.k.a. future-you\u2019s problem'; }
+    else if (st.filter==='done') { filterTitle='Completed'; filterSubtitle='Trophies for the shelf'; }
+    else if (!['all'].includes(st.filter)) {
+      const s = st.subs.find(x=>x.id===st.filter);
+      const m = s && st.mains.find(x=>x.id===s.mainId);
+      if (s) { filterTitle = s.name; filterSubtitle = m ? m.name + ' \u00b7 sector' : 'Category'; }
+    }
+
+    // grouped
+    const groups = [];
+    st.mains.forEach(m => {
+      const subIds = st.subs.filter(s=>s.mainId===m.id).map(s=>s.id);
+      const items = visible.filter(t => t.catIds.some(c => subIds.includes(c)));
+      if (items.length) groups.push({ title: m.name, count: items.length, items: items.map(t=>this.rowVM(t)) });
+    });
+    const uncat = visible.filter(t => !t.catIds.length);
+    if (uncat.length) groups.push({ title: 'No category', count: uncat.length, items: uncat.map(t=>this.rowVM(t)) });
+
+    const hasVisible = visible.length > 0;
+    let emptyTitle = 'Inbox zero, you absolute legend', emptyBody = 'Nothing queued. The machines are idle and slightly bored.';
+    if (st.filter==='today') { emptyTitle='All clear for today'; emptyBody='Zero tasks due. Go outside. Touch grass. We\u2019ll wait.'; }
+    else if (st.filter==='done') { emptyTitle='Nothing completed. Yet.'; emptyBody='Bold strategy. We\u2019re rooting for you.'; }
+    else if (st.filter==='upcoming') { emptyTitle='The future is empty'; emptyBody='No upcoming tasks. Ominous, but relaxing.'; }
+
+    // task dialog
+    const d = st.dialog;
+    const draftCats = d ? st.mains.map(m => ({
+      name: m.name,
+      chips: st.subs.filter(s=>s.mainId===m.id).map(s => {
+        const on = d.catIds.includes(s.id);
+        return {
+          name: s.name,
+          toggle: () => this.toggleDraftCat(s.id),
+          style: `font-size:11px;padding:5px 12px;cursor:pointer;border-radius:0;text-transform:uppercase;letter-spacing:0.05em;border:1px solid ${on?'var(--color-accent)':'var(--color-divider)'};background:${on?'var(--color-accent)':'transparent'};color:${on?'#fff':'var(--color-text)'};font-family:var(--font-mono);box-shadow:${on?'0 0 14px -5px var(--color-accent)':'none'}`,
+        };
+      }),
+    })) : [];
+    const presetDefs = d ? [
+      { label:'Today', iso: toISO(NOW) },
+      { label:'Tomorrow', iso: toISO(addDays(NOW,1)) },
+      { label:'Next week', iso: toISO(addDays(NOW,7)) },
+    ] : [];
+    const datePresets = presetDefs.map(p => {
+      const on = d && d.due === p.iso;
+      return { label:p.label, onClick: () => this.updateDialog({ due:p.iso }),
+        style: `font-size:12px;padding:6px 12px;cursor:pointer;border-radius:0;font-family:inherit;border:1px solid ${on?'var(--color-accent)':'var(--color-divider)'};background:${on?'color-mix(in srgb,var(--color-accent) 16%,transparent)':'transparent'};color:${on?'var(--color-accent)':'var(--color-text)'}` };
+    });
+    if (d) datePresets.push({ label:'Clear', onClick: () => this.updateDialog({ due:null }),
+      style:`font-size:12px;padding:6px 12px;cursor:pointer;border-radius:0;font-family:inherit;border:1px solid var(--color-divider);background:transparent;color:color-mix(in srgb,var(--color-text) 60%,transparent)` });
+
+    // categories view
+    const catMains = st.mains.map(m => ({
+      name: m.name,
+      count: st.subs.filter(s=>s.mainId===m.id).length + ' subs',
+      select: () => this.set({ selectedMain: m.id }),
+      rename: () => this.set({ catDialog: { kind:'main', id:m.id, value:m.name } }),
+      remove: () => this.removeMain(m.id),
+      rowStyle: `display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border:1px solid ${st.selectedMain===m.id?'var(--color-accent)':'transparent'};background:${st.selectedMain===m.id?'color-mix(in srgb,var(--color-accent) 14%,transparent)':'transparent'}`,
+    }));
+    const selMain = st.mains.find(m=>m.id===st.selectedMain);
+    const selectedSubs = st.subs.filter(s=>s.mainId===st.selectedMain).map(s => ({
+      name: s.name,
+      count: st.todos.filter(t=>t.catIds.includes(s.id)).length,
+      rename: () => this.set({ catDialog: { kind:'sub', id:s.id, value:s.name } }),
+      remove: () => this.removeSub(s.id),
+    }));
+
+    // ===== reports derived =====
+    const allSel = [...st.subs.map(s => s.id), '__none__'];
+    const repSet = new Set(st.repSel == null ? allSel : st.repSel);
+    const inRange = t => t.due && t.due >= st.repStart && t.due <= st.repEnd;
+    const repTasks = st.todos.filter(t => t.amount != null && inRange(t) && (t.catIds.length ? t.catIds.some(c => repSet.has(c)) : repSet.has('__none__')));
+    const inTotal = repTasks.reduce((s, t) => t.amount > 0 ? s + t.amount : s, 0);
+    const outTotal = repTasks.reduce((s, t) => t.amount < 0 ? s + t.amount : s, 0);
+    const netTotal = inTotal + outTotal;
+    const chipStyle = on => `font-size:11px;padding:5px 12px;cursor:pointer;border-radius:0;text-transform:uppercase;letter-spacing:0.05em;font-family:var(--font-mono);border:1px solid ${on ? 'var(--color-accent)' : 'var(--color-divider)'};background:${on ? 'var(--color-accent)' : 'transparent'};color:${on ? '#fff' : 'var(--color-text)'}`;
+    const repChips = st.mains.map(m => ({
+      name: m.name,
+      subs: st.subs.filter(s => s.mainId === m.id).map(s => ({ name: s.name, toggle: () => this.repToggleSub(s.id, allSel), style: chipStyle(repSet.has(s.id)) })),
+    }));
+    repChips.push({ name: 'Other', subs: [{ name: 'Uncategorized', toggle: () => this.repToggleSub('__none__', allSel), style: chipStyle(repSet.has('__none__')) }] });
+    // category breakdown
+    const catAgg = [];
+    st.mains.forEach(m => {
+      const subIds = st.subs.filter(s => s.mainId === m.id).map(s => s.id);
+      const items = repTasks.filter(t => t.catIds.some(c => subIds.includes(c)));
+      if (items.length) catAgg.push({ name: m.name, net: items.reduce((s, t) => s + t.amount, 0) });
+    });
+    const uncatR = repTasks.filter(t => !t.catIds.length);
+    if (uncatR.length) catAgg.push({ name: 'Uncategorized', net: uncatR.reduce((s, t) => s + t.amount, 0) });
+    const maxCat = Math.max(1, ...catAgg.map(c => Math.abs(c.net)));
+    const catBars = catAgg.map(c => ({
+      name: c.name, netLabel: fmtMoney(c.net),
+      barStyle: `position:absolute;top:3px;bottom:3px;${c.net >= 0 ? 'left' : 'right'}:50%;width:${Math.abs(c.net) / maxCat * 50}%;background:${c.net >= 0 ? '#37e07a' : 'var(--color-accent)'}`,
+      netStyle: `width:108px;flex:none;text-align:right;font-family:var(--font-mono);font-size:13px;font-weight:700;color:${c.net >= 0 ? '#37e07a' : 'var(--color-accent)'}`,
+    }));
+    // time buckets
+    const rStart = parseISO(st.repStart), rEnd = parseISO(st.repEnd);
+    const spanDays = Math.round((dOnly(rEnd) - dOnly(rStart)) / 86400000) + 1;
+    const gran = spanDays <= 16 ? 'day' : spanDays <= 95 ? 'week' : 'month';
+    const buckets = [];
+    if (gran === 'day') {
+      for (let i = 0; i < Math.max(spanDays, 1); i++) { const dd = addDays(rStart, i); buckets.push({ id: toISO(dd), label: String(dd.getDate()), net: 0 }); }
+    } else if (gran === 'week') {
+      const n = Math.max(1, Math.ceil(spanDays / 7));
+      for (let i = 0; i < n; i++) { const dd = addDays(rStart, i * 7); buckets.push({ id: 'w' + i, label: `${MONTHS[dd.getMonth()]} ${dd.getDate()}`, net: 0 }); }
+    } else {
+      let y = rStart.getFullYear(), mo = rStart.getMonth();
+      while (y < rEnd.getFullYear() || (y === rEnd.getFullYear() && mo <= rEnd.getMonth())) { buckets.push({ id: `${y}-${mo}`, label: MONTHS[mo], net: 0 }); mo++; if (mo > 11) { mo = 0; y++; } }
+    }
+    const bIndex = {}; buckets.forEach((b, i) => { bIndex[b.id] = i; });
+    const bKey = iso => { const dd = parseISO(iso); if (gran === 'day') return iso; if (gran === 'week') { const off = Math.round((dOnly(dd) - dOnly(rStart)) / 86400000); return 'w' + Math.floor(off / 7); } return `${dd.getFullYear()}-${dd.getMonth()}`; };
+    repTasks.forEach(t => { const k = bKey(t.due); if (bIndex[k] != null) buckets[bIndex[k]].net += t.amount; });
+    const maxB = Math.max(1, ...buckets.map(b => Math.abs(b.net)));
+    const bucketBars = buckets.map(b => ({
+      label: b.label,
+      posStyle: `width:66%;height:${b.net > 0 ? b.net / maxB * 100 : 0}%;background:#37e07a;${b.net > 0 ? 'box-shadow:0 0 12px -4px #37e07a' : ''}`,
+      negStyle: `width:66%;height:${b.net < 0 ? -b.net / maxB * 100 : 0}%;background:var(--color-accent);${b.net < 0 ? 'box-shadow:0 0 12px -4px var(--color-accent)' : ''}`,
+    }));
+    // ===== import derived =====
+    const importParsed = st.importRows != null;
+    const importRowsVM = (st.importRows || []).map(r => ({
+      key: r.key,
+      title: r.title,
+      dateLabel: r.date || '\u2014',
+      amountLabel: r.amount != null ? fmtMoney(r.amount) : 'no amount',
+      dateStyle: 'font-family:var(--font-mono);font-size:12px;color:color-mix(in srgb,var(--color-text) 55%,transparent)',
+      amountStyle: `font-family:var(--font-mono);font-size:13px;font-weight:700;text-align:right;color:${r.amount == null ? 'color-mix(in srgb,var(--color-text) 40%,transparent)' : (r.amount >= 0 ? '#37e07a' : 'var(--color-accent)')}`,
+      rowStyle: `padding:10px 10px;border-bottom:1px solid var(--color-divider);opacity:${r.ok ? '1' : '0.45'}`,
+      catTags: (r.catIds || []).map(id => ({ name: this.subName(id) })).filter(x => x.name),
+      editCats: () => this.openImportCat(r.key),
+      editLabel: (r.catIds || []).length ? 'Edit categories' : '+ categories',
+      isDefault: !!st.titleDefaults[r.title.trim().toLowerCase()],
+    }));
+    const importOkCount = (st.importRows || []).filter(r => r.ok).length;
+
+    const cd = st.catDialog;
+
+    return {
+      appName: this.props.appName ?? 'TASK-O-TRON 9000',
+      headerCount: st.todos.filter(t=>!t.done).length,
+      // nav
+      goTasks: () => this.set({ view:'tasks' }),
+      goCats: () => this.set({ view:'categories' }),
+      navTasksStyle: this.navBtn(st.view==='tasks'),
+      navCatsStyle: this.navBtn(st.view==='categories'),
+      isTasks: st.view==='tasks', isCats: st.view==='categories',
+      isImport: st.view==='import', isReports: st.view==='reports',
+      goImport: () => this.set({ view:'import' }),
+      goReports: () => this.set({ view:'reports' }),
+      navImportStyle: this.navBtn(st.view==='import'),
+      navReportsStyle: this.navBtn(st.view==='reports'),
+      // sidebar
+      smartFilters: smart, sidebarMains,
+      // layout
+      isList: st.layout==='list', isGrouped: st.layout==='grouped',
+      setListLayout: () => this.set({ layout:'list' }),
+      setGroupedLayout: () => this.set({ layout:'grouped' }),
+      // header
+      filterTitle, filterSubtitle,
+      quickAdd: st.quickAdd,
+      quickAddDisabled: !st.quickAdd.trim(),
+      onQuickInput: e => this.set({ quickAdd: e.target.value }),
+      onQuickKey: e => { if (e.key==='Enter') this.addQuick(); },
+      addQuick: () => this.addQuick(),
+      newTask: () => this.openNew(),
+      // list
+      visibleTodos: visible.map(t=>this.rowVM(t)),
+      groups, hasVisible,
+      isListEmpty: st.layout==='list' && !hasVisible,
+      isGroupedEmpty: st.layout==='grouped' && !hasVisible,
+      emptyTitle, emptyBody,
+      // task dialog
+      dialogOpen: !!d,
+      dialogTitle: d ? (d.id==null ? 'New task' : 'Edit task') : '',
+      isEditing: !!d && d.id!=null,
+      isCreating: !!d && d.id==null,
+      dTitle: d ? d.title : '',
+      dDue: d ? (d.due ?? '') : '',
+      dDueLabel: d ? (d.due ? dueLabel(d.due) : 'No date — living dangerously') : '',
+      isDueKind: d ? (d.dateKind || 'due') === 'due' : true,
+      isTxnKind: d ? d.dateKind === 'transaction' : false,
+      setKindDue: () => this.updateDialog({ dateKind: 'due' }),
+      setKindTxn: () => this.updateDialog({ dateKind: 'transaction' }),
+      dateFieldLabel: d && d.dateKind === 'transaction' ? 'Transaction date' : 'Do-it date',
+      onTitleInput: e => this.updateDialog({ title: e.target.value }),
+      onDateInput: e => this.updateDialog({ due: e.target.value || null }),
+      datePresets, draftCats,
+      dAmount: d ? d.amountStr : '',
+      onAmountInput: e => this.updateDialog({ amountStr: e.target.value }),
+      saveDisabled: !d || !d.title.trim(),
+      saveTask: () => this.saveTask(),
+      cancelDialog: () => this.set({ dialog: null }),
+      deleteFromDialog: () => this.deleteFromDialog(),
+      stop: e => e.stopPropagation(),
+      // categories view
+      catMains,
+      selectedMainName: selMain ? selMain.name : '—',
+      selectedSubs,
+      noSubs: selectedSubs.length===0,
+      newMain: st.newMain, newSub: st.newSub,
+      onNewMainInput: e => this.set({ newMain: e.target.value }),
+      onNewSubInput: e => this.set({ newSub: e.target.value }),
+      onNewMainKey: e => { if (e.key==='Enter') this.addMain(); },
+      onNewSubKey: e => { if (e.key==='Enter') this.addSub(); },
+      addMain: () => this.addMain(),
+      addSub: () => this.addSub(),
+      addMainDisabled: !st.newMain.trim(),
+      addSubDisabled: !st.newSub.trim(),
+      // import view
+      importText: st.importText,
+      onImportInput: e => this.set({ importText: e.target.value, importRows: null }),
+      parseImport: () => this.parseImport(),
+      loadSample: () => this.loadSampleImport(),
+      clearImport: () => this.set({ importText: '', importRows: null }),
+      parseDisabled: !st.importText.trim(),
+      importParsed, importNotParsed: !importParsed,
+      importRows: importRowsVM,
+      importOkCount, importTotalCount: (st.importRows || []).length,
+      commitImport: () => this.commitImport(),
+      commitDisabled: importOkCount === 0,
+      // import category editor
+      importCatOpen: !!st.importCat,
+      importCatTitle: st.importCat ? st.importCat.title : '',
+      importCatChips: st.importCat ? st.mains.map(m => ({
+        name: m.name,
+        chips: st.subs.filter(s => s.mainId === m.id).map(s => ({ name: s.name, toggle: () => this.toggleImportCat(s.id), style: chipStyle(st.importCat.catIds.includes(s.id)) })),
+      })) : [],
+      importCatApplyAll: st.importCat ? st.importCat.applyAll : false,
+      importCatRemember: st.importCat ? st.importCat.remember : false,
+      importSameCount: st.importCat ? (st.importRows || []).filter(r => r.title.trim().toLowerCase() === st.importCat.title.trim().toLowerCase()).length : 0,
+      onImportApplyAll: e => this.setImportCatFlag('applyAll', e.target.checked),
+      onImportRemember: e => this.setImportCatFlag('remember', e.target.checked),
+      saveImportCat: () => this.saveImportCat(),
+      cancelImportCat: () => this.set({ importCat: null }),
+      // reports view
+      repStart: st.repStart, repEnd: st.repEnd,
+      onRepStart: e => this.set({ repStart: e.target.value }),
+      onRepEnd: e => this.set({ repEnd: e.target.value }),
+      repThisMonth: () => this.set({ repStart: '2026-07-01', repEnd: '2026-07-31' }),
+      repLast30: () => this.set({ repStart: toISO(addDays(NOW, -30)), repEnd: toISO(NOW) }),
+      repYear: () => this.set({ repStart: '2026-01-01', repEnd: '2026-12-31' }),
+      repChips,
+      repAll: () => this.set({ repSel: null }),
+      repNone: () => this.set({ repSel: [] }),
+      inLabel: fmtAbs(inTotal), outLabel: fmtAbs(outTotal), netLabel: fmtMoney(netTotal),
+      netColor: netTotal >= 0 ? '#37e07a' : 'var(--color-accent)',
+      granLabel: gran === 'day' ? 'daily' : gran === 'week' ? 'weekly' : 'monthly',
+      bucketBars, catBars,
+      repCount: repTasks.length,
+      repHasData: repTasks.length > 0,
+      repNoData: repTasks.length === 0,
+      // category dialog
+      catDialogOpen: !!cd,
+      catDialogTitle: cd ? (cd.kind==='main' ? 'Rename main category' : 'Rename sub category') : '',
+      catDraftValue: cd ? cd.value : '',
+      onCatDraftInput: e => this.set({ catDialog: { ...st.catDialog, value: e.target.value } }),
+      onCatDraftKey: e => { if (e.key==='Enter') this.saveCat(); },
+      catSave: () => this.saveCat(),
+      catCancel: () => this.set({ catDialog: null }),
+      catSaveDisabled: !cd || !cd.value.trim(),
+    };
+  }
+}
+</script>
+</body>
+</html>

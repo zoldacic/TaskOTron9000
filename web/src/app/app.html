@@ -1,0 +1,14 @@
+<div class="shell">
+  <app-title-bar />
+  <div class="body">
+    <app-sidebar />
+    <main class="content om-scroll">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<!-- global dialogs (each renders only when its store signal is set) -->
+<app-task-dialog />
+<app-category-rename-dialog />
+<app-import-cat-dialog />

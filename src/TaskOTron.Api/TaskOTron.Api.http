@@ -1,0 +1,70 @@
+@host = http://localhost:5249
+
+### Health
+GET {{host}}/
+
+### List all tasks
+GET {{host}}/api/todos
+
+### Create a task (quick-add / new-task dialog)
+POST {{host}}/api/todos
+Content-Type: application/json
+
+{ "title": "Buy milk", "due": "2026-07-20", "amount": -3.50, "dateKind": "due", "catIds": ["he"] }
+
+### Update a task (edit dialog; preserves done)
+PUT {{host}}/api/todos/1
+Content-Type: application/json
+
+{ "title": "Finish Q3 revenue report", "due": "2026-07-18", "amount": null, "dateKind": "due", "catIds": ["wr"] }
+
+### Toggle done
+PATCH {{host}}/api/todos/1/toggle
+
+### Delete a task
+DELETE {{host}}/api/todos/1
+
+### Category tree (mains + subs + counts)
+GET {{host}}/api/categories
+
+### Add a main category
+POST {{host}}/api/mains
+Content-Type: application/json
+
+{ "name": "Side project" }
+
+### Add a sub category
+POST {{host}}/api/subs
+Content-Type: application/json
+
+{ "mainId": "work", "name": "Standups" }
+
+### Delete a main (cascades to its subs, strips them from tasks + title defaults)
+DELETE {{host}}/api/mains/home
+
+### Title defaults
+GET {{host}}/api/title-defaults
+
+### Remember categories for a title
+PUT {{host}}/api/title-defaults/whole foods market
+Content-Type: application/json
+
+{ "catIds": ["he"] }
+
+### Parse a pasted bank statement
+POST {{host}}/api/import/parse
+Content-Type: application/json
+
+{ "text": "2026-07-15\tACME CORP PAYROLL\t+4200.00\n2026-07-14\tWHOLE FOODS MARKET\t-76.20" }
+
+### Commit parsed rows as transaction tasks
+POST {{host}}/api/import/commit
+Content-Type: application/json
+
+{ "rows": [ { "title": "ACME CORP PAYROLL", "date": "2026-07-15", "amount": 4200.00, "catIds": ["pf"] } ] }
+
+### Spending report (omit `categories` for all; empty for none)
+GET {{host}}/api/report?from=2026-07-01&to=2026-07-31
+
+### Spending report, only Finance
+GET {{host}}/api/report?from=2026-07-01&to=2026-07-31&categories=pf
