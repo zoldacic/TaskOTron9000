@@ -38,7 +38,7 @@ import { fmtMoney } from '../../core/money-util';
     .row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 8px; }
     .row:hover { background: var(--tint-hover); }
     .check {
-      flex: none; width: 22px; height: 22px; margin-top: 1px; display: grid; place-items: center;
+      flex: none; width: 22px; height: 22px; margin-top: 1px; padding: 0; display: grid; place-items: center;
       cursor: pointer; border: 2px solid var(--color-divider); background: transparent; color: #fff;
     }
     .check.done { border-color: var(--color-accent); background: var(--color-accent); box-shadow: 0 0 10px -2px var(--color-accent); }

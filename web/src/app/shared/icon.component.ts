@@ -71,6 +71,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
       }
     </svg>
   `,
+  styles: [`:host { display: inline-flex; } svg { display: block; }`],
 })
 export class IconComponent {
   @Input() name!: string;
