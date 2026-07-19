@@ -3,11 +3,12 @@ import { TaskStore } from '../../core/task.store';
 import { Todo } from '../../models';
 import { IconComponent } from '../../shared/icon.component';
 import { TaskRowComponent } from './task-row.component';
+import { QueryPanelComponent } from './query-panel.component';
 
 @Component({
   selector: 'app-tasks-view',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, TaskRowComponent],
+  imports: [IconComponent, TaskRowComponent, QueryPanelComponent],
   template: `
     <div class="view">
       <header class="head">
@@ -24,9 +25,26 @@ import { TaskRowComponent } from './task-row.component';
               <app-icon name="grid" [size]="14" /> Grouped
             </button>
           </div>
+          <button class="btn btn-secondary" [class.on]="store.queryPanelOpen()" (click)="store.toggleQueryPanel()">
+            <app-icon name="filter" [size]="14" /> Filters
+            @if (activeCount() > 0) { <span class="badge">{{ activeCount() }}</span> }
+          </button>
           <button class="btn btn-primary" (click)="store.openNew()"><app-icon name="plus" [size]="16" /> New task</button>
         </div>
       </header>
+
+      <div class="search">
+        <app-icon name="search" [size]="16" class="search-ic" />
+        <input class="input" placeholder="Search tasks by title…" [value]="store.queryDraft().text"
+               (input)="store.patchQuery({ text: value($event) })">
+        @if (store.queryActive()) {
+          <button class="btn btn-ghost clear" (click)="store.clearQuery()"><app-icon name="x" [size]="14" /> Clear</button>
+        }
+      </div>
+
+      @if (store.queryPanelOpen()) {
+        <app-query-panel />
+      }
 
       <div class="quick">
         <input class="input" placeholder="Log a task before it logs you…" [value]="store.quickAdd()"
@@ -62,6 +80,16 @@ import { TaskRowComponent } from './task-row.component';
     .view { display: flex; flex-direction: column; height: 100%; }
     .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px 24px 16px; }
     .actions { display: flex; align-items: center; gap: 12px; }
+    .btn.on { border-color: var(--color-accent); color: var(--color-accent); background: var(--accent-fill); }
+    .badge {
+      font-family: var(--font-mono); font-size: 11px; min-width: 18px; text-align: center;
+      padding: 1px 5px; background: var(--color-accent); color: #fff;
+    }
+    .search { display: flex; align-items: center; gap: 10px; padding: 0 24px 16px; }
+    .search .input { flex: 1; }
+    .search-ic { color: var(--muted); flex: none; }
+    .search .clear { flex: none; color: var(--muted); }
+    .search .clear:hover { color: var(--color-accent); }
     .quick { display: flex; gap: 10px; padding: 0 24px 16px; }
     .scroll {
       flex: 1; min-height: 0; overflow-y: auto; padding: 0 24px 24px;
@@ -87,7 +115,30 @@ export class TasksViewComponent {
 
   value(e: Event): string { return (e.target as HTMLInputElement).value; }
 
+  // Count of active query criteria — drives the Filters badge.
+  activeCount = computed(() => {
+    const q = this.store.queryDraft();
+    let n = 0;
+    if (q.text.trim()) n++;
+    if (q.catIds.length) n++;
+    if (q.dueFrom != null || q.dueTo != null) n++;
+    if (q.dateKind !== 'any') n++;
+    if (q.amountKind !== 'any') n++;
+    if (q.amountMin != null || q.amountMax != null) n++;
+    if (q.bankAccountId != null) n++;
+    return n;
+  });
+
   titleInfo = computed(() => {
+    if (this.store.queryActive()) {
+      const id = this.store.appliedQueryId();
+      const saved = id && this.store.savedQueries().find((s) => s.id === id);
+      const n = this.store.visibleTodos().length;
+      return {
+        title: saved ? saved.name : 'Query results',
+        subtitle: `${n} ${n === 1 ? 'task matches' : 'tasks match'} your criteria`,
+      };
+    }
     const f = this.store.filter();
     if (f === 'all') return { title: 'All tasks', subtitle: 'Everything on your plate (and then some)' };
     if (f === 'today') return { title: 'Today', subtitle: 'Due today + everything you’re avoiding' };
@@ -99,6 +150,9 @@ export class TasksViewComponent {
   });
 
   emptyInfo = computed(() => {
+    if (this.store.queryActive()) {
+      return { title: 'No matches', body: 'Nothing fits this query. Loosen a filter and try again.' };
+    }
     const f = this.store.filter();
     if (f === 'today') return { title: 'All clear for today', body: 'Zero tasks due. Go outside. Touch grass. We’ll wait.' };
     if (f === 'done') return { title: 'Nothing completed. Yet.', body: 'Bold strategy. We’re rooting for you.' };

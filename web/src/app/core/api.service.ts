@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE } from './api-base';
 import {
-  BankAccount, Categories, ImportCommitRow, ImportRow, Main, Report, Sub, TitleDefault, Todo, TodoWrite,
+  BankAccount, Categories, ImportCommitRow, ImportRow, Main, Report, SavedQuery, Sub, TaskQuery,
+  TitleDefault, Todo, TodoWrite,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -60,6 +61,20 @@ export class ApiService {
   }
   deleteBankAccount(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/api/bank-accounts/${id}`);
+  }
+
+  // ---- saved queries ----
+  getSavedQueries(): Observable<SavedQuery[]> {
+    return this.http.get<SavedQuery[]>(`${this.base}/api/saved-queries`);
+  }
+  addSavedQuery(name: string, query: TaskQuery): Observable<SavedQuery> {
+    return this.http.post<SavedQuery>(`${this.base}/api/saved-queries`, { name, query });
+  }
+  updateSavedQuery(id: string, name: string, query: TaskQuery): Observable<SavedQuery> {
+    return this.http.put<SavedQuery>(`${this.base}/api/saved-queries/${id}`, { name, query });
+  }
+  deleteSavedQuery(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/api/saved-queries/${id}`);
   }
 
   // ---- title defaults ----

@@ -10,6 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Todo> Todos => Set<Todo>();
     public DbSet<TitleDefault> TitleDefaults => Set<TitleDefault>();
     public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
+    public DbSet<SavedQuery> SavedQueries => Set<SavedQuery>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -31,6 +32,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<BankAccount>(e =>
         {
             e.Property(a => a.Id).ValueGeneratedNever();
+        });
+
+        b.Entity<SavedQuery>(e =>
+        {
+            e.Property(q => q.Id).ValueGeneratedNever();
         });
 
         b.Entity<Todo>(e =>

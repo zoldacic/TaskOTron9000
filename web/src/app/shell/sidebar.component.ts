@@ -30,7 +30,7 @@ import { IconComponent } from '../shared/icon.component';
       <div class="section rule-2">
         <div class="kicker sec-kicker">Lists</div>
         @for (f of smartFilters(); track f.key) {
-          <button class="filter" [class.active]="store.filter() === f.key" (click)="pick(f.key)">
+          <button class="filter" [class.active]="!store.queryActive() && store.filter() === f.key" (click)="pick(f.key)">
             <span class="sq" [style.background]="f.dot"></span>
             <span class="label">{{ f.label }}</span>
             <span class="count">{{ f.count }}</span>
@@ -38,13 +38,31 @@ import { IconComponent } from '../shared/icon.component';
         }
       </div>
 
+      <!-- saved queries -->
+      @if (store.savedQueries().length) {
+        <div class="section rule-2">
+          <div class="kicker sec-kicker">Saved queries</div>
+          @for (q of store.savedQueries(); track q.id) {
+            <div class="row">
+              <button class="filter" [class.active]="store.appliedQueryId() === q.id" (click)="applyQuery(q.id)">
+                <app-icon name="star" [size]="13" />
+                <span class="label">{{ q.name }}</span>
+              </button>
+              <button class="btn-icon del" title="Delete saved query" (click)="store.askRemoveSavedQuery(q.id)">
+                <app-icon name="trash" [size]="14" />
+              </button>
+            </div>
+          }
+        </div>
+      }
+
       <!-- category tree -->
       <div class="section">
         <div class="kicker sec-kicker">Categories</div>
         @for (m of store.mains(); track m.id) {
           <div class="main-label">{{ m.name }}</div>
           @for (s of store.subsOf(m.id); track s.id) {
-            <button class="filter sub" [class.active]="store.filter() === s.id" (click)="pick(s.id)">
+            <button class="filter sub" [class.active]="!store.queryActive() && store.filter() === s.id" (click)="pick(s.id)">
               <span class="label">{{ s.name }}</span>
               <span class="count">{{ s.taskCount }}</span>
             </button>
@@ -79,6 +97,11 @@ import { IconComponent } from '../shared/icon.component';
     .filter:hover { background: var(--tint-hover); }
     .filter.active { background: var(--accent-fill); color: var(--color-accent); box-shadow: inset 3px 0 0 var(--color-accent); }
     .filter.sub { padding-left: 14px; }
+    .row { display: flex; align-items: center; }
+    .row .filter { flex: 1; min-width: 0; }
+    .row .del { flex: none; color: var(--muted); opacity: 0; }
+    .row:hover .del { opacity: 1; }
+    .row .del:hover { color: var(--color-accent); }
     .sq { width: 9px; height: 9px; flex: none; }
     .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .count {
@@ -106,7 +129,12 @@ export class SidebarComponent {
   }
 
   pick(f: Filter): void {
-    this.store.filter.set(f);
+    this.store.pickFilter(f);
+    void this.router.navigate(['/tasks']);
+  }
+
+  applyQuery(id: string): void {
+    this.store.applySavedQuery(id);
     void this.router.navigate(['/tasks']);
   }
 }

@@ -2,9 +2,11 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 import {
-  BankAccount, Categories, DateKind, ImportCommitRow, ImportRow, Main, Report, Sub, TitleDefault, Todo,
+  BankAccount, Categories, DateKind, ImportCommitRow, ImportRow, Main, Report, SavedQuery, Sub,
+  TaskQuery, TitleDefault, Todo,
 } from '../models';
 import { matches, sortTodos, Filter } from './todo-util';
+import { emptyQuery, isEmptyQuery, matchesQuery } from './task-query';
 import { toISO, addDays, startOfToday, diffDays } from './date-util';
 
 export interface TaskDraft {
@@ -59,9 +61,19 @@ export class TaskStore {
   readonly subs = signal<Sub[]>([]);
   readonly titleDefaults = signal<TitleDefault[]>([]);
   readonly bankAccounts = signal<BankAccount[]>([]);
+  readonly savedQueries = signal<SavedQuery[]>([]);
 
   // ---- view state ----
   readonly filter = signal<Filter>('all');
+
+  // ---- querying ----
+  // activeQuery non-null => the composable query drives visibleTodos, overriding `filter`.
+  readonly activeQuery = signal<TaskQuery | null>(null);
+  readonly queryDraft = signal<TaskQuery>(emptyQuery());
+  readonly queryPanelOpen = signal(false);
+  readonly appliedQueryId = signal<string | null>(null); // which saved query is applied (sidebar highlight)
+  readonly saveQueryName = signal<string | null>(null); // non-null => "name this query" dialog open
+  readonly saveQueryError = signal<string | null>(null);
   readonly layout = signal<'list' | 'grouped'>('list');
   readonly quickAdd = signal('');
   readonly selectedMain = signal<string | null>(null);
@@ -90,8 +102,15 @@ export class TaskStore {
   readonly report = signal<Report | null>(null);
 
   // ---- computed ----
-  readonly visibleTodos = computed(() =>
-    sortTodos(this.todos().filter((t) => matches(t, this.filter()))));
+  readonly visibleTodos = computed(() => {
+    const q = this.activeQuery();
+    const list = q
+      ? this.todos().filter((t) => matchesQuery(t, q))
+      : this.todos().filter((t) => matches(t, this.filter()));
+    return sortTodos(list);
+  });
+
+  readonly queryActive = computed(() => this.activeQuery() !== null);
 
   readonly pendingCount = computed(() => this.todos().filter((t) => !t.done).length);
 
@@ -119,7 +138,8 @@ export class TaskStore {
   // ---- loading ----
   async loadAll(): Promise<void> {
     await Promise.all([
-      this.refreshTodos(), this.refreshCategories(), this.refreshTitleDefaults(), this.refreshBankAccounts(),
+      this.refreshTodos(), this.refreshCategories(), this.refreshTitleDefaults(),
+      this.refreshBankAccounts(), this.refreshSavedQueries(),
     ]);
     if (this.selectedMain() === null) this.selectedMain.set(this.mains()[0]?.id ?? null);
   }
@@ -137,6 +157,9 @@ export class TaskStore {
   async refreshBankAccounts(): Promise<void> {
     this.bankAccounts.set(await firstValueFrom(this.api.getBankAccounts()));
   }
+  async refreshSavedQueries(): Promise<void> {
+    this.savedQueries.set(await firstValueFrom(this.api.getSavedQueries()));
+  }
 
   // ---- confirm ----
   private ask(c: Confirm): void { this.confirm.set(c); }
@@ -146,6 +169,75 @@ export class TaskStore {
     if (!c) return;
     this.confirm.set(null);
     await c.run();
+  }
+
+  // ---- querying ----
+  /** Select a smart-list / category filter, leaving any active query behind. */
+  pickFilter(f: Filter): void {
+    this.activeQuery.set(null);
+    this.appliedQueryId.set(null);
+    this.queryDraft.set(emptyQuery());
+    this.filter.set(f);
+  }
+  toggleQueryPanel(): void { this.queryPanelOpen.update((v) => !v); }
+  /** Patch the working query; applies live (empty draft falls back to the smart-list filter). */
+  patchQuery(patch: Partial<TaskQuery>): void {
+    const d = { ...this.queryDraft(), ...patch };
+    this.queryDraft.set(d);
+    this.appliedQueryId.set(null); // hand-editing detaches from a named saved query
+    this.activeQuery.set(isEmptyQuery(d) ? null : d);
+  }
+  toggleQueryCat(subId: string): void {
+    const d = this.queryDraft();
+    const has = d.catIds.includes(subId);
+    this.patchQuery({ catIds: has ? d.catIds.filter((x) => x !== subId) : [...d.catIds, subId] });
+  }
+  clearQuery(): void {
+    this.queryDraft.set(emptyQuery());
+    this.activeQuery.set(null);
+    this.appliedQueryId.set(null);
+  }
+  applySavedQuery(id: string): void {
+    const sq = this.savedQueries().find((q) => q.id === id);
+    if (!sq) return;
+    this.queryDraft.set({ ...sq.query });
+    this.activeQuery.set(isEmptyQuery(sq.query) ? null : { ...sq.query });
+    this.appliedQueryId.set(id);
+  }
+  openSaveQuery(): void {
+    if (isEmptyQuery(this.queryDraft())) return;
+    this.saveQueryError.set(null);
+    this.saveQueryName.set('');
+  }
+  cancelSaveQuery(): void { this.saveQueryName.set(null); }
+  async confirmSaveQuery(): Promise<void> {
+    const name = (this.saveQueryName() ?? '').trim();
+    const q = this.queryDraft();
+    if (!name || isEmptyQuery(q)) return;
+    this.saveQueryError.set(null);
+    try {
+      const created = await firstValueFrom(this.api.addSavedQuery(name, q));
+      this.saveQueryName.set(null);
+      await this.refreshSavedQueries();
+      this.appliedQueryId.set(created.id);
+    } catch {
+      this.saveQueryError.set(`Couldn’t save “${name}” — that name may already be taken.`);
+    }
+  }
+  async removeSavedQuery(id: string): Promise<void> {
+    await firstValueFrom(this.api.deleteSavedQuery(id));
+    if (this.appliedQueryId() === id) this.appliedQueryId.set(null);
+    await this.refreshSavedQueries();
+  }
+  askRemoveSavedQuery(id: string): void {
+    const q = this.savedQueries().find((x) => x.id === id);
+    const name = q?.name ? `“${q.name}”` : 'this saved query';
+    this.ask({
+      title: 'Delete saved query?',
+      message: `Do you really want to delete ${name}? This can’t be undone.`,
+      confirmLabel: 'Delete saved query',
+      run: () => this.removeSavedQuery(id),
+    });
   }
 
   // ---- tasks ----

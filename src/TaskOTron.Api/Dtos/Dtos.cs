@@ -34,6 +34,24 @@ public record CategoryRenameDto(string Name);
 public record BankAccountDto(string Id, string Name, int TaskCount);
 public record BankAccountWriteDto(string Name);
 
+// ---- Saved queries ----
+// Composable task-query criteria. All fields are "ignore when empty/any":
+// Text blank, CatIds empty, null dates, DateKind/AmountKind "any", null amount bounds,
+// null BankAccountId. BankAccountId "__none__" matches tasks with no account.
+public record TaskQueryDto(
+    string Text,
+    List<string> CatIds,
+    string? DueFrom,        // inclusive ISO yyyy-MM-dd
+    string? DueTo,          // inclusive ISO yyyy-MM-dd
+    string DateKind,        // "any" | "due" | "transaction"
+    string AmountKind,      // "any" | "has" | "none" | "income" | "spend"
+    decimal? AmountMin,     // bound on absolute amount
+    decimal? AmountMax,     // bound on absolute amount
+    string? BankAccountId); // specific id, "__none__", or null
+
+public record SavedQueryDto(string Id, string Name, TaskQueryDto Query);
+public record SavedQueryWriteDto(string Name, TaskQueryDto Query);
+
 // ---- Title defaults ----
 public record TitleDefaultDto(string NormalizedTitle, List<string> CatIds);
 public record TitleDefaultWriteDto(List<string> CatIds);

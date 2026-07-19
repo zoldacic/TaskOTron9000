@@ -7,6 +7,7 @@ import { TaskDialogComponent } from './dialogs/task-dialog.component';
 import { CategoryRenameDialogComponent } from './dialogs/category-rename-dialog.component';
 import { ImportCatDialogComponent } from './dialogs/import-cat-dialog.component';
 import { ConfirmDialogComponent } from './dialogs/confirm-dialog.component';
+import { SaveQueryDialogComponent } from './dialogs/save-query-dialog.component';
 
 @Component({
   selector: 'app-root',
@@ -14,7 +15,7 @@ import { ConfirmDialogComponent } from './dialogs/confirm-dialog.component';
   imports: [
     RouterOutlet, TitleBarComponent, SidebarComponent,
     TaskDialogComponent, CategoryRenameDialogComponent, ImportCatDialogComponent,
-    ConfirmDialogComponent,
+    ConfirmDialogComponent, SaveQueryDialogComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

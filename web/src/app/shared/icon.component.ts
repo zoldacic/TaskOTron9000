@@ -53,6 +53,12 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
         }
         @case ('plus') { <path d="M5 12h14" /><path d="M12 5v14" /> }
         @case ('x') { <path d="M18 6 6 18" /><path d="m6 6 12 12" /> }
+        @case ('search') {
+          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+        }
+        @case ('filter') {
+          <path d="M3 4h18" /><path d="M6 10h12" /><path d="M10 16h4" />
+        }
         @case ('minus') { <path d="M5 12h14" /> }
         @case ('square') { <rect x="4" y="4" width="16" height="16" /> }
         @case ('star') {

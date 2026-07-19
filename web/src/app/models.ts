@@ -50,6 +50,28 @@ export interface TitleDefault {
   catIds: string[];
 }
 
+export type QueryDateKind = 'any' | 'due' | 'transaction';
+export type QueryAmountKind = 'any' | 'has' | 'none' | 'income' | 'spend';
+
+// Composable task-query criteria. Every field is "ignore when empty/any" — see task-query.ts.
+export interface TaskQuery {
+  text: string; // case-insensitive substring on title; blank = ignore
+  catIds: string[]; // match ANY of these sub ids; empty = ignore
+  dueFrom: string | null; // inclusive ISO yyyy-MM-dd
+  dueTo: string | null; // inclusive ISO yyyy-MM-dd
+  dateKind: QueryDateKind;
+  amountKind: QueryAmountKind;
+  amountMin: number | null; // bound on absolute amount
+  amountMax: number | null; // bound on absolute amount
+  bankAccountId: string | null; // specific id, '__none__' (no account), or null = ignore
+}
+
+export interface SavedQuery {
+  id: string;
+  name: string;
+  query: TaskQuery;
+}
+
 export interface ImportRow {
   key: number;
   title: string;
