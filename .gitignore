@@ -4,5 +4,8 @@ obj/
 *.db-shm
 *.db-wal
 
+# Bank statement exports (personal data)
+Extracts/
+
 # Claude Code local (per-machine) settings
 .claude/settings.local.json
