@@ -38,6 +38,7 @@ app.UseCors(DevCors);
 
 app.MapTodoEndpoints();
 app.MapCategoryEndpoints();
+app.MapBankAccountEndpoints();
 app.MapTitleDefaultEndpoints();
 app.MapImportEndpoints();
 app.MapReportEndpoints();

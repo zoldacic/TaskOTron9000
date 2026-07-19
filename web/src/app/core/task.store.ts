@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 import {
-  Categories, DateKind, ImportCommitRow, ImportRow, Main, Report, Sub, TitleDefault, Todo,
+  BankAccount, Categories, DateKind, ImportCommitRow, ImportRow, Main, Report, Sub, TitleDefault, Todo,
 } from '../models';
 import { matches, sortTodos, Filter } from './todo-util';
 import { toISO, addDays, startOfToday, diffDays } from './date-util';
@@ -14,6 +14,7 @@ export interface TaskDraft {
   catIds: string[];
   amountStr: string;
   dateKind: DateKind;
+  bankAccountId: string | null;
 }
 export interface CatDraft {
   kind: 'main' | 'sub';
@@ -57,6 +58,7 @@ export class TaskStore {
   readonly mains = signal<Main[]>([]);
   readonly subs = signal<Sub[]>([]);
   readonly titleDefaults = signal<TitleDefault[]>([]);
+  readonly bankAccounts = signal<BankAccount[]>([]);
 
   // ---- view state ----
   readonly filter = signal<Filter>('all');
@@ -74,8 +76,12 @@ export class TaskStore {
 
   // ---- import ----
   readonly importText = signal('');
-  readonly importAccount = signal('');
+  readonly importAccountId = signal<string | null>(null);
   readonly importRows = signal<ImportRow[] | null>(null);
+
+  // ---- bank accounts ----
+  readonly newBankAccount = signal('');
+  readonly bankAccountError = signal<string | null>(null);
 
   // ---- reports ----
   readonly repStart = signal('2026-07-01');
@@ -103,13 +109,18 @@ export class TaskStore {
   subName(id: string): string {
     return this.subs().find((s) => s.id === id)?.name ?? '';
   }
+  accountName(id: string | null): string {
+    return id ? this.bankAccounts().find((a) => a.id === id)?.name ?? '' : '';
+  }
   subsOf(mainId: string): Sub[] {
     return this.subs().filter((s) => s.mainId === mainId);
   }
 
   // ---- loading ----
   async loadAll(): Promise<void> {
-    await Promise.all([this.refreshTodos(), this.refreshCategories(), this.refreshTitleDefaults()]);
+    await Promise.all([
+      this.refreshTodos(), this.refreshCategories(), this.refreshTitleDefaults(), this.refreshBankAccounts(),
+    ]);
     if (this.selectedMain() === null) this.selectedMain.set(this.mains()[0]?.id ?? null);
   }
   async refreshTodos(): Promise<void> {
@@ -122,6 +133,9 @@ export class TaskStore {
   }
   async refreshTitleDefaults(): Promise<void> {
     this.titleDefaults.set(await firstValueFrom(this.api.getTitleDefaults()));
+  }
+  async refreshBankAccounts(): Promise<void> {
+    this.bankAccounts.set(await firstValueFrom(this.api.getBankAccounts()));
   }
 
   // ---- confirm ----
@@ -173,7 +187,7 @@ export class TaskStore {
     const title = this.quickAdd().trim();
     if (!title) return;
     await firstValueFrom(this.api.createTodo({
-      title, due: null, amount: null, dateKind: 'due', catIds: this.inheritedCatIds(),
+      title, due: null, amount: null, dateKind: 'due', catIds: this.inheritedCatIds(), bankAccountId: null,
     }));
     this.quickAdd.set('');
     await this.refreshTodos();
@@ -183,6 +197,7 @@ export class TaskStore {
     const due = this.filter() === 'today' ? toISO(startOfToday()) : null;
     this.taskDialog.set({
       id: null, title: '', due, catIds: this.inheritedCatIds(), amountStr: '', dateKind: 'due',
+      bankAccountId: null,
     });
   }
   openEdit(id: number): void {
@@ -191,6 +206,7 @@ export class TaskStore {
     this.taskDialog.set({
       id, title: t.title, due: t.due, catIds: [...t.catIds],
       amountStr: t.amount == null ? '' : String(t.amount), dateKind: t.dateKind ?? 'due',
+      bankAccountId: t.bankAccountId,
     });
   }
   updateDialog(patch: Partial<TaskDraft>): void {
@@ -208,7 +224,10 @@ export class TaskStore {
     if (!d || !d.title.trim()) return;
     const parsed = d.amountStr.trim() !== '' ? parseFloat(d.amountStr) : NaN;
     const amount = Number.isNaN(parsed) ? null : parsed;
-    const body = { title: d.title.trim(), due: d.due, amount, dateKind: d.dateKind, catIds: d.catIds };
+    const body = {
+      title: d.title.trim(), due: d.due, amount, dateKind: d.dateKind, catIds: d.catIds,
+      bankAccountId: d.bankAccountId,
+    };
     if (d.id == null) await firstValueFrom(this.api.createTodo(body));
     else await firstValueFrom(this.api.updateTodo(d.id, body));
     this.taskDialog.set(null);
@@ -303,23 +322,46 @@ export class TaskStore {
   async parseImport(): Promise<void> {
     this.importRows.set(await firstValueFrom(this.api.parseImport(this.importText())));
   }
-  /** Prefixes a row title with the (shared) import account name, when one is set. */
-  accountTitle(title: string): string {
-    const account = this.importAccount().trim();
-    return account ? `${account} — ${title}` : title;
-  }
   async commitImport(): Promise<void> {
     const rows = (this.importRows() ?? []).filter((r) => r.ok);
     if (!rows.length) return;
+    const bankAccountId = this.importAccountId();
     const body: ImportCommitRow[] = rows.map((r) => ({
-      title: this.accountTitle(r.title), date: r.date, amount: r.amount, catIds: r.catIds,
+      title: r.title, date: r.date, amount: r.amount, catIds: r.catIds, bankAccountId,
     }));
     await firstValueFrom(this.api.commitImport(body));
     this.importText.set('');
-    this.importAccount.set('');
     this.importRows.set(null);
     this.filter.set('all');
-    await this.refreshTodos();
+    // Imported tasks now use this account, so refresh usage counts too.
+    await Promise.all([this.refreshTodos(), this.refreshBankAccounts()]);
+  }
+
+  // ---- bank accounts ----
+  /** Adds a new bank account and selects it for import. */
+  async addBankAccount(): Promise<void> {
+    const name = this.newBankAccount().trim();
+    if (!name) return;
+    this.bankAccountError.set(null);
+    try {
+      const created = await firstValueFrom(this.api.addBankAccount(name));
+      this.newBankAccount.set('');
+      await this.refreshBankAccounts();
+      this.importAccountId.set(created.id);
+    } catch {
+      this.bankAccountError.set(`Couldn’t add “${name}” — it may already exist.`);
+    }
+  }
+  /** Deletes a bank account. Only unused accounts can be removed (enforced by the API). */
+  async removeBankAccount(id: string): Promise<void> {
+    this.bankAccountError.set(null);
+    try {
+      await firstValueFrom(this.api.deleteBankAccount(id));
+      if (this.importAccountId() === id) this.importAccountId.set(null);
+      await this.refreshBankAccounts();
+    } catch {
+      this.bankAccountError.set('Couldn’t delete — this account is still used by a task.');
+    }
   }
   openImportCat(key: number): void {
     const r = (this.importRows() ?? []).find((x) => x.key === key);

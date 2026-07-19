@@ -10,14 +10,16 @@ public record TodoDto(
     string? Due,           // ISO yyyy-MM-dd
     decimal? Amount,
     DateKind DateKind,
-    List<string> CatIds);
+    List<string> CatIds,
+    string? BankAccountId);
 
 public record TodoWriteDto(
     string Title,
     string? Due,
     decimal? Amount,
     DateKind DateKind = DateKind.Due,
-    List<string>? CatIds = null);
+    List<string>? CatIds = null,
+    string? BankAccountId = null);
 
 // ---- Categories ----
 public record MainDto(string Id, string Name);
@@ -28,6 +30,10 @@ public record MainWriteDto(string Name);
 public record SubWriteDto(string MainId, string Name);
 public record CategoryRenameDto(string Name);
 
+// ---- Bank accounts ----
+public record BankAccountDto(string Id, string Name, int TaskCount);
+public record BankAccountWriteDto(string Name);
+
 // ---- Title defaults ----
 public record TitleDefaultDto(string NormalizedTitle, List<string> CatIds);
 public record TitleDefaultWriteDto(List<string> CatIds);
@@ -35,7 +41,7 @@ public record TitleDefaultWriteDto(List<string> CatIds);
 // ---- Import ----
 public record ImportParseRequest(string Text);
 public record ImportRowDto(int Key, string Title, string? Date, decimal? Amount, bool Ok, List<string> CatIds);
-public record ImportCommitRow(string Title, string? Date, decimal? Amount, List<string>? CatIds);
+public record ImportCommitRow(string Title, string? Date, decimal? Amount, List<string>? CatIds, string? BankAccountId = null);
 public record ImportCommitRequest(List<ImportCommitRow> Rows);
 
 // ---- Reports ----

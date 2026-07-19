@@ -31,6 +31,18 @@ public static class ImportEndpoints
             var wantedIds = rows.SelectMany(r => r.CatIds ?? []).Distinct().ToList();
             var subs = await db.Subs.Where(s => wantedIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id);
 
+            // Validate any referenced bank accounts.
+            var wantedAccounts = rows.Select(r => r.BankAccountId)
+                .Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+            if (wantedAccounts.Count > 0)
+            {
+                var known = await db.BankAccounts.Where(a => wantedAccounts.Contains(a.Id))
+                    .Select(a => a.Id).ToListAsync();
+                var missing = wantedAccounts.Except(known).ToList();
+                if (missing.Count > 0)
+                    return Results.BadRequest($"Unknown bank account '{missing[0]}'.");
+            }
+
             var created = new List<Todo>();
             foreach (var r in rows)
             {
@@ -41,6 +53,7 @@ public static class ImportEndpoints
                     Due = Mapping.ParseDate(r.Date),
                     Amount = r.Amount,
                     DateKind = DateKind.Transaction,
+                    BankAccountId = string.IsNullOrEmpty(r.BankAccountId) ? null : r.BankAccountId,
                     Categories = (r.CatIds ?? [])
                         .Where(subs.ContainsKey)
                         .Select(id => subs[id])

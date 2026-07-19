@@ -54,6 +54,19 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
                    (input)="patch({ amountStr: value($event) })">
           </label>
 
+          @if (store.bankAccounts().length) {
+            <label class="field mt">
+              <span class="kicker">Bank account <span class="hint">· optional</span></span>
+              <select class="input acct" [value]="d.bankAccountId ?? ''"
+                      (change)="patch({ bankAccountId: selectAccount($event) })">
+                <option value="">— None —</option>
+                @for (a of store.bankAccounts(); track a.id) {
+                  <option [value]="a.id">{{ a.name }}</option>
+                }
+              </select>
+            </label>
+          }
+
           <div class="field mt">
             <span class="kicker">Categories</span>
             @for (m of store.mains(); track m.id) {
@@ -87,6 +100,7 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
     .preset.ghost { color: var(--muted); }
     .date-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
     .date { max-width: 200px; font-family: var(--font-mono); }
+    .acct { max-width: 240px; }
     .human { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
     .cat-main { font-weight: 700; font-size: 12px; margin: 10px 0 6px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -113,6 +127,7 @@ export class TaskDialogComponent {
   }
 
   value(e: Event): string { return (e.target as HTMLInputElement).value; }
+  selectAccount(e: Event): string | null { return (e.target as HTMLSelectElement).value || null; }
   patch(p: Parameters<TaskStore['updateDialog']>[0]): void { this.store.updateDialog(p); }
   close(): void { this.store.taskDialog.set(null); }
 }

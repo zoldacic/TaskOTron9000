@@ -28,6 +28,8 @@ public static class TodoEndpoints
             var title = dto.Title?.Trim();
             if (string.IsNullOrEmpty(title))
                 return Results.BadRequest("Title is required.");
+            if (!await BankAccountValid(db, dto.BankAccountId))
+                return Results.BadRequest($"Unknown bank account '{dto.BankAccountId}'.");
 
             var t = new Todo
             {
@@ -36,6 +38,7 @@ public static class TodoEndpoints
                 Due = Mapping.ParseDate(dto.Due),
                 Amount = dto.Amount,
                 DateKind = dto.DateKind,
+                BankAccountId = dto.BankAccountId,
                 Categories = await LoadSubs(db, dto.CatIds),
             };
             db.Todos.Add(t);
@@ -51,11 +54,14 @@ public static class TodoEndpoints
             var title = dto.Title?.Trim();
             if (string.IsNullOrEmpty(title))
                 return Results.BadRequest("Title is required.");
+            if (!await BankAccountValid(db, dto.BankAccountId))
+                return Results.BadRequest($"Unknown bank account '{dto.BankAccountId}'.");
 
             t.Title = title;
             t.Due = Mapping.ParseDate(dto.Due);
             t.Amount = dto.Amount;
             t.DateKind = dto.DateKind;
+            t.BankAccountId = dto.BankAccountId;
             t.Categories.Clear();
             foreach (var s in await LoadSubs(db, dto.CatIds)) t.Categories.Add(s);
             // Done is intentionally preserved (matches the prototype's edit path).
@@ -87,5 +93,11 @@ public static class TodoEndpoints
     {
         if (ids is null || ids.Count == 0) return [];
         return await db.Subs.Where(s => ids.Contains(s.Id)).ToListAsync();
+    }
+
+    private static async Task<bool> BankAccountValid(AppDbContext db, string? id)
+    {
+        if (string.IsNullOrEmpty(id)) return true; // null = no account
+        return await db.BankAccounts.AnyAsync(a => a.Id == id);
     }
 }

@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE } from './api-base';
 import {
-  Categories, ImportCommitRow, ImportRow, Main, Report, Sub, TitleDefault, Todo, TodoWrite,
+  BankAccount, Categories, ImportCommitRow, ImportRow, Main, Report, Sub, TitleDefault, Todo, TodoWrite,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -49,6 +49,17 @@ export class ApiService {
   }
   deleteSub(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/api/subs/${id}`);
+  }
+
+  // ---- bank accounts ----
+  getBankAccounts(): Observable<BankAccount[]> {
+    return this.http.get<BankAccount[]>(`${this.base}/api/bank-accounts`);
+  }
+  addBankAccount(name: string): Observable<BankAccount> {
+    return this.http.post<BankAccount>(`${this.base}/api/bank-accounts`, { name });
+  }
+  deleteBankAccount(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/api/bank-accounts/${id}`);
   }
 
   // ---- title defaults ----

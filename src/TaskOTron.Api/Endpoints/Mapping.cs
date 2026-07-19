@@ -13,7 +13,8 @@ internal static class Mapping
         t.Due?.ToString("yyyy-MM-dd"),
         t.Amount,
         t.DateKind,
-        t.Categories.Select(c => c.Id).OrderBy(x => x).ToList());
+        t.Categories.Select(c => c.Id).OrderBy(x => x).ToList(),
+        t.BankAccountId);
 
     /// <summary>Parse an ISO yyyy-MM-dd string to DateOnly; blank/null → null.</summary>
     public static DateOnly? ParseDate(string? iso)

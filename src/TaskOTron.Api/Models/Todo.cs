@@ -16,6 +16,10 @@ public class Todo
 
     public DateKind DateKind { get; set; } = DateKind.Due;
 
+    // The bank account this task belongs to (set on import). null = none.
+    public string? BankAccountId { get; set; }
+    public BankAccount? BankAccount { get; set; }
+
     // Many-to-many with Sub (the prototype's catIds[]).
     public ICollection<Sub> Categories { get; set; } = new List<Sub>();
 }

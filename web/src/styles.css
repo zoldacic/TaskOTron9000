@@ -155,6 +155,11 @@ button { font-family: inherit; }
   letter-spacing: 0.06em;
 }
 .tag-neutral { background: color-mix(in srgb, #93a4cc 14%, transparent); color: var(--color-text); }
+.tag-account {
+  gap: 4px;
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-accent);
+}
 
 .chip {
   font-size: 11px;

@@ -10,6 +10,7 @@ export interface Todo {
   amount: number | null; // null = no amount
   dateKind: DateKind;
   catIds: string[];
+  bankAccountId: string | null;
 }
 
 export interface TodoWrite {
@@ -18,6 +19,7 @@ export interface TodoWrite {
   amount: number | null;
   dateKind: DateKind;
   catIds: string[];
+  bankAccountId: string | null;
 }
 
 export interface Main {
@@ -35,6 +37,12 @@ export interface Sub {
 export interface Categories {
   mains: Main[];
   subs: Sub[];
+}
+
+export interface BankAccount {
+  id: string;
+  name: string;
+  taskCount: number;
 }
 
 export interface TitleDefault {
@@ -56,6 +64,7 @@ export interface ImportCommitRow {
   date: string | null;
   amount: number | null;
   catIds: string[];
+  bankAccountId: string | null;
 }
 
 export interface ReportBucket {

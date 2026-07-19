@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { TaskStore } from '../../core/task.store';
-import { ImportRow } from '../../models';
+import { BankAccount, ImportRow } from '../../models';
 import { IconComponent } from '../../shared/icon.component';
 import { fmtMoney } from '../../core/money-util';
 import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-import';
@@ -21,11 +21,33 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
         <!-- paste -->
         <section class="col">
           <div class="kicker col-kicker">Paste transactions</div>
-          <label class="acct-field">
+          <div class="acct-field">
             <span class="acct-label">Bank account</span>
-            <input class="input acct-input" type="text" placeholder="e.g. SEB Personal"
-                   [value]="store.importAccount()" (input)="store.importAccount.set(value($event))">
-          </label>
+            <div class="acct-row">
+              <select class="input acct-select" [value]="store.importAccountId() ?? ''"
+                      (change)="store.importAccountId.set(selectAccount($event))">
+                <option value="">— None —</option>
+                @for (a of store.bankAccounts(); track a.id) {
+                  <option [value]="a.id">{{ a.name }}</option>
+                }
+              </select>
+              @if (selectedAccount(); as a) {
+                <button class="btn btn-ghost acct-del" [disabled]="a.taskCount > 0"
+                        [title]="a.taskCount > 0
+                          ? 'Used by ' + a.taskCount + ' task' + (a.taskCount === 1 ? '' : 's') + ' — can’t delete'
+                          : 'Delete this account'"
+                        (click)="store.removeBankAccount(a.id)">Delete</button>
+              }
+            </div>
+            <div class="acct-add">
+              <input class="input acct-new" type="text" placeholder="Add a bank account…"
+                     [value]="store.newBankAccount()" (input)="store.newBankAccount.set(value($event))"
+                     (keyup.enter)="store.addBankAccount()">
+              <button class="btn btn-secondary" [disabled]="!store.newBankAccount().trim()"
+                      (click)="store.addBankAccount()">Add</button>
+            </div>
+            @if (store.bankAccountError(); as e) { <span class="file-error">{{ e }}</span> }
+          </div>
           <div class="file-import">
             <label class="file-label">Import file
               <select class="input file-type" [value]="fileType()" (change)="fileType.set(selectValue($event))">
@@ -43,7 +65,7 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
             <button class="btn btn-secondary" (click)="store.loadSampleImport()">Load sample</button>
             <button class="btn btn-ghost" (click)="store.clearImport()">Clear</button>
           </div>
-          <p class="help">Dates and amounts are auto-detected (currency symbols, +/- signs and thousands separators are handled). Importing a file appends its rows to the box below. The bank account name, when set, is added to every imported task's title.</p>
+          <p class="help">Dates and amounts are auto-detected (currency symbols, +/- signs and thousands separators are handled). Importing a file appends its rows to the box below. The selected bank account is attached to every imported task. An account can only be deleted while no saved task uses it.</p>
         </section>
 
         <!-- preview -->
@@ -59,7 +81,7 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
               @for (r of store.importRows(); track r.key) {
                 <div class="trow rule-1" [style.opacity]="r.ok ? 1 : 0.45">
                   <div class="cells">
-                    <span class="t-title" [title]="store.accountTitle(r.title)">{{ store.accountTitle(r.title) }}</span>
+                    <span class="t-title" [title]="r.title">{{ r.title }}</span>
                     <span class="t-date">{{ r.date ?? '—' }}</span>
                     <span class="t-amount" [style.color]="amountColor(r)">{{ amountLabel(r) }}</span>
                   </div>
@@ -91,7 +113,13 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
     .buttons { display: flex; gap: 10px; margin-top: 14px; }
     .acct-field { display: block; margin-bottom: 12px; }
     .acct-label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-    .acct-input { max-width: 280px; }
+    .acct-row { display: flex; align-items: center; gap: 8px; }
+    .acct-select { max-width: 280px; }
+    .acct-del { padding: 6px 12px; font-size: 12px; color: var(--muted); }
+    .acct-del:not(:disabled):hover { color: var(--color-accent); }
+    .acct-del:disabled { opacity: 0.4; cursor: not-allowed; }
+    .acct-add { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .acct-new { max-width: 210px; }
     .file-import { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
     .file-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
     .file-type { width: auto; padding: 6px 10px; }
@@ -126,6 +154,10 @@ export class ImportViewComponent {
   readonly fileTypes = BANK_FILE_TYPES;
   readonly fileType = signal<BankFileType>(BANK_FILE_TYPES[0]);
   readonly fileError = signal<string | null>(null);
+
+  readonly selectedAccount = computed<BankAccount | null>(() =>
+    this.store.bankAccounts().find((a) => a.id === this.store.importAccountId()) ?? null);
+  selectAccount(e: Event): string | null { return (e.target as HTMLSelectElement).value || null; }
 
   async commit(): Promise<void> {
     await this.store.commitImport();

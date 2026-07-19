@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Sub> Subs => Set<Sub>();
     public DbSet<Todo> Todos => Set<Todo>();
     public DbSet<TitleDefault> TitleDefaults => Set<TitleDefault>();
+    public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -27,10 +28,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        b.Entity<BankAccount>(e =>
+        {
+            e.Property(a => a.Id).ValueGeneratedNever();
+        });
+
         b.Entity<Todo>(e =>
         {
             e.Property(t => t.Amount).HasColumnType("TEXT"); // preserve decimal precision on SQLite
             e.Property(t => t.DateKind).HasConversion<string>();
+            // A task's bank account. Restrict delete so an account in use can't be removed
+            // (the API guards this too, returning a friendly 409).
+            e.HasOne(t => t.BankAccount)
+                .WithMany(a => a.Todos)
+                .HasForeignKey(t => t.BankAccountId)
+                .OnDelete(DeleteBehavior.Restrict);
             // Todo <-> Sub many-to-many (the prototype's catIds[]).
             // Deleting a sub strips it from every task (join rows cascade automatically).
             e.HasMany(t => t.Categories)
