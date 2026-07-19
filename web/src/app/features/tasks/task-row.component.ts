@@ -31,7 +31,7 @@ import { fmtMoney } from '../../core/money-util';
         </span>
       }
       <button class="btn-icon" (click)="store.openEdit(todo.id)" aria-label="Edit"><app-icon name="pencil" /></button>
-      <button class="btn-icon danger" (click)="store.remove(todo.id)" aria-label="Delete"><app-icon name="trash" /></button>
+      <button class="btn-icon danger" (click)="store.askRemove(todo.id)" aria-label="Delete"><app-icon name="trash" /></button>
     </div>
   `,
   styles: [`

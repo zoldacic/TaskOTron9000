@@ -22,7 +22,7 @@ import { IconComponent } from '../../shared/icon.component';
               <span class="name">{{ m.name }}</span>
               <span class="sub-count">{{ store.subsOf(m.id).length }} subs</span>
               <button class="btn-icon" (click)="rename('main', m.id, m.name); $event.stopPropagation()" aria-label="Rename"><app-icon name="pencil" /></button>
-              <button class="btn-icon danger" (click)="store.removeMain(m.id); $event.stopPropagation()" aria-label="Delete"><app-icon name="trash" /></button>
+              <button class="btn-icon danger" (click)="store.askRemoveMain(m.id); $event.stopPropagation()" aria-label="Delete"><app-icon name="trash" /></button>
             </div>
           }
           <div class="add">
@@ -45,7 +45,7 @@ import { IconComponent } from '../../shared/icon.component';
                   <span class="name">{{ s.name }}</span>
                   <span class="task-count">{{ s.taskCount }} tasks</span>
                   <button class="btn-icon" (click)="rename('sub', s.id, s.name)" aria-label="Rename"><app-icon name="pencil" /></button>
-                  <button class="btn-icon danger" (click)="store.removeSub(s.id)" aria-label="Delete"><app-icon name="trash" /></button>
+                  <button class="btn-icon danger" (click)="store.askRemoveSub(s.id)" aria-label="Delete"><app-icon name="trash" /></button>
                 </div>
               }
             }

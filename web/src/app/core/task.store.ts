@@ -27,6 +27,12 @@ export interface ImportCatDraft {
   applyAll: boolean;
   remember: boolean;
 }
+export interface Confirm {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  run: () => void | Promise<void>;
+}
 
 const SMART: Filter[] = ['all', 'today', 'upcoming', 'done'];
 const isSmart = (f: Filter) => SMART.includes(f);
@@ -64,6 +70,7 @@ export class TaskStore {
   readonly taskDialog = signal<TaskDraft | null>(null);
   readonly catDialog = signal<CatDraft | null>(null);
   readonly importCat = signal<ImportCatDraft | null>(null);
+  readonly confirm = signal<Confirm | null>(null);
 
   // ---- import ----
   readonly importText = signal('');
@@ -117,6 +124,16 @@ export class TaskStore {
     this.titleDefaults.set(await firstValueFrom(this.api.getTitleDefaults()));
   }
 
+  // ---- confirm ----
+  private ask(c: Confirm): void { this.confirm.set(c); }
+  cancelConfirm(): void { this.confirm.set(null); }
+  async runConfirm(): Promise<void> {
+    const c = this.confirm();
+    if (!c) return;
+    this.confirm.set(null);
+    await c.run();
+  }
+
   // ---- tasks ----
   async toggle(id: number): Promise<void> {
     await firstValueFrom(this.api.toggleTodo(id));
@@ -125,6 +142,26 @@ export class TaskStore {
   async remove(id: number): Promise<void> {
     await firstValueFrom(this.api.deleteTodo(id));
     await this.refreshTodos();
+  }
+  askRemove(id: number): void {
+    const t = this.todos().find((x) => x.id === id);
+    const name = t?.title.trim() ? `“${t.title.trim()}”` : 'this task';
+    this.ask({
+      title: 'Delete task?',
+      message: `Do you really want to delete ${name}? This can’t be undone.`,
+      confirmLabel: 'Delete task',
+      run: () => this.remove(id),
+    });
+  }
+  askDeleteFromDialog(): void {
+    const d = this.taskDialog();
+    const name = d?.title.trim() ? `“${d.title.trim()}”` : 'this task';
+    this.ask({
+      title: 'Delete task?',
+      message: `Do you really want to delete ${name}? This can’t be undone.`,
+      confirmLabel: 'Delete task',
+      run: () => this.deleteFromDialog(),
+    });
   }
 
   private inheritedCatIds(): string[] {
@@ -208,10 +245,37 @@ export class TaskStore {
     await Promise.all([this.refreshCategories(), this.refreshTodos()]);
     if (this.selectedMain() === id) this.selectedMain.set(this.mains()[0]?.id ?? null);
   }
+  askRemoveMain(id: string): void {
+    const m = this.mains().find((x) => x.id === id);
+    const name = m?.name ? `“${m.name}”` : 'this category';
+    const subCount = this.subsOf(id).length;
+    const subNote = subCount > 0
+      ? ` Its ${subCount} sub ${subCount === 1 ? 'category' : 'categories'} will be removed too.`
+      : '';
+    this.ask({
+      title: 'Delete main category?',
+      message: `Do you really want to delete ${name}?${subNote} This can’t be undone.`,
+      confirmLabel: 'Delete category',
+      run: () => this.removeMain(id),
+    });
+  }
   async removeSub(id: string): Promise<void> {
     await firstValueFrom(this.api.deleteSub(id));
     if (this.filter() === id) this.filter.set('all');
     await Promise.all([this.refreshCategories(), this.refreshTodos(), this.refreshTitleDefaults()]);
+  }
+  askRemoveSub(id: string): void {
+    const s = this.subs().find((x) => x.id === id);
+    const name = s?.name ? `“${s.name}”` : 'this sub category';
+    const taskNote = s && s.taskCount > 0
+      ? ` It’s used by ${s.taskCount} ${s.taskCount === 1 ? 'task' : 'tasks'}, which will be uncategorised.`
+      : '';
+    this.ask({
+      title: 'Delete sub category?',
+      message: `Do you really want to delete ${name}?${taskNote} This can’t be undone.`,
+      confirmLabel: 'Delete sub category',
+      run: () => this.removeSub(id),
+    });
   }
   openRename(kind: 'main' | 'sub', id: string, value: string): void {
     this.catDialog.set({ kind, id, value });

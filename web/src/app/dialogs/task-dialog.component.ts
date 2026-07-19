@@ -68,7 +68,7 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
 
           <div class="dialog-actions">
             @if (d.id != null) {
-              <button class="btn btn-ghost del" (click)="store.deleteFromDialog()">Delete task</button>
+              <button class="btn btn-ghost del" (click)="store.askDeleteFromDialog()">Delete task</button>
             }
             <span class="spacer"></span>
             <button class="btn btn-secondary" (click)="close()">Cancel</button>
