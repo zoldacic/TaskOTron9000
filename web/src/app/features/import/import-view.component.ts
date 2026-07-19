@@ -21,13 +21,6 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
         <!-- paste -->
         <section class="col">
           <div class="kicker col-kicker">Paste transactions</div>
-          <textarea class="input paste" placeholder="2026-07-15    ACME CORP PAYROLL    +4200.00"
-                    [value]="store.importText()" (input)="store.importText.set(value($event))"></textarea>
-          <div class="buttons">
-            <button class="btn btn-primary" [disabled]="!store.importText().trim()" (click)="store.parseImport()">Parse rows</button>
-            <button class="btn btn-secondary" (click)="store.loadSampleImport()">Load sample</button>
-            <button class="btn btn-ghost" (click)="store.clearImport()">Clear</button>
-          </div>
           <div class="file-import">
             <label class="file-label">Import file
               <select class="input file-type" [value]="fileType()" (change)="fileType.set(selectValue($event))">
@@ -38,7 +31,14 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
             <button class="btn btn-secondary" (click)="fileInput.click()">Choose file…</button>
             @if (fileError()) { <span class="file-error">{{ fileError() }}</span> }
           </div>
-          <p class="help">Dates and amounts are auto-detected (currency symbols, +/- signs and thousands separators are handled). Importing a file appends its rows to the box above.</p>
+          <textarea class="input paste" placeholder="2026-07-15    ACME CORP PAYROLL    +4200.00"
+                    [value]="store.importText()" (input)="store.importText.set(value($event))"></textarea>
+          <div class="buttons">
+            <button class="btn btn-primary" [disabled]="!store.importText().trim()" (click)="store.parseImport()">Parse rows</button>
+            <button class="btn btn-secondary" (click)="store.loadSampleImport()">Load sample</button>
+            <button class="btn btn-ghost" (click)="store.clearImport()">Clear</button>
+          </div>
+          <p class="help">Dates and amounts are auto-detected (currency symbols, +/- signs and thousands separators are handled). Importing a file appends its rows to the box below.</p>
         </section>
 
         <!-- preview -->
@@ -84,7 +84,7 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
     .col-kicker { margin-bottom: 12px; }
     .paste { height: 300px; resize: vertical; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; }
     .buttons { display: flex; gap: 10px; margin-top: 14px; }
-    .file-import { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+    .file-import { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
     .file-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
     .file-type { width: auto; padding: 6px 10px; }
     .file-error { color: var(--color-accent); font-size: 12px; }
