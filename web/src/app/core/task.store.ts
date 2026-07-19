@@ -67,6 +67,7 @@ export class TaskStore {
 
   // ---- import ----
   readonly importText = signal('');
+  readonly importAccount = signal('');
   readonly importRows = signal<ImportRow[] | null>(null);
 
   // ---- reports ----
@@ -238,14 +239,20 @@ export class TaskStore {
   async parseImport(): Promise<void> {
     this.importRows.set(await firstValueFrom(this.api.parseImport(this.importText())));
   }
+  /** Prefixes a row title with the (shared) import account name, when one is set. */
+  accountTitle(title: string): string {
+    const account = this.importAccount().trim();
+    return account ? `${account} — ${title}` : title;
+  }
   async commitImport(): Promise<void> {
     const rows = (this.importRows() ?? []).filter((r) => r.ok);
     if (!rows.length) return;
     const body: ImportCommitRow[] = rows.map((r) => ({
-      title: r.title, date: r.date, amount: r.amount, catIds: r.catIds,
+      title: this.accountTitle(r.title), date: r.date, amount: r.amount, catIds: r.catIds,
     }));
     await firstValueFrom(this.api.commitImport(body));
     this.importText.set('');
+    this.importAccount.set('');
     this.importRows.set(null);
     this.filter.set('all');
     await this.refreshTodos();

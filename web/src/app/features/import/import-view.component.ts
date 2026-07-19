@@ -21,6 +21,11 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
         <!-- paste -->
         <section class="col">
           <div class="kicker col-kicker">Paste transactions</div>
+          <label class="acct-field">
+            <span class="acct-label">Bank account</span>
+            <input class="input acct-input" type="text" placeholder="e.g. SEB Personal"
+                   [value]="store.importAccount()" (input)="store.importAccount.set(value($event))">
+          </label>
           <div class="file-import">
             <label class="file-label">Import file
               <select class="input file-type" [value]="fileType()" (change)="fileType.set(selectValue($event))">
@@ -38,7 +43,7 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
             <button class="btn btn-secondary" (click)="store.loadSampleImport()">Load sample</button>
             <button class="btn btn-ghost" (click)="store.clearImport()">Clear</button>
           </div>
-          <p class="help">Dates and amounts are auto-detected (currency symbols, +/- signs and thousands separators are handled). Importing a file appends its rows to the box below.</p>
+          <p class="help">Dates and amounts are auto-detected (currency symbols, +/- signs and thousands separators are handled). Importing a file appends its rows to the box below. The bank account name, when set, is added to every imported task's title.</p>
         </section>
 
         <!-- preview -->
@@ -54,7 +59,7 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
               @for (r of store.importRows(); track r.key) {
                 <div class="trow rule-1" [style.opacity]="r.ok ? 1 : 0.45">
                   <div class="cells">
-                    <span class="t-title" [title]="r.title">{{ r.title }}</span>
+                    <span class="t-title" [title]="store.accountTitle(r.title)">{{ store.accountTitle(r.title) }}</span>
                     <span class="t-date">{{ r.date ?? '—' }}</span>
                     <span class="t-amount" [style.color]="amountColor(r)">{{ amountLabel(r) }}</span>
                   </div>
@@ -84,6 +89,9 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
     .col-kicker { margin-bottom: 12px; }
     .paste { height: 300px; resize: vertical; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; }
     .buttons { display: flex; gap: 10px; margin-top: 14px; }
+    .acct-field { display: block; margin-bottom: 12px; }
+    .acct-label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .acct-input { max-width: 280px; }
     .file-import { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
     .file-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
     .file-type { width: auto; padding: 6px 10px; }
