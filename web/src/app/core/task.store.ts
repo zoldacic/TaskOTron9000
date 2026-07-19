@@ -228,6 +228,13 @@ export class TaskStore {
   // ---- import ----
   loadSampleImport(): void { this.importText.set(SAMPLE_IMPORT); this.importRows.set(null); }
   clearImport(): void { this.importText.set(''); this.importRows.set(null); }
+  /** Appends parsed rows (each already `date\ttitle\tamount`) to the import text box. */
+  appendImportRows(rows: string[]): void {
+    if (rows.length === 0) return;
+    const cur = this.importText();
+    const sep = cur && !cur.endsWith('\n') ? '\n' : '';
+    this.importText.set(cur + sep + rows.join('\n'));
+  }
   async parseImport(): Promise<void> {
     this.importRows.set(await firstValueFrom(this.api.parseImport(this.importText())));
   }
