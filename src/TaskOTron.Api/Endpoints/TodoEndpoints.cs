@@ -87,6 +87,17 @@ public static class TodoEndpoints
             await db.SaveChangesAsync();
             return Results.NoContent();
         });
+
+        // Delete many at once. Unknown ids are ignored; returns the count actually removed.
+        g.MapPost("/bulk-delete", async (BulkDeleteDto dto, AppDbContext db) =>
+        {
+            var ids = dto.Ids?.Distinct().ToList() ?? [];
+            if (ids.Count == 0) return Results.Ok(new { deleted = 0 });
+            var toDelete = await db.Todos.Where(t => ids.Contains(t.Id)).ToListAsync();
+            db.Todos.RemoveRange(toDelete);
+            await db.SaveChangesAsync();
+            return Results.Ok(new { deleted = toDelete.Count });
+        });
     }
 
     private static async Task<List<Sub>> LoadSubs(AppDbContext db, List<string>? ids)

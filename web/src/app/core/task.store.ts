@@ -80,6 +80,10 @@ export class TaskStore {
   readonly newMain = signal('');
   readonly newSub = signal('');
 
+  // ---- selection (multi-select for bulk actions) ----
+  readonly selecting = signal(false);
+  readonly selectedIds = signal<Set<number>>(new Set());
+
   // ---- dialogs ----
   readonly taskDialog = signal<TaskDraft | null>(null);
   readonly catDialog = signal<CatDraft | null>(null);
@@ -113,6 +117,15 @@ export class TaskStore {
   readonly queryActive = computed(() => this.activeQuery() !== null);
 
   readonly pendingCount = computed(() => this.todos().filter((t) => !t.done).length);
+
+  readonly selectedCount = computed(() => this.selectedIds().size);
+  // True when every currently-visible task is selected (and there is at least one).
+  readonly allVisibleSelected = computed(() => {
+    const vis = this.visibleTodos();
+    if (vis.length === 0) return false;
+    const sel = this.selectedIds();
+    return vis.every((t) => sel.has(t.id));
+  });
 
   readonly counts = computed(() => {
     const all = this.todos();
@@ -237,6 +250,47 @@ export class TaskStore {
       message: `Do you really want to delete ${name}? This can’t be undone.`,
       confirmLabel: 'Delete saved query',
       run: () => this.removeSavedQuery(id),
+    });
+  }
+
+  // ---- selection ----
+  isSelected(id: number): boolean { return this.selectedIds().has(id); }
+  toggleSelected(id: number): void {
+    const next = new Set(this.selectedIds());
+    next.has(id) ? next.delete(id) : next.add(id);
+    this.selectedIds.set(next);
+  }
+  /** Enter selection mode (optionally pre-selecting one task). */
+  startSelecting(id?: number): void {
+    this.selecting.set(true);
+    if (id != null) this.selectedIds.set(new Set([id]));
+  }
+  /** Leave selection mode and drop any selection. */
+  stopSelecting(): void {
+    this.selecting.set(false);
+    this.selectedIds.set(new Set());
+  }
+  clearSelection(): void { this.selectedIds.set(new Set()); }
+  /** Select all visible tasks, or clear if they're already all selected. */
+  toggleSelectAllVisible(): void {
+    if (this.allVisibleSelected()) this.selectedIds.set(new Set());
+    else this.selectedIds.set(new Set(this.visibleTodos().map((t) => t.id)));
+  }
+  async removeSelected(): Promise<void> {
+    const ids = [...this.selectedIds()];
+    if (ids.length === 0) return;
+    await firstValueFrom(this.api.bulkDeleteTodos(ids));
+    this.stopSelecting();
+    await this.refreshTodos();
+  }
+  askRemoveSelected(): void {
+    const n = this.selectedIds().size;
+    if (n === 0) return;
+    this.ask({
+      title: n === 1 ? 'Delete task?' : 'Delete tasks?',
+      message: `Do you really want to delete ${n === 1 ? 'this task' : `these ${n} tasks`}? This can’t be undone.`,
+      confirmLabel: n === 1 ? 'Delete task' : `Delete ${n} tasks`,
+      run: () => this.removeSelected(),
     });
   }
 

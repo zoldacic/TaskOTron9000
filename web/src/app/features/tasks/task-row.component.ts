@@ -10,12 +10,19 @@ import { fmtMoney } from '../../core/money-util';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconComponent],
   template: `
-    <div class="row rule-1">
-      <button class="check" [class.done]="todo.done" (click)="store.toggle(todo.id)" aria-label="Toggle done">
-        @if (todo.done) { <app-icon name="check" [size]="14" /> }
-      </button>
+    <div class="row rule-1" [class.selected]="store.selecting() && store.isSelected(todo.id)">
+      @if (store.selecting()) {
+        <button class="check select" [class.on]="store.isSelected(todo.id)"
+                (click)="store.toggleSelected(todo.id)" aria-label="Select task">
+          @if (store.isSelected(todo.id)) { <app-icon name="check" [size]="14" /> }
+        </button>
+      } @else {
+        <button class="check" [class.done]="todo.done" (click)="store.toggle(todo.id)" aria-label="Toggle done">
+          @if (todo.done) { <app-icon name="check" [size]="14" /> }
+        </button>
+      }
 
-      <button class="main" (click)="store.openEdit(todo.id)">
+      <button class="main" (click)="store.selecting() ? store.toggleSelected(todo.id) : store.openEdit(todo.id)">
         <div class="title" [class.done]="todo.done">{{ todo.title }}</div>
         <div class="meta">
           @if (badge()) { <span class="due" [style.color]="dueColor()">{{ badge() }}</span> }
@@ -33,8 +40,10 @@ import { fmtMoney } from '../../core/money-util';
           {{ fmt(todo.amount) }}
         </span>
       }
-      <button class="btn-icon" (click)="store.openEdit(todo.id)" aria-label="Edit"><app-icon name="pencil" /></button>
-      <button class="btn-icon danger" (click)="store.askRemove(todo.id)" aria-label="Delete"><app-icon name="trash" /></button>
+      @if (!store.selecting()) {
+        <button class="btn-icon" (click)="store.openEdit(todo.id)" aria-label="Edit"><app-icon name="pencil" /></button>
+        <button class="btn-icon danger" (click)="store.askRemove(todo.id)" aria-label="Delete"><app-icon name="trash" /></button>
+      }
     </div>
   `,
   styles: [`
@@ -45,6 +54,9 @@ import { fmtMoney } from '../../core/money-util';
       cursor: pointer; border: 2px solid var(--color-divider); background: transparent; color: #fff;
     }
     .check.done { border-color: var(--color-accent); background: var(--color-accent); box-shadow: 0 0 10px -2px var(--color-accent); }
+    .check.select { border-radius: 5px; }
+    .check.select.on { border-color: var(--color-accent); background: var(--color-accent); box-shadow: 0 0 10px -2px var(--color-accent); }
+    .row.selected { background: var(--accent-fill); }
     .main { flex: 1; min-width: 0; text-align: left; background: transparent; border: 0; cursor: pointer; padding: 0; color: inherit; }
     .title { font-size: 15px; line-height: 1.3; }
     .title.done { text-decoration: line-through; color: color-mix(in srgb, var(--color-text) 42%, transparent); }

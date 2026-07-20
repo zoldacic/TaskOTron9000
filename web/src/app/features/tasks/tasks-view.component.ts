@@ -29,6 +29,11 @@ import { QueryPanelComponent } from './query-panel.component';
             <app-icon name="filter" [size]="14" /> Filters
             @if (activeCount() > 0) { <span class="badge">{{ activeCount() }}</span> }
           </button>
+          @if (store.selecting()) {
+            <button class="btn btn-secondary" (click)="store.stopSelecting()"><app-icon name="x" [size]="14" /> Done</button>
+          } @else {
+            <button class="btn btn-secondary" (click)="store.startSelecting()"><app-icon name="check" [size]="14" /> Select</button>
+          }
           <button class="btn btn-primary" (click)="store.openNew()"><app-icon name="plus" [size]="16" /> New task</button>
         </div>
       </header>
@@ -51,6 +56,20 @@ import { QueryPanelComponent } from './query-panel.component';
                (input)="store.quickAdd.set(value($event))" (keydown.enter)="store.addQuick()">
         <button class="btn btn-secondary" [disabled]="!store.quickAdd().trim()" (click)="store.addQuick()">Add</button>
       </div>
+
+      @if (store.selecting()) {
+        <div class="selbar">
+          <button class="btn btn-ghost" (click)="store.toggleSelectAllVisible()">
+            <app-icon [name]="store.allVisibleSelected() ? 'x' : 'check'" [size]="14" />
+            {{ store.allVisibleSelected() ? 'Clear all' : 'Select all' }}
+          </button>
+          <span class="selcount">{{ store.selectedCount() }} selected</span>
+          <span class="spacer"></span>
+          <button class="btn btn-primary" [disabled]="store.selectedCount() === 0" (click)="store.askRemoveSelected()">
+            <app-icon name="trash" [size]="14" /> Delete
+          </button>
+        </div>
+      }
 
       <div class="scroll om-scroll">
         @if (store.visibleTodos().length === 0) {
@@ -91,6 +110,12 @@ import { QueryPanelComponent } from './query-panel.component';
     .search .clear { flex: none; color: var(--muted); }
     .search .clear:hover { color: var(--color-accent); }
     .quick { display: flex; gap: 10px; padding: 0 24px 16px; }
+    .selbar {
+      display: flex; align-items: center; gap: 12px; margin: 0 24px 16px; padding: 8px 12px;
+      border: 1px solid var(--color-accent); background: var(--accent-fill);
+    }
+    .selbar .spacer { flex: 1; }
+    .selcount { font-family: var(--font-mono); font-size: 12px; color: var(--muted-strong); }
     .scroll {
       flex: 1; min-height: 0; overflow-y: auto; padding: 0 24px 24px;
       background-image:

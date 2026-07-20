@@ -28,6 +28,9 @@ export class ApiService {
   deleteTodo(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/api/todos/${id}`);
   }
+  bulkDeleteTodos(ids: number[]): Observable<{ deleted: number }> {
+    return this.http.post<{ deleted: number }>(`${this.base}/api/todos/bulk-delete`, { ids });
+  }
 
   // ---- categories ----
   getCategories(): Observable<Categories> {

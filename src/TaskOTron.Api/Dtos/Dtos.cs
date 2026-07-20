@@ -21,6 +21,8 @@ public record TodoWriteDto(
     List<string>? CatIds = null,
     string? BankAccountId = null);
 
+public record BulkDeleteDto(List<int> Ids);
+
 // ---- Categories ----
 public record MainDto(string Id, string Name);
 public record SubDto(string Id, string MainId, string Name, int TaskCount);
