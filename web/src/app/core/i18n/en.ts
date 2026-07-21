@@ -145,7 +145,8 @@ export const en = {
   'dialog.importCat.title': 'Assign categories',
   'dialog.importCat.category': 'Category',
   'dialog.importCat.subcategories': 'Subcategories',
-  'dialog.importCat.applyAll': 'Apply to all {count} rows titled "{title}"',
+  'dialog.importCat.applyAll': 'Apply to all {count} rows containing "{match}"',
+  'dialog.importCat.applyAllHint': 'Select part of the title to match fewer rows:',
   'dialog.importCat.remember': 'Remember as default for this title in future imports',
   'dialog.importCat.apply': 'Apply',
 

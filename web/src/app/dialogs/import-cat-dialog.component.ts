@@ -37,8 +37,14 @@ import { TaskStore } from '../core/task.store';
 
           <label class="check">
             <input type="checkbox" [checked]="c.applyAll" (change)="flag('applyAll', $event)">
-            <span>{{ store.t('dialog.importCat.applyAll', { count: sameTitleCount(), title: c.title }) }}</span>
+            <span>{{ store.t('dialog.importCat.applyAll', { count: matchCount(), match: c.match }) }}</span>
           </label>
+          @if (c.applyAll) {
+            <div class="match-picker">
+              <span class="match-hint">{{ store.t('dialog.importCat.applyAllHint') }}</span>
+              <span class="match-title" (mouseup)="captureSelection()" (dblclick)="captureSelection()">{{ c.title }}</span>
+            </div>
+          }
           <label class="check">
             <input type="checkbox" [checked]="c.remember" (change)="flag('remember', $event)">
             <span>{{ store.t('dialog.importCat.remember') }}</span>
@@ -61,16 +67,32 @@ import { TaskStore } from '../core/task.store';
     .chip.main.on { border-color: var(--color-accent); color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 16%, transparent); }
     .check { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; cursor: pointer; }
     .check input { accent-color: var(--color-accent); width: 16px; height: 16px; }
+    .match-picker { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 0 24px; }
+    .match-hint { font-size: 12px; color: var(--muted-strong); }
+    .match-title {
+      align-self: flex-start; font-family: var(--font-mono); font-size: 13px;
+      padding: 4px 8px; background: var(--tint-surface); border: 1px solid var(--color-divider);
+      user-select: text; cursor: text; white-space: pre-wrap; word-break: break-all;
+    }
+    .match-title::selection { background: var(--color-accent); color: #fff; }
   `],
 })
 export class ImportCatDialogComponent {
   store = inject(TaskStore);
 
-  sameTitleCount(): number {
+  /** How many import rows contain the current match substring (drives the "apply to all" count). */
+  matchCount(): number {
     const c = this.store.importCat();
     if (!c) return 0;
-    const norm = c.title.trim().toLowerCase();
-    return (this.store.importRows() ?? []).filter((r) => r.title.trim().toLowerCase() === norm).length;
+    const m = c.match.trim().toLowerCase();
+    if (!m) return 0;
+    return (this.store.importRows() ?? []).filter((r) => r.title.trim().toLowerCase().includes(m)).length;
+  }
+
+  /** Use the user's text selection within the title as the match; a bare click (no selection) leaves it unchanged. */
+  captureSelection(): void {
+    const text = window.getSelection()?.toString() ?? '';
+    if (text.trim()) this.store.setImportCatMatch(text);
   }
 
   flag(k: 'applyAll' | 'remember', e: Event): void {

@@ -30,6 +30,8 @@ export interface CatDraft {
 export interface ImportCatDraft {
   key: number;
   title: string;
+  /** Substring "Apply to all" matches on (case-insensitive). Defaults to the full title. */
+  match: string;
   mainId: string; // required single main category (radio behaviour)
   catIds: string[];
   applyAll: boolean;
@@ -589,11 +591,18 @@ export class TaskStore {
     if (!r) return;
     const norm = r.title.trim().toLowerCase();
     this.importCat.set({
-      key, title: r.title,
+      key, title: r.title, match: r.title,
       mainId: r.mainId || this.importMainId() || this.firstMainId(),
       catIds: [...(r.catIds ?? [])], applyAll: false,
       remember: this.titleDefaults().some((d) => d.normalizedTitle === norm),
     });
+  }
+  /** Narrow the "apply to all" match to a selected part of the title (empty resets to the full title). */
+  setImportCatMatch(text: string): void {
+    const c = this.importCat();
+    if (!c) return;
+    const m = text.trim();
+    this.importCat.set({ ...c, match: m || c.title });
   }
   /** Select the required single main category for the import row (radio behaviour). */
   setImportCatMain(mainId: string): void {
@@ -614,9 +623,10 @@ export class TaskStore {
     const c = this.importCat();
     if (!c || !c.mainId) return;
     const norm = c.title.trim().toLowerCase();
-    // Apply the main + subs to this row (and same-title rows if requested).
+    const match = c.match.trim().toLowerCase();
+    // Apply the main + subs to this row (and rows whose title contains the match, if requested).
     this.importRows.set((this.importRows() ?? []).map((r) =>
-      r.key === c.key || (c.applyAll && r.title.trim().toLowerCase() === norm)
+      r.key === c.key || (c.applyAll && match !== '' && r.title.trim().toLowerCase().includes(match))
         ? { ...r, mainId: c.mainId, catIds: [...c.catIds] } : r));
     // Persist / clear the remembered default (main + subs).
     if (c.remember) await firstValueFrom(this.api.putTitleDefault(norm, c.catIds, c.mainId));
