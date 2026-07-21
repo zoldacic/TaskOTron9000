@@ -10,7 +10,11 @@ public record ParsedImportRow(
     string? Date,
     decimal? Amount,
     bool Ok,
-    List<string> CatIds);
+    List<string> CatIds,
+    string? MainId);
+
+/// <summary>A remembered categorization for a title: one main + its subcategories.</summary>
+public record TitleDefaultEntry(string? MainId, List<string> CatIds);
 
 /// <summary>
 /// Faithful C# port of the prototype's detectDate / detectAmount / parseImport
@@ -69,11 +73,12 @@ public static partial class ImportParser
 
     /// <summary>
     /// Parses raw pasted text into rows. <paramref name="titleDefaults"/> maps normalized
-    /// (lowercased, trimmed) titles to sub-category ids, used to pre-fill a row's categories.
+    /// (lowercased, trimmed) titles to a remembered main + sub-category ids, used to
+    /// pre-fill a row's categories.
     /// </summary>
     public static List<ParsedImportRow> Parse(
         string? text,
-        IReadOnlyDictionary<string, List<string>> titleDefaults)
+        IReadOnlyDictionary<string, TitleDefaultEntry> titleDefaults)
     {
         var lines = (text ?? "")
             .Split('\n')
@@ -103,9 +108,11 @@ public static partial class ImportParser
 
             var title = rest.Count > 0 ? string.Join(" ", rest) : "Untitled row";
             var norm = title.Trim().ToLowerInvariant();
-            var catIds = titleDefaults.TryGetValue(norm, out var def) ? new List<string>(def) : new List<string>();
+            var hasDef = titleDefaults.TryGetValue(norm, out var def);
+            var catIds = hasDef ? new List<string>(def!.CatIds) : new List<string>();
+            var mainId = hasDef ? def!.MainId : null;
 
-            rows.Add(new ParsedImportRow(i, title, date, amount, amount is not null, catIds));
+            rows.Add(new ParsedImportRow(i, title, date, amount, amount is not null, catIds, mainId));
         }
         return rows;
     }

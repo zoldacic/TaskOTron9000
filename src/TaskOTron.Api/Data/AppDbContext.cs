@@ -65,6 +65,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<TitleDefault>(e =>
         {
             e.HasKey(td => td.NormalizedTitle);
+            // Remembered main category. SetNull so deleting a main just clears the
+            // remembered default rather than blocking the delete.
+            e.HasOne(td => td.Main)
+                .WithMany()
+                .HasForeignKey(td => td.MainId)
+                .OnDelete(DeleteBehavior.SetNull);
             // Deleting a sub also strips it from remembered title defaults.
             e.HasMany(td => td.Categories)
                 .WithMany(s => s.TitleDefaults)

@@ -143,6 +143,8 @@ export const sv: Record<TranslationKey, string> = {
 
   // ---- import-cat dialog ----
   'dialog.importCat.title': 'Tilldela kategorier',
+  'dialog.importCat.category': 'Kategori',
+  'dialog.importCat.subcategories': 'Underkategorier',
   'dialog.importCat.applyAll': 'Tillämpa på alla {count} rader med titeln "{title}"',
   'dialog.importCat.remember': 'Kom ihåg som standard för den här titeln vid framtida importer',
   'dialog.importCat.apply': 'Tillämpa',
@@ -208,6 +210,7 @@ export const sv: Record<TranslationKey, string> = {
   'import.sub': 'Klistra in ett kontoutdrag — en transaktion per rad. Varje rad blir en uppgift.',
   'import.pasteTransactions': 'Klistra in transaktioner',
   'import.mainCategory': 'Kategori',
+  'import.mainCategoryHint': 'Standardkategori för varje importerad rad — ändra valfri rad nedan.',
   'import.bankAccount': 'Bankkonto',
   'import.none': '— Inget —',
   'import.deleteAccount': 'Ta bort det här kontot',

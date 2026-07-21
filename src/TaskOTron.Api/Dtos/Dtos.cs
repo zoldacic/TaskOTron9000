@@ -57,12 +57,12 @@ public record SavedQueryDto(string Id, string Name, TaskQueryDto Query);
 public record SavedQueryWriteDto(string Name, TaskQueryDto Query);
 
 // ---- Title defaults ----
-public record TitleDefaultDto(string NormalizedTitle, List<string> CatIds);
-public record TitleDefaultWriteDto(List<string> CatIds);
+public record TitleDefaultDto(string NormalizedTitle, List<string> CatIds, string? MainId);
+public record TitleDefaultWriteDto(List<string> CatIds, string? MainId = null);
 
 // ---- Import ----
 public record ImportParseRequest(string Text);
-public record ImportRowDto(int Key, string Title, string? Date, decimal? Amount, bool Ok, List<string> CatIds);
+public record ImportRowDto(int Key, string Title, string? Date, decimal? Amount, bool Ok, List<string> CatIds, string? MainId);
 public record ImportCommitRow(string Title, string? Date, decimal? Amount, List<string>? CatIds, string? MainId = null, string? BankAccountId = null);
 public record ImportCommitRequest(List<ImportCommitRow> Rows);
 

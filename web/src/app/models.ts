@@ -50,6 +50,7 @@ export interface BankAccount {
 export interface TitleDefault {
   normalizedTitle: string;
   catIds: string[];
+  mainId: string | null; // remembered required main category (null if not remembered)
 }
 
 export type QueryDateKind = 'any' | 'due' | 'transaction';
@@ -80,6 +81,7 @@ export interface ImportRow {
   date: string | null;
   amount: number | null;
   ok: boolean;
+  mainId: string | null; // required main category; null until defaulted client-side
   catIds: string[];
 }
 

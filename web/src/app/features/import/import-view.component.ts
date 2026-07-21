@@ -24,11 +24,12 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
           <div class="acct-field">
             <span class="acct-label">{{ store.t('import.mainCategory') }}</span>
             <select class="input acct-select" [value]="store.importMainId() ?? ''"
-                    (change)="store.importMainId.set(selectValueStr($event) || null)">
+                    (change)="store.setImportMain(selectValueStr($event) || null)">
               @for (m of store.mains(); track m.id) {
                 <option [value]="m.id">{{ m.name }}</option>
               }
             </select>
+            <span class="acct-hint">{{ store.t('import.mainCategoryHint') }}</span>
           </div>
           <div class="acct-field">
             <span class="acct-label">{{ store.t('import.bankAccount') }}</span>
@@ -95,7 +96,8 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
                     <span class="t-amount" [style.color]="amountColor(r)">{{ amountLabel(r) }}</span>
                   </div>
                   <div class="row-cats">
-                    <button class="cat-edit" (click)="store.openImportCat(r.key)">{{ r.catIds.length ? store.t('import.editCategories') : store.t('import.addCategories') }}</button>
+                    <button class="cat-edit" (click)="store.openImportCat(r.key)">{{ store.t('import.editCategories') }}</button>
+                    @if (store.mainName(r.mainId); as mn) { <span class="tag tag-main">{{ mn }}</span> }
                     @for (id of r.catIds; track id) {
                       @if (store.subName(id); as n) { <span class="tag tag-neutral">{{ n }}</span> }
                     }
@@ -122,6 +124,8 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
     .buttons { display: flex; gap: 10px; margin-top: 14px; }
     .acct-field { display: block; margin-bottom: 12px; }
     .acct-label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .acct-hint { display: block; font-size: 11px; color: var(--muted-strong); margin-top: 6px; }
+    .tag-main { background: color-mix(in srgb, var(--color-accent) 14%, transparent); color: var(--color-accent); }
     .acct-row { display: flex; align-items: center; gap: 8px; }
     .acct-select { max-width: 280px; }
     .acct-del { padding: 6px 12px; font-size: 12px; color: var(--muted); }

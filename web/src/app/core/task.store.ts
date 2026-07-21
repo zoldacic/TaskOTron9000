@@ -30,6 +30,7 @@ export interface CatDraft {
 export interface ImportCatDraft {
   key: number;
   title: string;
+  mainId: string; // required single main category (radio behaviour)
   catIds: string[];
   applyAll: boolean;
   remember: boolean;
@@ -105,7 +106,7 @@ export class TaskStore {
   // ---- import ----
   readonly importText = signal('');
   readonly importAccountId = signal<string | null>(null);
-  readonly importMainId = signal<string | null>(null); // required main for imported tasks
+  readonly importMainId = signal<string | null>(null); // batch default main for imported tasks
   readonly importRows = signal<ImportRow[] | null>(null);
 
   // ---- bank accounts ----
@@ -153,6 +154,9 @@ export class TaskStore {
 
   subName(id: string): string {
     return this.subs().find((s) => s.id === id)?.name ?? '';
+  }
+  mainName(id: string | null): string {
+    return id ? this.mains().find((m) => m.id === id)?.name ?? '' : '';
   }
   accountName(id: string | null): string {
     return id ? this.bankAccounts().find((a) => a.id === id)?.name ?? '' : '';
@@ -526,15 +530,25 @@ export class TaskStore {
     this.importText.set(cur + sep + rows.join('\n'));
   }
   async parseImport(): Promise<void> {
-    this.importRows.set(await firstValueFrom(this.api.parseImport(this.importText())));
+    const rows = await firstValueFrom(this.api.parseImport(this.importText()));
+    // Each row needs a main: keep any remembered from a title default, else the batch default.
+    const def = this.importMainId() ?? this.firstMainId();
+    this.importRows.set(rows.map((r) => ({ ...r, mainId: r.mainId ?? def })));
+  }
+  /** Set the batch default main and apply it to every parsed row. */
+  setImportMain(mainId: string | null): void {
+    this.importMainId.set(mainId);
+    const rows = this.importRows();
+    if (mainId && rows) this.importRows.set(rows.map((r) => ({ ...r, mainId })));
   }
   async commitImport(): Promise<void> {
     const rows = (this.importRows() ?? []).filter((r) => r.ok);
     if (!rows.length) return;
     const bankAccountId = this.importAccountId();
-    const mainId = this.importMainId() ?? this.firstMainId();
+    const fallback = this.importMainId() ?? this.firstMainId();
     const body: ImportCommitRow[] = rows.map((r) => ({
-      title: r.title, date: r.date, amount: r.amount, mainId, catIds: r.catIds, bankAccountId,
+      title: r.title, date: r.date, amount: r.amount,
+      mainId: r.mainId ?? fallback, catIds: r.catIds, bankAccountId,
     }));
     await firstValueFrom(this.api.commitImport(body));
     this.importText.set('');
@@ -575,9 +589,16 @@ export class TaskStore {
     if (!r) return;
     const norm = r.title.trim().toLowerCase();
     this.importCat.set({
-      key, title: r.title, catIds: [...(r.catIds ?? [])], applyAll: false,
+      key, title: r.title,
+      mainId: r.mainId || this.importMainId() || this.firstMainId(),
+      catIds: [...(r.catIds ?? [])], applyAll: false,
       remember: this.titleDefaults().some((d) => d.normalizedTitle === norm),
     });
+  }
+  /** Select the required single main category for the import row (radio behaviour). */
+  setImportCatMain(mainId: string): void {
+    const c = this.importCat();
+    if (c) this.importCat.set({ ...c, mainId });
   }
   toggleImportCat(id: string): void {
     const c = this.importCat();
@@ -591,14 +612,14 @@ export class TaskStore {
   }
   async saveImportCat(): Promise<void> {
     const c = this.importCat();
-    if (!c) return;
+    if (!c || !c.mainId) return;
     const norm = c.title.trim().toLowerCase();
-    // Apply to this row (and same-title rows if requested).
+    // Apply the main + subs to this row (and same-title rows if requested).
     this.importRows.set((this.importRows() ?? []).map((r) =>
       r.key === c.key || (c.applyAll && r.title.trim().toLowerCase() === norm)
-        ? { ...r, catIds: [...c.catIds] } : r));
-    // Persist / clear the remembered default.
-    if (c.remember) await firstValueFrom(this.api.putTitleDefault(norm, c.catIds));
+        ? { ...r, mainId: c.mainId, catIds: [...c.catIds] } : r));
+    // Persist / clear the remembered default (main + subs).
+    if (c.remember) await firstValueFrom(this.api.putTitleDefault(norm, c.catIds, c.mainId));
     else await firstValueFrom(this.api.deleteTitleDefault(norm));
     this.importCat.set(null);
     await this.refreshTitleDefaults();

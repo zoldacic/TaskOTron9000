@@ -84,9 +84,9 @@ export class ApiService {
   getTitleDefaults(): Observable<TitleDefault[]> {
     return this.http.get<TitleDefault[]>(`${this.base}/api/title-defaults`);
   }
-  putTitleDefault(normalizedTitle: string, catIds: string[]): Observable<TitleDefault> {
+  putTitleDefault(normalizedTitle: string, catIds: string[], mainId: string | null): Observable<TitleDefault> {
     return this.http.put<TitleDefault>(
-      `${this.base}/api/title-defaults/${encodeURIComponent(normalizedTitle)}`, { catIds });
+      `${this.base}/api/title-defaults/${encodeURIComponent(normalizedTitle)}`, { catIds, mainId });
   }
   deleteTitleDefault(normalizedTitle: string): Observable<void> {
     return this.http.delete<void>(

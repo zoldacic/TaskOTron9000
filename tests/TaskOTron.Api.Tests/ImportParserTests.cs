@@ -5,7 +5,7 @@ namespace TaskOTron.Api.Tests;
 
 public class ImportParserTests
 {
-    private static readonly Dictionary<string, List<string>> NoDefaults = new();
+    private static readonly Dictionary<string, TitleDefaultEntry> NoDefaults = new();
 
     [Theory]
     [InlineData("2026-07-15", "2026-07-15")]
@@ -65,16 +65,27 @@ public class ImportParserTests
     }
 
     [Fact]
-    public void Parse_prefills_categories_from_title_defaults()
+    public void Parse_prefills_main_and_categories_from_title_defaults()
     {
-        var defaults = new Dictionary<string, List<string>>
+        var defaults = new Dictionary<string, TitleDefaultEntry>
         {
-            ["whole foods market"] = ["he"],
+            ["whole foods market"] = new("home", ["he"]),
         };
         var rows = ImportParser.Parse("2026-07-14\tWHOLE FOODS MARKET\t-76.20", defaults);
 
         Assert.Single(rows);
+        Assert.Equal("home", rows[0].MainId);
         Assert.Equal(["he"], rows[0].CatIds);
+    }
+
+    [Fact]
+    public void Parse_without_a_matching_default_leaves_main_null()
+    {
+        var rows = ImportParser.Parse("2026-07-14\tWHOLE FOODS MARKET\t-76.20", NoDefaults);
+
+        Assert.Single(rows);
+        Assert.Null(rows[0].MainId);
+        Assert.Empty(rows[0].CatIds);
     }
 
     [Fact]

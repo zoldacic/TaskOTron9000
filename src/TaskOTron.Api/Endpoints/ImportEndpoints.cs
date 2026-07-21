@@ -18,7 +18,7 @@ public static class ImportEndpoints
             var defaults = await LoadTitleDefaults(db);
             var rows = ImportParser.Parse(req.Text, defaults);
             return Results.Ok(rows.Select(r =>
-                new ImportRowDto(r.Key, r.Title, r.Date, r.Amount, r.Ok, r.CatIds)));
+                new ImportRowDto(r.Key, r.Title, r.Date, r.Amount, r.Ok, r.CatIds, r.MainId)));
         });
 
         // Commit confirmed rows: each importable (amount != null) row becomes a Transaction task.
@@ -79,9 +79,11 @@ public static class ImportEndpoints
         });
     }
 
-    private static async Task<Dictionary<string, List<string>>> LoadTitleDefaults(AppDbContext db)
+    private static async Task<Dictionary<string, TitleDefaultEntry>> LoadTitleDefaults(AppDbContext db)
     {
         var defs = await db.TitleDefaults.Include(td => td.Categories).AsNoTracking().ToListAsync();
-        return defs.ToDictionary(td => td.NormalizedTitle, td => td.Categories.Select(c => c.Id).ToList());
+        return defs.ToDictionary(
+            td => td.NormalizedTitle,
+            td => new TitleDefaultEntry(td.MainId, td.Categories.Select(c => c.Id).ToList()));
     }
 }

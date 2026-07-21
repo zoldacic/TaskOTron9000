@@ -3,7 +3,7 @@ import { TaskQuery, Todo } from '../models';
 
 function todo(p: Partial<Todo>): Todo {
   return {
-    id: 1, title: 't', done: false, due: null, amount: null, dateKind: 'due', catIds: [],
+    id: 1, title: 't', done: false, due: null, amount: null, dateKind: 'due', mainId: 'work', catIds: [],
     bankAccountId: null, ...p,
   };
 }

@@ -67,9 +67,9 @@ public static class DbInitializer
 
         var titleDefaults = new List<TitleDefault>
         {
-            new() { NormalizedTitle = "whole foods market", Categories = [S("he")] },
-            new() { NormalizedTitle = "city power & light", Categories = [S("pf")] },
-            new() { NormalizedTitle = "acme corp payroll", Categories = [S("pf")] },
+            new() { NormalizedTitle = "whole foods market", MainId = "home", Categories = [S("he")] },
+            new() { NormalizedTitle = "city power & light", MainId = "personal", Categories = [S("pf")] },
+            new() { NormalizedTitle = "acme corp payroll", MainId = "personal", Categories = [S("pf")] },
         };
         db.TitleDefaults.AddRange(titleDefaults);
 

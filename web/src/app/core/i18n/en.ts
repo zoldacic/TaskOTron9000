@@ -143,6 +143,8 @@ export const en = {
 
   // ---- import-cat dialog ----
   'dialog.importCat.title': 'Assign categories',
+  'dialog.importCat.category': 'Category',
+  'dialog.importCat.subcategories': 'Subcategories',
   'dialog.importCat.applyAll': 'Apply to all {count} rows titled "{title}"',
   'dialog.importCat.remember': 'Remember as default for this title in future imports',
   'dialog.importCat.apply': 'Apply',
@@ -208,6 +210,7 @@ export const en = {
   'import.sub': 'Paste a statement — one transaction per line. Each row becomes a task.',
   'import.pasteTransactions': 'Paste transactions',
   'import.mainCategory': 'Category',
+  'import.mainCategoryHint': 'Default main category for every imported row — override any row below.',
   'import.bankAccount': 'Bank account',
   'import.none': '— None —',
   'import.deleteAccount': 'Delete this account',
