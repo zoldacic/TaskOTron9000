@@ -88,12 +88,16 @@ import { fmtMoney } from '../../core/money-util';
           <!-- net by category -->
           <section class="block">
             <div class="kicker chart-kicker">{{ store.t('report.netByCategory') }}</div>
-            @for (c of r.categoryBreakdown; track c.name) {
+            @for (c of r.categoryBreakdown; track c.name; let i = $index) {
               <div class="cat-bar">
+                @if (multiColor()) {
+                  <span class="swatch" [style.background]="catColor(i)"></span>
+                }
                 <span class="cat-name">{{ c.name }}</span>
                 <div class="track">
                   <div class="track-axis"></div>
                   <div class="cbar" [class.pos]="c.net >= 0" [class.neg]="c.net < 0"
+                       [style.background]="barColor(i)"
                        [style.width.%]="absPct(c.net)"
                        [style.left]="c.net >= 0 ? '50%' : null" [style.right]="c.net < 0 ? '50%' : null"></div>
                 </div>
@@ -133,6 +137,7 @@ import { fmtMoney } from '../../core/money-util';
     .axis { height: 2px; background: var(--color-divider); }
     .b-label { text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 6px; }
     .cat-bar { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+    .swatch { width: 10px; height: 10px; flex: none; border-radius: 2px; }
     .cat-name { width: 110px; flex: none; text-align: right; font-size: 13px; }
     .track { flex: 1; position: relative; height: 22px; background: var(--tint-surface); }
     .track-axis { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--color-divider); }
@@ -169,4 +174,24 @@ export class ReportViewComponent implements OnInit {
     Math.max(1, ...(this.store.report()?.categoryBreakdown ?? []).map((c) => Math.abs(c.net))));
 
   absPct(net: number): number { return Math.abs(net) / this.maxCat() * 50; }
+
+  // Distinct per-category colors, used when more than one category is charted.
+  private readonly palette = [
+    '#3b82f6', // accent blue
+    '#37e07a', // income green
+    '#ffb020', // amber
+    '#a855f7', // purple
+    '#14b8a6', // teal
+    '#ec4899', // pink
+    '#f97316', // orange
+    '#ff3b1e', // red
+  ];
+
+  multiColor = computed(() => (this.store.report()?.categoryBreakdown.length ?? 0) > 1);
+
+  catColor(index: number): string { return this.palette[index % this.palette.length]; }
+
+  // Override the bar background with a per-category color only when charting
+  // several categories; otherwise fall back to the .pos/.neg income/danger tint.
+  barColor(index: number): string | null { return this.multiColor() ? this.catColor(index) : null; }
 }
