@@ -9,18 +9,18 @@ import { TaskStore } from '../core/task.store';
       <div class="dialog-backdrop" (click)="store.cancelSaveQuery()">
         <div class="dialog narrow" (click)="$event.stopPropagation()"
              (keydown.escape)="store.cancelSaveQuery()">
-          <h2 class="dialog-title">Save query</h2>
-          <p class="msg">Name this query so you can reapply it later from the sidebar.</p>
-          <input class="input" [value]="store.saveQueryName() ?? ''" placeholder="e.g. July groceries"
+          <h2 class="dialog-title">{{ store.t('dialog.saveQuery.title') }}</h2>
+          <p class="msg">{{ store.t('dialog.saveQuery.msg') }}</p>
+          <input class="input" [value]="store.saveQueryName() ?? ''" [placeholder]="store.t('dialog.saveQuery.placeholder')"
                  (input)="store.saveQueryName.set(value($event))"
                  (keydown.enter)="store.confirmSaveQuery()" autofocus>
           @if (store.saveQueryError(); as err) {
             <p class="err">{{ err }}</p>
           }
           <div class="dialog-actions">
-            <button class="btn btn-secondary" (click)="store.cancelSaveQuery()">Cancel</button>
+            <button class="btn btn-secondary" (click)="store.cancelSaveQuery()">{{ store.t('common.cancel') }}</button>
             <button class="btn btn-primary" [disabled]="!(store.saveQueryName() ?? '').trim()"
-                    (click)="store.confirmSaveQuery()">Save query</button>
+                    (click)="store.confirmSaveQuery()">{{ store.t('dialog.saveQuery.save') }}</button>
           </div>
         </div>
       </div>

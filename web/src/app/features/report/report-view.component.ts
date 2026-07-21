@@ -8,23 +8,23 @@ import { fmtMoney } from '../../core/money-util';
   template: `
     <div class="view om-scroll">
       <header class="head">
-        <h1 class="view-title">Spending report</h1>
-        <div class="view-sub">Money in and out across a date range and selected categories.</div>
+        <h1 class="view-title">{{ store.t('report.title') }}</h1>
+        <div class="view-sub">{{ store.t('report.sub') }}</div>
       </header>
 
       <!-- range -->
       <section class="block rule-2">
         <div class="range">
-          <label class="field"><span class="kicker">From</span>
+          <label class="field"><span class="kicker">{{ store.t('report.from') }}</span>
             <input class="input date" type="date" [value]="store.repStart()"
                    (change)="store.setRange(value($event), store.repEnd())"></label>
-          <label class="field"><span class="kicker">To</span>
+          <label class="field"><span class="kicker">{{ store.t('report.to') }}</span>
             <input class="input date" type="date" [value]="store.repEnd()"
                    (change)="store.setRange(store.repStart(), value($event))"></label>
           <div class="quick">
-            <button class="btn" (click)="store.quickRange('month')">This month</button>
-            <button class="btn" (click)="store.quickRange('last30')">Last 30 days</button>
-            <button class="btn" (click)="store.quickRange('year')">Year</button>
+            <button class="btn" (click)="store.quickRange('month')">{{ store.t('report.thisMonth') }}</button>
+            <button class="btn" (click)="store.quickRange('last30')">{{ store.t('report.last30') }}</button>
+            <button class="btn" (click)="store.quickRange('year')">{{ store.t('report.year') }}</button>
           </div>
         </div>
       </section>
@@ -32,10 +32,10 @@ import { fmtMoney } from '../../core/money-util';
       <!-- category selection -->
       <section class="block rule-2">
         <div class="sel-head">
-          <span class="kicker">Categories</span>
+          <span class="kicker">{{ store.t('report.categories') }}</span>
           <div class="sel-actions">
-            <button class="btn btn-ghost" (click)="store.repAll()">All</button>
-            <button class="btn btn-ghost" (click)="store.repNone()">None</button>
+            <button class="btn btn-ghost" (click)="store.repAll()">{{ store.t('report.all') }}</button>
+            <button class="btn btn-ghost" (click)="store.repNone()">{{ store.t('report.none') }}</button>
           </div>
         </div>
         @for (m of store.mains(); track m.id) {
@@ -49,9 +49,9 @@ import { fmtMoney } from '../../core/money-util';
           </div>
         }
         <div class="sel-row">
-          <span class="sel-label">Other</span>
+          <span class="sel-label">{{ store.t('report.other') }}</span>
           <div class="chips">
-            <button class="chip" [class.on]="isSel('__none__')" (click)="store.repToggleSub('__none__')">Uncategorized</button>
+            <button class="chip" [class.on]="isSel('__none__')" (click)="store.repToggleSub('__none__')">{{ store.t('report.uncategorized') }}</button>
           </div>
         </div>
       </section>
@@ -59,20 +59,20 @@ import { fmtMoney } from '../../core/money-util';
       @if (store.report(); as r) {
         <!-- stat cards -->
         <section class="stats">
-          <div class="stat"><span class="kicker">Money in</span><span class="fig in">{{ fmt(r.moneyIn) }}</span></div>
-          <div class="stat"><span class="kicker">Money out</span><span class="fig out">{{ fmt(r.moneyOut) }}</span></div>
-          <div class="stat"><span class="kicker">Net change</span><span class="fig" [class.in]="r.net >= 0" [class.out]="r.net < 0">{{ fmt(r.net) }}</span></div>
+          <div class="stat"><span class="kicker">{{ store.t('report.moneyIn') }}</span><span class="fig in">{{ fmt(r.moneyIn) }}</span></div>
+          <div class="stat"><span class="kicker">{{ store.t('report.moneyOut') }}</span><span class="fig out">{{ fmt(r.moneyOut) }}</span></div>
+          <div class="stat"><span class="kicker">{{ store.t('report.netChange') }}</span><span class="fig" [class.in]="r.net >= 0" [class.out]="r.net < 0">{{ fmt(r.net) }}</span></div>
         </section>
 
         @if (r.categoryBreakdown.length === 0) {
           <div class="empty">
-            <h2>No money in this window</h2>
-            <p>Widen the dates, select more categories, or import a bank file to see the damage.</p>
+            <h2>{{ store.t('report.emptyTitle') }}</h2>
+            <p>{{ store.t('report.emptyBody') }}</p>
           </div>
         } @else {
           <!-- net over time -->
           <section class="block">
-            <div class="kicker chart-kicker">Net over time · {{ granLabel(r.granularity) }}</div>
+            <div class="kicker chart-kicker">{{ store.t('report.netOverTime') }} · {{ granLabel(r.granularity) }}</div>
             <div class="chart">
               @for (b of r.buckets; track $index) {
                 <div class="bucket">
@@ -87,7 +87,7 @@ import { fmtMoney } from '../../core/money-util';
 
           <!-- net by category -->
           <section class="block">
-            <div class="kicker chart-kicker">Net by category</div>
+            <div class="kicker chart-kicker">{{ store.t('report.netByCategory') }}</div>
             @for (c of r.categoryBreakdown; track c.name) {
               <div class="cat-bar">
                 <span class="cat-name">{{ c.name }}</span>
@@ -159,7 +159,7 @@ export class ReportViewComponent implements OnInit {
   }
 
   granLabel(g: string): string {
-    return g === 'day' ? 'daily' : g === 'week' ? 'weekly' : 'monthly';
+    return this.store.t(g === 'day' ? 'report.gran.daily' : g === 'week' ? 'report.gran.weekly' : 'report.gran.monthly');
   }
 
   maxBucket = computed(() =>

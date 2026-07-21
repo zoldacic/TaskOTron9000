@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TaskStore } from '../../core/task.store';
 import { QueryAmountKind, QueryDateKind } from '../../models';
 import { NO_ACCOUNT } from '../../core/task-query';
+import { TranslationKey } from '../../core/i18n/en';
 import { IconComponent } from '../../shared/icon.component';
 
 @Component({
@@ -12,7 +13,7 @@ import { IconComponent } from '../../shared/icon.component';
     <div class="panel rule-2">
       <!-- categories -->
       <div class="field">
-        <span class="kicker">Categories <span class="hint">· match any</span></span>
+        <span class="kicker">{{ store.t('query.categories') }} <span class="hint">{{ store.t('query.matchAny') }}</span></span>
         @for (m of store.mains(); track m.id) {
           <div class="cat-main">{{ m.name }}</div>
           <div class="chips">
@@ -27,23 +28,23 @@ import { IconComponent } from '../../shared/icon.component';
       <div class="grid">
         <!-- due date range -->
         <label class="field">
-          <span class="kicker">Due from</span>
+          <span class="kicker">{{ store.t('query.dueFrom') }}</span>
           <input class="input date" type="date" [value]="q().dueFrom ?? ''"
                  (input)="store.patchQuery({ dueFrom: value($event) || null })">
         </label>
         <label class="field">
-          <span class="kicker">Due to</span>
+          <span class="kicker">{{ store.t('query.dueTo') }}</span>
           <input class="input date" type="date" [value]="q().dueTo ?? ''"
                  (input)="store.patchQuery({ dueTo: value($event) || null })">
         </label>
 
         <!-- task type -->
         <div class="field">
-          <span class="kicker">Task type</span>
+          <span class="kicker">{{ store.t('query.taskType') }}</span>
           <div class="seg">
             @for (o of dateKinds; track o.key) {
               <button class="seg-opt" [class.active]="q().dateKind === o.key"
-                      (click)="store.patchQuery({ dateKind: o.key })">{{ o.label }}</button>
+                      (click)="store.patchQuery({ dateKind: o.key })">{{ store.t(o.labelKey) }}</button>
             }
           </div>
         </div>
@@ -51,11 +52,11 @@ import { IconComponent } from '../../shared/icon.component';
         <!-- bank account -->
         @if (store.bankAccounts().length) {
           <label class="field">
-            <span class="kicker">Bank account</span>
+            <span class="kicker">{{ store.t('query.bankAccount') }}</span>
             <select class="input acct" [value]="q().bankAccountId ?? ''"
                     (change)="store.patchQuery({ bankAccountId: selectVal($event) })">
-              <option value="">Any</option>
-              <option [value]="NO_ACCOUNT">— No account —</option>
+              <option value="">{{ store.t('query.any') }}</option>
+              <option [value]="NO_ACCOUNT">{{ store.t('query.noAccount') }}</option>
               @for (a of store.bankAccounts(); track a.id) {
                 <option [value]="a.id">{{ a.name }}</option>
               }
@@ -66,31 +67,31 @@ import { IconComponent } from '../../shared/icon.component';
 
       <!-- amount -->
       <div class="field">
-        <span class="kicker">Amount</span>
+        <span class="kicker">{{ store.t('query.amount') }}</span>
         <div class="seg">
           @for (o of amountKinds; track o.key) {
             <button class="seg-opt" [class.active]="q().amountKind === o.key"
-                    (click)="store.patchQuery({ amountKind: o.key })">{{ o.label }}</button>
+                    (click)="store.patchQuery({ amountKind: o.key })">{{ store.t(o.labelKey) }}</button>
           }
         </div>
         <div class="range">
-          <input class="input num" inputmode="decimal" placeholder="min" [value]="q().amountMin ?? ''"
+          <input class="input num" inputmode="decimal" [placeholder]="store.t('query.minPlaceholder')" [value]="q().amountMin ?? ''"
                  (input)="store.patchQuery({ amountMin: num($event) })">
           <span class="dash">–</span>
-          <input class="input num" inputmode="decimal" placeholder="max" [value]="q().amountMax ?? ''"
+          <input class="input num" inputmode="decimal" [placeholder]="store.t('query.maxPlaceholder')" [value]="q().amountMax ?? ''"
                  (input)="store.patchQuery({ amountMax: num($event) })">
-          <span class="hint">absolute value</span>
+          <span class="hint">{{ store.t('query.absoluteValue') }}</span>
         </div>
       </div>
 
       <div class="actions">
         <button class="btn btn-ghost" (click)="store.clearQuery()"
                 [disabled]="!store.queryActive()">
-          <app-icon name="x" [size]="14" /> Clear
+          <app-icon name="x" [size]="14" /> {{ store.t('query.clear') }}
         </button>
         <span class="spacer"></span>
         <button class="btn btn-secondary" (click)="store.openSaveQuery()"
-                [disabled]="!store.queryActive()">Save query…</button>
+                [disabled]="!store.queryActive()">{{ store.t('query.saveQuery') }}</button>
       </div>
     </div>
   `,
@@ -114,17 +115,17 @@ export class QueryPanelComponent {
   store = inject(TaskStore);
   readonly NO_ACCOUNT = NO_ACCOUNT;
 
-  readonly dateKinds: { key: QueryDateKind; label: string }[] = [
-    { key: 'any', label: 'Any' },
-    { key: 'due', label: 'Tasks' },
-    { key: 'transaction', label: 'Transactions' },
+  readonly dateKinds: { key: QueryDateKind; labelKey: TranslationKey }[] = [
+    { key: 'any', labelKey: 'query.type.any' },
+    { key: 'due', labelKey: 'query.type.due' },
+    { key: 'transaction', labelKey: 'query.type.transaction' },
   ];
-  readonly amountKinds: { key: QueryAmountKind; label: string }[] = [
-    { key: 'any', label: 'Any' },
-    { key: 'income', label: 'Income' },
-    { key: 'spend', label: 'Spend' },
-    { key: 'has', label: 'Has amount' },
-    { key: 'none', label: 'No amount' },
+  readonly amountKinds: { key: QueryAmountKind; labelKey: TranslationKey }[] = [
+    { key: 'any', labelKey: 'query.amt.any' },
+    { key: 'income', labelKey: 'query.amt.income' },
+    { key: 'spend', labelKey: 'query.amt.spend' },
+    { key: 'has', labelKey: 'query.amt.has' },
+    { key: 'none', labelKey: 'query.amt.none' },
   ];
 
   q() { return this.store.queryDraft(); }

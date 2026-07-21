@@ -9,50 +9,50 @@ import { IconComponent } from '../../shared/icon.component';
   template: `
     <div class="view">
       <header class="head">
-        <h1 class="view-title">Categories</h1>
-        <div class="view-sub">Organise tasks into main categories and sub categories.</div>
+        <h1 class="view-title">{{ store.t('cat.title') }}</h1>
+        <div class="view-sub">{{ store.t('cat.sub') }}</div>
       </header>
 
       <div class="cols">
         <!-- main categories -->
         <section class="col mains">
-          <div class="kicker col-kicker">Main categories</div>
+          <div class="kicker col-kicker">{{ store.t('cat.mainCategories') }}</div>
           @for (m of store.mains(); track m.id) {
             <div class="main-row" [class.sel]="store.selectedMain() === m.id" (click)="store.selectMain(m.id)">
               <span class="name">{{ m.name }}</span>
-              <span class="sub-count">{{ store.subsOf(m.id).length }} subs</span>
-              <button class="btn-icon" (click)="rename('main', m.id, m.name); $event.stopPropagation()" aria-label="Rename"><app-icon name="pencil" /></button>
-              <button class="btn-icon danger" (click)="store.askRemoveMain(m.id); $event.stopPropagation()" aria-label="Delete"><app-icon name="trash" /></button>
+              <span class="sub-count">{{ store.t('cat.subsCount', { count: store.subsOf(m.id).length }) }}</span>
+              <button class="btn-icon" (click)="rename('main', m.id, m.name); $event.stopPropagation()" [attr.aria-label]="store.t('cat.rename')"><app-icon name="pencil" /></button>
+              <button class="btn-icon danger" (click)="store.askRemoveMain(m.id); $event.stopPropagation()" [attr.aria-label]="store.t('cat.delete')"><app-icon name="trash" /></button>
             </div>
           }
           <div class="add">
-            <input class="input" placeholder="New main category…" [value]="store.newMain()"
+            <input class="input" [placeholder]="store.t('cat.newMainPlaceholder')" [value]="store.newMain()"
                    (input)="store.newMain.set(value($event))" (keydown.enter)="store.addMain()">
-            <button class="btn btn-secondary" [disabled]="!store.newMain().trim()" (click)="store.addMain()">Add</button>
+            <button class="btn btn-secondary" [disabled]="!store.newMain().trim()" (click)="store.addMain()">{{ store.t('cat.add') }}</button>
           </div>
         </section>
 
         <!-- sub categories -->
         <section class="col subs">
-          <div class="kicker col-kicker">Sub categories of <span class="accent">{{ selMainName() }}</span></div>
+          <div class="kicker col-kicker">{{ store.t('cat.subsOf') }} <span class="accent">{{ selMainName() }}</span></div>
           @if (store.selectedMain(); as mid) {
             @if (store.subsOf(mid).length === 0) {
-              <p class="empty">No sub categories yet — add one below.</p>
+              <p class="empty">{{ store.t('cat.noSubs') }}</p>
             } @else {
               @for (s of store.subsOf(mid); track s.id) {
                 <div class="sub-row rule-1">
                   <span class="dot"></span>
                   <span class="name">{{ s.name }}</span>
-                  <span class="task-count">{{ s.taskCount }} tasks</span>
-                  <button class="btn-icon" (click)="rename('sub', s.id, s.name)" aria-label="Rename"><app-icon name="pencil" /></button>
-                  <button class="btn-icon danger" (click)="store.askRemoveSub(s.id)" aria-label="Delete"><app-icon name="trash" /></button>
+                  <span class="task-count">{{ store.t('cat.tasksCount', { count: s.taskCount }) }}</span>
+                  <button class="btn-icon" (click)="rename('sub', s.id, s.name)" [attr.aria-label]="store.t('cat.rename')"><app-icon name="pencil" /></button>
+                  <button class="btn-icon danger" (click)="store.askRemoveSub(s.id)" [attr.aria-label]="store.t('cat.delete')"><app-icon name="trash" /></button>
                 </div>
               }
             }
             <div class="add sub-add">
-              <input class="input" placeholder="New sub category…" [value]="store.newSub()"
+              <input class="input" [placeholder]="store.t('cat.newSubPlaceholder')" [value]="store.newSub()"
                      (input)="store.newSub.set(value($event))" (keydown.enter)="store.addSub()">
-              <button class="btn btn-secondary" [disabled]="!store.newSub().trim()" (click)="store.addSub()">Add</button>
+              <button class="btn btn-secondary" [disabled]="!store.newSub().trim()" (click)="store.addSub()">{{ store.t('cat.add') }}</button>
             </div>
           }
         </section>

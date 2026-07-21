@@ -8,6 +8,9 @@ import {
 import { matches, sortTodos, Filter } from './todo-util';
 import { emptyQuery, isEmptyQuery, matchesQuery } from './task-query';
 import { toISO, addDays, startOfToday, diffDays } from './date-util';
+import { I18nService } from './i18n/i18n.service';
+import { TranslationKey } from './i18n/en';
+import { TParams } from './i18n/types';
 
 export interface TaskDraft {
   id: number | null;
@@ -54,6 +57,12 @@ const SAMPLE_IMPORT = [
 @Injectable({ providedIn: 'root' })
 export class TaskStore {
   private api = inject(ApiService);
+  private i18n = inject(I18nService);
+
+  // ---- i18n facade (every component already injects `store`, so templates use store.t(...)) ----
+  readonly lang = this.i18n.lang;
+  setLang = (l: Parameters<I18nService['setLang']>[0]): void => this.i18n.setLang(l);
+  t = (key: TranslationKey, params?: TParams): string => this.i18n.t(key, params);
 
   // ---- data ----
   readonly todos = signal<Todo[]>([]);
@@ -86,6 +95,7 @@ export class TaskStore {
 
   // ---- dialogs ----
   readonly taskDialog = signal<TaskDraft | null>(null);
+  readonly expandedMains = signal<Set<string>>(new Set());
   readonly catDialog = signal<CatDraft | null>(null);
   readonly importCat = signal<ImportCatDraft | null>(null);
   readonly confirm = signal<Confirm | null>(null);
@@ -234,7 +244,7 @@ export class TaskStore {
       await this.refreshSavedQueries();
       this.appliedQueryId.set(created.id);
     } catch {
-      this.saveQueryError.set(`Couldn’t save “${name}” — that name may already be taken.`);
+      this.saveQueryError.set(this.t('query.error.save', { name }));
     }
   }
   async removeSavedQuery(id: string): Promise<void> {
@@ -244,11 +254,11 @@ export class TaskStore {
   }
   askRemoveSavedQuery(id: string): void {
     const q = this.savedQueries().find((x) => x.id === id);
-    const name = q?.name ? `“${q.name}”` : 'this saved query';
+    const name = q?.name ? `“${q.name}”` : this.t('confirm.thisSavedQuery');
     this.ask({
-      title: 'Delete saved query?',
-      message: `Do you really want to delete ${name}? This can’t be undone.`,
-      confirmLabel: 'Delete saved query',
+      title: this.t('confirm.deleteSavedQuery.title'),
+      message: this.t('confirm.deleteSavedQuery.message', { name }),
+      confirmLabel: this.t('confirm.deleteSavedQuery.confirm'),
       run: () => this.removeSavedQuery(id),
     });
   }
@@ -286,10 +296,19 @@ export class TaskStore {
   askRemoveSelected(): void {
     const n = this.selectedIds().size;
     if (n === 0) return;
+    if (n === 1) {
+      this.ask({
+        title: this.t('confirm.deleteTask.title'),
+        message: this.t('confirm.deleteTask.message', { name: this.t('confirm.thisTask') }),
+        confirmLabel: this.t('confirm.deleteTask.confirm'),
+        run: () => this.removeSelected(),
+      });
+      return;
+    }
     this.ask({
-      title: n === 1 ? 'Delete task?' : 'Delete tasks?',
-      message: `Do you really want to delete ${n === 1 ? 'this task' : `these ${n} tasks`}? This can’t be undone.`,
-      confirmLabel: n === 1 ? 'Delete task' : `Delete ${n} tasks`,
+      title: this.t('confirm.deleteTasks.title'),
+      message: this.t('confirm.deleteTasks.message', { count: n }),
+      confirmLabel: this.t('confirm.deleteTasks.confirm', { count: n }),
       run: () => this.removeSelected(),
     });
   }
@@ -305,21 +324,21 @@ export class TaskStore {
   }
   askRemove(id: number): void {
     const t = this.todos().find((x) => x.id === id);
-    const name = t?.title.trim() ? `“${t.title.trim()}”` : 'this task';
+    const name = t?.title.trim() ? `“${t.title.trim()}”` : this.t('confirm.thisTask');
     this.ask({
-      title: 'Delete task?',
-      message: `Do you really want to delete ${name}? This can’t be undone.`,
-      confirmLabel: 'Delete task',
+      title: this.t('confirm.deleteTask.title'),
+      message: this.t('confirm.deleteTask.message', { name }),
+      confirmLabel: this.t('confirm.deleteTask.confirm'),
       run: () => this.remove(id),
     });
   }
   askDeleteFromDialog(): void {
     const d = this.taskDialog();
-    const name = d?.title.trim() ? `“${d.title.trim()}”` : 'this task';
+    const name = d?.title.trim() ? `“${d.title.trim()}”` : this.t('confirm.thisTask');
     this.ask({
-      title: 'Delete task?',
-      message: `Do you really want to delete ${name}? This can’t be undone.`,
-      confirmLabel: 'Delete task',
+      title: this.t('confirm.deleteTask.title'),
+      message: this.t('confirm.deleteTask.message', { name }),
+      confirmLabel: this.t('confirm.deleteTask.confirm'),
       run: () => this.deleteFromDialog(),
     });
   }
@@ -341,19 +360,31 @@ export class TaskStore {
 
   openNew(): void {
     const due = this.filter() === 'today' ? toISO(startOfToday()) : null;
+    const catIds = this.inheritedCatIds();
+    this.expandedMains.set(this.mainsWithSelection(catIds));
     this.taskDialog.set({
-      id: null, title: '', due, catIds: this.inheritedCatIds(), amountStr: '', dateKind: 'due',
+      id: null, title: '', due, catIds, amountStr: '', dateKind: 'due',
       bankAccountId: null,
     });
   }
   openEdit(id: number): void {
     const t = this.todos().find((x) => x.id === id);
     if (!t) return;
+    this.expandedMains.set(this.mainsWithSelection(t.catIds));
     this.taskDialog.set({
       id, title: t.title, due: t.due, catIds: [...t.catIds],
       amountStr: t.amount == null ? '' : String(t.amount), dateKind: t.dateKind ?? 'due',
       bankAccountId: t.bankAccountId,
     });
+  }
+  isMainExpanded(id: string): boolean { return this.expandedMains().has(id); }
+  toggleMainExpand(id: string): void {
+    const next = new Set(this.expandedMains());
+    if (next.has(id)) next.delete(id); else next.add(id);
+    this.expandedMains.set(next);
+  }
+  private mainsWithSelection(catIds: string[]): Set<string> {
+    return new Set(this.subs().filter((s) => catIds.includes(s.id)).map((s) => s.mainId));
   }
   updateDialog(patch: Partial<TaskDraft>): void {
     const d = this.taskDialog();
@@ -412,15 +443,14 @@ export class TaskStore {
   }
   askRemoveMain(id: string): void {
     const m = this.mains().find((x) => x.id === id);
-    const name = m?.name ? `“${m.name}”` : 'this category';
+    const name = m?.name ? `“${m.name}”` : this.t('confirm.thisCategory');
     const subCount = this.subsOf(id).length;
-    const subNote = subCount > 0
-      ? ` Its ${subCount} sub ${subCount === 1 ? 'category' : 'categories'} will be removed too.`
-      : '';
+    const note = subCount === 0 ? ''
+      : this.t(subCount === 1 ? 'confirm.deleteMain.noteOne' : 'confirm.deleteMain.noteMany', { count: subCount });
     this.ask({
-      title: 'Delete main category?',
-      message: `Do you really want to delete ${name}?${subNote} This can’t be undone.`,
-      confirmLabel: 'Delete category',
+      title: this.t('confirm.deleteMain.title'),
+      message: this.t('confirm.deleteMain.message', { name, note }),
+      confirmLabel: this.t('confirm.deleteMain.confirm'),
       run: () => this.removeMain(id),
     });
   }
@@ -431,14 +461,14 @@ export class TaskStore {
   }
   askRemoveSub(id: string): void {
     const s = this.subs().find((x) => x.id === id);
-    const name = s?.name ? `“${s.name}”` : 'this sub category';
-    const taskNote = s && s.taskCount > 0
-      ? ` It’s used by ${s.taskCount} ${s.taskCount === 1 ? 'task' : 'tasks'}, which will be uncategorised.`
+    const name = s?.name ? `“${s.name}”` : this.t('confirm.thisSubCategory');
+    const note = s && s.taskCount > 0
+      ? this.t(s.taskCount === 1 ? 'confirm.deleteSub.noteOne' : 'confirm.deleteSub.noteMany', { count: s.taskCount })
       : '';
     this.ask({
-      title: 'Delete sub category?',
-      message: `Do you really want to delete ${name}?${taskNote} This can’t be undone.`,
-      confirmLabel: 'Delete sub category',
+      title: this.t('confirm.deleteSub.title'),
+      message: this.t('confirm.deleteSub.message', { name, note }),
+      confirmLabel: this.t('confirm.deleteSub.confirm'),
       run: () => this.removeSub(id),
     });
   }
@@ -495,7 +525,7 @@ export class TaskStore {
       await this.refreshBankAccounts();
       this.importAccountId.set(created.id);
     } catch {
-      this.bankAccountError.set(`Couldn’t add “${name}” — it may already exist.`);
+      this.bankAccountError.set(this.t('bank.error.add', { name }));
     }
   }
   /** Deletes a bank account. Only unused accounts can be removed (enforced by the API). */
@@ -506,7 +536,7 @@ export class TaskStore {
       if (this.importAccountId() === id) this.importAccountId.set(null);
       await this.refreshBankAccounts();
     } catch {
-      this.bankAccountError.set('Couldn’t delete — this account is still used by a task.');
+      this.bankAccountError.set(this.t('bank.error.delete'));
     }
   }
   openImportCat(key: number): void {

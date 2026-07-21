@@ -8,7 +8,7 @@ import { TaskStore } from '../core/task.store';
     @if (store.importCat(); as c) {
       <div class="dialog-backdrop" (click)="close()">
         <div class="dialog" (click)="$event.stopPropagation()">
-          <h2 class="dialog-title">Assign categories</h2>
+          <h2 class="dialog-title">{{ store.t('dialog.importCat.title') }}</h2>
           <p class="dialog-sub">{{ c.title }}</p>
 
           @for (m of store.mains(); track m.id) {
@@ -22,16 +22,16 @@ import { TaskStore } from '../core/task.store';
 
           <label class="check">
             <input type="checkbox" [checked]="c.applyAll" (change)="flag('applyAll', $event)">
-            <span>Apply to all {{ sameTitleCount() }} rows titled "{{ c.title }}"</span>
+            <span>{{ store.t('dialog.importCat.applyAll', { count: sameTitleCount(), title: c.title }) }}</span>
           </label>
           <label class="check">
             <input type="checkbox" [checked]="c.remember" (change)="flag('remember', $event)">
-            <span>Remember as default for this title in future imports</span>
+            <span>{{ store.t('dialog.importCat.remember') }}</span>
           </label>
 
           <div class="dialog-actions">
-            <button class="btn btn-secondary" (click)="close()">Cancel</button>
-            <button class="btn btn-primary" (click)="store.saveImportCat()">Apply</button>
+            <button class="btn btn-secondary" (click)="close()">{{ store.t('common.cancel') }}</button>
+            <button class="btn btn-primary" (click)="store.saveImportCat()">{{ store.t('dialog.importCat.apply') }}</button>
           </div>
         </div>
       </div>

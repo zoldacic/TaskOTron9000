@@ -13,22 +13,22 @@ import { IconComponent } from '../shared/icon.component';
       <!-- nav -->
       <nav class="section rule-2">
         <a class="nav" routerLink="/tasks" routerLinkActive="active">
-          <app-icon name="tasks" /><span>Tasks</span>
+          <app-icon name="tasks" /><span>{{ store.t('nav.tasks') }}</span>
         </a>
         <a class="nav" routerLink="/categories" routerLinkActive="active">
-          <app-icon name="folder" /><span>Manage categories</span>
+          <app-icon name="folder" /><span>{{ store.t('nav.categories') }}</span>
         </a>
         <a class="nav" routerLink="/import" routerLinkActive="active">
-          <app-icon name="upload" /><span>Import bank file</span>
+          <app-icon name="upload" /><span>{{ store.t('nav.import') }}</span>
         </a>
         <a class="nav" routerLink="/reports" routerLinkActive="active">
-          <app-icon name="bar-chart" /><span>Spending report</span>
+          <app-icon name="bar-chart" /><span>{{ store.t('nav.reports') }}</span>
         </a>
       </nav>
 
       <!-- smart lists -->
       <div class="section rule-2">
-        <div class="kicker sec-kicker">Lists</div>
+        <div class="kicker sec-kicker">{{ store.t('sidebar.lists') }}</div>
         @for (f of smartFilters(); track f.key) {
           <button class="filter" [class.active]="!store.queryActive() && store.filter() === f.key" (click)="pick(f.key)">
             <span class="sq" [style.background]="f.dot"></span>
@@ -41,14 +41,14 @@ import { IconComponent } from '../shared/icon.component';
       <!-- saved queries -->
       @if (store.savedQueries().length) {
         <div class="section rule-2">
-          <div class="kicker sec-kicker">Saved queries</div>
+          <div class="kicker sec-kicker">{{ store.t('sidebar.savedQueries') }}</div>
           @for (q of store.savedQueries(); track q.id) {
             <div class="row">
               <button class="filter" [class.active]="store.appliedQueryId() === q.id" (click)="applyQuery(q.id)">
                 <app-icon name="star" [size]="13" />
                 <span class="label">{{ q.name }}</span>
               </button>
-              <button class="btn-icon del" title="Delete saved query" (click)="store.askRemoveSavedQuery(q.id)">
+              <button class="btn-icon del" [title]="store.t('sidebar.deleteSavedQuery')" (click)="store.askRemoveSavedQuery(q.id)">
                 <app-icon name="trash" [size]="14" />
               </button>
             </div>
@@ -58,7 +58,7 @@ import { IconComponent } from '../shared/icon.component';
 
       <!-- category tree -->
       <div class="section">
-        <div class="kicker sec-kicker">Categories</div>
+        <div class="kicker sec-kicker">{{ store.t('sidebar.categories') }}</div>
         @for (m of store.mains(); track m.id) {
           <div class="main-label">{{ m.name }}</div>
           @for (s of store.subsOf(m.id); track s.id) {
@@ -68,6 +68,15 @@ import { IconComponent } from '../shared/icon.component';
             </button>
           }
         }
+      </div>
+
+      <!-- language toggle (pinned footer) -->
+      <div class="lang-footer">
+        <span class="kicker">{{ store.t('sidebar.language') }}</span>
+        <div class="seg lang-seg">
+          <button class="seg-opt" [class.active]="store.lang() === 'en'" (click)="store.setLang('en')">EN</button>
+          <button class="seg-opt" [class.active]="store.lang() === 'sv'" (click)="store.setLang('sv')">SV</button>
+        </div>
       </div>
     </aside>
   `,
@@ -112,6 +121,13 @@ import { IconComponent } from '../shared/icon.component';
     .main-label {
       font-weight: 700; font-size: 13px; padding: 10px 8px 4px;
     }
+    .lang-footer {
+      margin-top: auto; padding: 12px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      background: var(--color-surface); border-top: 2px solid var(--color-divider);
+    }
+    .lang-seg { flex: none; }
+    .lang-seg .seg-opt { padding: 5px 12px; font-family: var(--font-mono); font-size: 12px; }
   `],
 })
 export class SidebarComponent {
@@ -121,10 +137,10 @@ export class SidebarComponent {
   smartFilters() {
     const c = this.store.counts();
     return [
-      { key: 'all' as Filter, label: 'All tasks', count: c.all, dot: 'var(--color-neutral-500)' },
-      { key: 'today' as Filter, label: 'Today', count: c.today, dot: 'var(--color-accent)' },
-      { key: 'upcoming' as Filter, label: 'Upcoming', count: c.upcoming, dot: 'var(--color-accent-400)' },
-      { key: 'done' as Filter, label: 'Completed', count: c.done, dot: 'var(--color-neutral-400)' },
+      { key: 'all' as Filter, label: this.store.t('list.all'), count: c.all, dot: 'var(--color-neutral-500)' },
+      { key: 'today' as Filter, label: this.store.t('list.today'), count: c.today, dot: 'var(--color-accent)' },
+      { key: 'upcoming' as Filter, label: this.store.t('list.upcoming'), count: c.upcoming, dot: 'var(--color-accent-400)' },
+      { key: 'done' as Filter, label: this.store.t('list.done'), count: c.done, dot: 'var(--color-neutral-400)' },
     ];
   }
 

@@ -1,8 +1,17 @@
 // Faithful port of the prototype's date helpers (Tasks.dc.html:611-636).
 // Change from prototype: "now" is the real current day, not the fixed 2026-07-17.
+// Labels are locale-aware: month/weekday names come from Intl, Today/Tomorrow from the dict.
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const WDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+import { Lang } from './i18n/types';
+import { en, TranslationKey } from './i18n/en';
+import { sv } from './i18n/sv';
+
+const DICT: Record<Lang, Record<TranslationKey, string>> = { en, sv };
+const localeOf = (lang: Lang) => (lang === 'sv' ? 'sv-SE' : 'en-US');
+const monthDay = (d: Date, lang: Lang) =>
+  new Intl.DateTimeFormat(localeOf(lang), { month: 'short', day: 'numeric' }).format(d);
+const weekday = (d: Date, lang: Lang) =>
+  new Intl.DateTimeFormat(localeOf(lang), { weekday: 'long' }).format(d);
 
 /** Local midnight of today. */
 export function startOfToday(): Date {
@@ -29,13 +38,13 @@ export function diffDays(iso: string): number {
   return Math.round((parseISO(iso).getTime() - startOfToday().getTime()) / 86400000);
 }
 
-export function dueLabel(iso: string): string {
+export function dueLabel(iso: string, lang: Lang = 'en'): string {
   const n = diffDays(iso), d = parseISO(iso);
-  if (n < 0) return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
-  if (n === 0) return 'Today';
-  if (n === 1) return 'Tomorrow';
-  if (n <= 6) return WDAYS[d.getDay()];
-  return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+  if (n < 0) return monthDay(d, lang);
+  if (n === 0) return DICT[lang]['date.today'];
+  if (n === 1) return DICT[lang]['date.tomorrow'];
+  if (n <= 6) return weekday(d, lang);
+  return monthDay(d, lang);
 }
 
 export type DueTone = 'muted' | 'over' | 'today';

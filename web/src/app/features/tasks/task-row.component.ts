@@ -13,11 +13,11 @@ import { fmtMoney } from '../../core/money-util';
     <div class="row rule-1" [class.selected]="store.selecting() && store.isSelected(todo.id)">
       @if (store.selecting()) {
         <button class="check select" [class.on]="store.isSelected(todo.id)"
-                (click)="store.toggleSelected(todo.id)" aria-label="Select task">
+                (click)="store.toggleSelected(todo.id)" [attr.aria-label]="store.t('row.selectTask')">
           @if (store.isSelected(todo.id)) { <app-icon name="check" [size]="14" /> }
         </button>
       } @else {
-        <button class="check" [class.done]="todo.done" (click)="store.toggle(todo.id)" aria-label="Toggle done">
+        <button class="check" [class.done]="todo.done" (click)="store.toggle(todo.id)" [attr.aria-label]="store.t('row.toggleDone')">
           @if (todo.done) { <app-icon name="check" [size]="14" /> }
         </button>
       }
@@ -41,8 +41,8 @@ import { fmtMoney } from '../../core/money-util';
         </span>
       }
       @if (!store.selecting()) {
-        <button class="btn-icon" (click)="store.openEdit(todo.id)" aria-label="Edit"><app-icon name="pencil" /></button>
-        <button class="btn-icon danger" (click)="store.askRemove(todo.id)" aria-label="Delete"><app-icon name="trash" /></button>
+        <button class="btn-icon" (click)="store.openEdit(todo.id)" [attr.aria-label]="store.t('row.edit')"><app-icon name="pencil" /></button>
+        <button class="btn-icon danger" (click)="store.askRemove(todo.id)" [attr.aria-label]="store.t('row.delete')"><app-icon name="trash" /></button>
       }
     </div>
   `,
@@ -80,8 +80,9 @@ export class TaskRowComponent {
   badge(): string {
     const t = this.todo;
     if (!t.due) return '';
-    if (this.isTxn()) return 'Txn ' + dueLabel(t.due);
-    return dueTone(t.due, t.done) === 'over' ? dueLabel(t.due) + ' · overdue' : dueLabel(t.due);
+    const label = dueLabel(t.due, this.store.lang());
+    if (this.isTxn()) return this.store.t('row.txnPrefix') + ' ' + label;
+    return dueTone(t.due, t.done) === 'over' ? label + ' · ' + this.store.t('row.overdueSuffix') : label;
   }
 
   dueColor(): string {

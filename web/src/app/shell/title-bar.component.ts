@@ -12,13 +12,13 @@ import { IconComponent } from '../shared/icon.component';
         <div class="logo"></div>
         <span class="name">TASK-O-TRON 9000</span>
         <span class="status">
-          <span class="dot"></span>{{ store.pendingCount() }} PENDING · SYSTEM ONLINE
+          <span class="dot"></span>{{ store.t('titlebar.status', { count: store.pendingCount() }) }}
         </span>
       </div>
       <div class="win">
-        <button aria-label="Minimize"><app-icon name="minus" [size]="14" /></button>
-        <button aria-label="Maximize"><app-icon name="square" [size]="12" /></button>
-        <button class="close" aria-label="Close"><app-icon name="x" [size]="14" /></button>
+        <button [attr.aria-label]="store.t('titlebar.minimize')"><app-icon name="minus" [size]="14" /></button>
+        <button [attr.aria-label]="store.t('titlebar.maximize')"><app-icon name="square" [size]="12" /></button>
+        <button class="close" [attr.aria-label]="store.t('titlebar.close')"><app-icon name="x" [size]="14" /></button>
       </div>
     </div>
   `,
