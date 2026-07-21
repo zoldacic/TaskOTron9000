@@ -9,6 +9,9 @@
   --color-accent: #ff3b1e;
   --color-accent-400: #ff6a52;
   --color-accent-500: #e63316;
+  /* danger: reserved for destructive/warning actions (e.g. Delete) */
+  --color-danger: #ff3b1e;
+  --color-danger-hover: #e63316;
   --color-neutral-400: #8b95b5;
   --color-neutral-500: #6b7699;
   --color-income: #37e07a;
@@ -81,15 +84,23 @@ button { font-family: inherit; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-primary {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: #fff;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 55%, transparent),
-    0 0 20px -6px var(--color-accent);
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-bg);
 }
-.btn-primary:hover {
-  background: var(--color-accent-500);
-  box-shadow: 0 0 0 1px var(--color-accent), 0 0 26px -4px var(--color-accent);
+.btn-primary:hover { background: #fff; border-color: #fff; }
+
+/* danger: red is reserved for destructive/warning actions only */
+.btn-danger {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-danger) 55%, transparent),
+    0 0 20px -6px var(--color-danger);
+}
+.btn-danger:hover {
+  background: var(--color-danger-hover);
+  box-shadow: 0 0 0 1px var(--color-danger), 0 0 26px -4px var(--color-danger);
 }
 
 .btn-secondary { background: color-mix(in srgb, var(--color-text) 6%, transparent); }

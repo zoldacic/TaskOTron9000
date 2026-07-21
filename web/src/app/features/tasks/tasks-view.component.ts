@@ -65,7 +65,7 @@ import { QueryPanelComponent } from './query-panel.component';
           </button>
           <span class="selcount">{{ store.t('tasks.selectedCount', { count: store.selectedCount() }) }}</span>
           <span class="spacer"></span>
-          <button class="btn btn-primary" [disabled]="store.selectedCount() === 0" (click)="store.askRemoveSelected()">
+          <button class="btn btn-danger" [disabled]="store.selectedCount() === 0" (click)="store.askRemoveSelected()">
             <app-icon name="trash" [size]="14" /> {{ store.t('tasks.delete') }}
           </button>
         </div>
