@@ -32,12 +32,14 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
 
           <div class="field mt">
             <span class="kicker">{{ d.dateKind === 'transaction' ? store.t('dialog.task.transactionDate') : store.t('dialog.task.doItDate') }}</span>
-            <div class="presets">
-              @for (p of presets(); track p.labelKey) {
-                <button class="btn preset" [class.on]="d.due === p.iso" (click)="patch({ due: p.iso })">{{ store.t(p.labelKey) }}</button>
-              }
-              <button class="btn preset ghost" (click)="patch({ due: null })">{{ store.t('dialog.task.clear') }}</button>
-            </div>
+            @if (d.dateKind !== 'transaction') {
+              <div class="presets">
+                @for (p of presets(); track p.labelKey) {
+                  <button class="btn preset" [class.on]="d.due === p.iso" (click)="patch({ due: p.iso })">{{ store.t(p.labelKey) }}</button>
+                }
+                <button class="btn preset ghost" (click)="patch({ due: null })">{{ store.t('dialog.task.clear') }}</button>
+              </div>
+            }
             <div class="date-row">
               <input class="input date" type="date" [value]="d.due ?? ''"
                      (input)="patch({ due: value($event) || null })">
