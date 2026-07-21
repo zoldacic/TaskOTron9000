@@ -146,7 +146,7 @@ export const sv: Record<TranslationKey, string> = {
   'dialog.importCat.category': 'Kategori',
   'dialog.importCat.subcategories': 'Underkategorier',
   'dialog.importCat.applyAll': 'Tillämpa på alla {count} rader som innehåller "{match}"',
-  'dialog.importCat.applyAllHint': 'Markera en del av titeln för att träffa färre rader:',
+  'dialog.importCat.applyAllHint': 'Markera en del av titeln för att träffa fler rader:',
   'dialog.importCat.remember': 'Kom ihåg som standard för den här titeln vid framtida importer',
   'dialog.importCat.apply': 'Tillämpa',
 
