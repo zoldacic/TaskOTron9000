@@ -1,6 +1,9 @@
 /* ===== TASK-O-TRON 9000 — Modernist dark theme (recreated design system) ===== */
 
 :root {
+  /* dark native controls (select popups, scrollbars) render legibly */
+  color-scheme: dark;
+
   /* colors (README design tokens) */
   --color-bg: #0a0c12;
   --color-surface: #141826;
@@ -136,6 +139,8 @@ button { font-family: inherit; }
 }
 .input::placeholder { color: color-mix(in srgb, var(--color-text) 38%, transparent); }
 .input:focus { outline: none; border-color: var(--color-accent); }
+/* native <select> popup: dark background so options stay readable */
+.input option { background: var(--color-surface); color: var(--color-text); }
 
 .field { display: block; }
 .field > .kicker { display: block; margin-bottom: 6px; }
