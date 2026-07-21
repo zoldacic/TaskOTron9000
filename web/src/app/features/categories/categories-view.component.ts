@@ -30,6 +30,7 @@ import { IconComponent } from '../../shared/icon.component';
                    (input)="store.newMain.set(value($event))" (keydown.enter)="store.addMain()">
             <button class="btn btn-secondary" [disabled]="!store.newMain().trim()" (click)="store.addMain()">{{ store.t('cat.add') }}</button>
           </div>
+          @if (store.catError(); as e) { <p class="cat-error">{{ e }}</p> }
         </section>
 
         <!-- sub categories -->
@@ -80,6 +81,7 @@ import { IconComponent } from '../../shared/icon.component';
     .add { display: flex; gap: 10px; margin-top: 16px; }
     .sub-add { max-width: 420px; }
     .empty { color: var(--muted); font-family: var(--font-mono); font-size: 13px; }
+    .cat-error { color: var(--color-accent); font-size: 12px; margin-top: 10px; }
   `],
 })
 export class CategoriesViewComponent {

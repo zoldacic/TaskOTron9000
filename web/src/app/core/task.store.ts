@@ -16,6 +16,7 @@ export interface TaskDraft {
   id: number | null;
   title: string;
   due: string | null;
+  mainId: string; // required single main category
   catIds: string[];
   amountStr: string;
   dateKind: DateKind;
@@ -88,6 +89,7 @@ export class TaskStore {
   readonly selectedMain = signal<string | null>(null);
   readonly newMain = signal('');
   readonly newSub = signal('');
+  readonly catError = signal<string | null>(null); // e.g. main-in-use on delete
 
   // ---- selection (multi-select for bulk actions) ----
   readonly selecting = signal(false);
@@ -103,6 +105,7 @@ export class TaskStore {
   // ---- import ----
   readonly importText = signal('');
   readonly importAccountId = signal<string | null>(null);
+  readonly importMainId = signal<string | null>(null); // required main for imported tasks
   readonly importRows = signal<ImportRow[] | null>(null);
 
   // ---- bank accounts ----
@@ -157,6 +160,12 @@ export class TaskStore {
   subsOf(mainId: string): Sub[] {
     return this.subs().filter((s) => s.mainId === mainId);
   }
+  /** The main a sub belongs to, or null if unknown. */
+  mainOfSub(subId: string): string | null {
+    return this.subs().find((s) => s.id === subId)?.mainId ?? null;
+  }
+  /** First main id (default for the required single category). */
+  firstMainId(): string { return this.mains()[0]?.id ?? ''; }
 
   // ---- loading ----
   async loadAll(): Promise<void> {
@@ -173,6 +182,10 @@ export class TaskStore {
     const c: Categories = await firstValueFrom(this.api.getCategories());
     this.mains.set(c.mains);
     this.subs.set(c.subs);
+    // Default the import main to the first category once one is known / if it vanished.
+    if (!this.importMainId() || !c.mains.some((m) => m.id === this.importMainId())) {
+      this.importMainId.set(c.mains[0]?.id ?? null);
+    }
   }
   async refreshTitleDefaults(): Promise<void> {
     this.titleDefaults.set(await firstValueFrom(this.api.getTitleDefaults()));
@@ -347,12 +360,18 @@ export class TaskStore {
     const f = this.filter();
     return isSmart(f) ? [] : [f];
   }
+  /** Default main when creating a task: the filtered sub's main, else the first main. */
+  private inheritedMainId(): string {
+    const f = this.filter();
+    return (!isSmart(f) && this.mainOfSub(f)) || this.firstMainId();
+  }
 
   async addQuick(): Promise<void> {
     const title = this.quickAdd().trim();
     if (!title) return;
     await firstValueFrom(this.api.createTodo({
-      title, due: null, amount: null, dateKind: 'due', catIds: this.inheritedCatIds(), bankAccountId: null,
+      title, due: null, amount: null, dateKind: 'due',
+      mainId: this.inheritedMainId(), catIds: this.inheritedCatIds(), bankAccountId: null,
     }));
     this.quickAdd.set('');
     await this.refreshTodos();
@@ -363,7 +382,7 @@ export class TaskStore {
     const catIds = this.inheritedCatIds();
     this.expandedMains.set(this.mainsWithSelection(catIds));
     this.taskDialog.set({
-      id: null, title: '', due, catIds, amountStr: '', dateKind: 'due',
+      id: null, title: '', due, mainId: this.inheritedMainId(), catIds, amountStr: '', dateKind: 'due',
       bankAccountId: null,
     });
   }
@@ -372,7 +391,7 @@ export class TaskStore {
     if (!t) return;
     this.expandedMains.set(this.mainsWithSelection(t.catIds));
     this.taskDialog.set({
-      id, title: t.title, due: t.due, catIds: [...t.catIds],
+      id, title: t.title, due: t.due, mainId: t.mainId || this.firstMainId(), catIds: [...t.catIds],
       amountStr: t.amount == null ? '' : String(t.amount), dateKind: t.dateKind ?? 'due',
       bankAccountId: t.bankAccountId,
     });
@@ -390,6 +409,10 @@ export class TaskStore {
     const d = this.taskDialog();
     if (d) this.taskDialog.set({ ...d, ...patch });
   }
+  /** Select the required single main category (radio behaviour). */
+  setDraftMain(mainId: string): void {
+    this.updateDialog({ mainId });
+  }
   toggleDraftCat(subId: string): void {
     const d = this.taskDialog();
     if (!d) return;
@@ -398,12 +421,12 @@ export class TaskStore {
   }
   async saveTask(): Promise<void> {
     const d = this.taskDialog();
-    if (!d || !d.title.trim()) return;
+    if (!d || !d.title.trim() || !d.mainId) return;
     const parsed = d.amountStr.trim() !== '' ? parseFloat(d.amountStr) : NaN;
     const amount = Number.isNaN(parsed) ? null : parsed;
     const body = {
-      title: d.title.trim(), due: d.due, amount, dateKind: d.dateKind, catIds: d.catIds,
-      bankAccountId: d.bankAccountId,
+      title: d.title.trim(), due: d.due, amount, dateKind: d.dateKind,
+      mainId: d.mainId, catIds: d.catIds, bankAccountId: d.bankAccountId,
     };
     if (d.id == null) await firstValueFrom(this.api.createTodo(body));
     else await firstValueFrom(this.api.updateTodo(d.id, body));
@@ -436,7 +459,14 @@ export class TaskStore {
     await this.refreshCategories();
   }
   async removeMain(id: string): Promise<void> {
-    await firstValueFrom(this.api.deleteMain(id));
+    this.catError.set(null);
+    try {
+      await firstValueFrom(this.api.deleteMain(id));
+    } catch {
+      // Blocked (409) when the main is still a task's required category.
+      this.catError.set(this.t('cat.error.mainInUse'));
+      return;
+    }
     if (this.filter() === id) this.filter.set('all');
     await Promise.all([this.refreshCategories(), this.refreshTodos()]);
     if (this.selectedMain() === id) this.selectedMain.set(this.mains()[0]?.id ?? null);
@@ -502,8 +532,9 @@ export class TaskStore {
     const rows = (this.importRows() ?? []).filter((r) => r.ok);
     if (!rows.length) return;
     const bankAccountId = this.importAccountId();
+    const mainId = this.importMainId() ?? this.firstMainId();
     const body: ImportCommitRow[] = rows.map((r) => ({
-      title: r.title, date: r.date, amount: r.amount, catIds: r.catIds, bankAccountId,
+      title: r.title, date: r.date, amount: r.amount, mainId, catIds: r.catIds, bankAccountId,
     }));
     await firstValueFrom(this.api.commitImport(body));
     this.importText.set('');

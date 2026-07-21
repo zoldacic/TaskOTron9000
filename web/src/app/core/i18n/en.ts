@@ -126,7 +126,8 @@ export const en = {
   'dialog.task.bankAccount': 'Bank account',
   'dialog.task.optional': '· optional',
   'dialog.task.none': '— None —',
-  'dialog.task.categories': 'Categories',
+  'dialog.task.category': 'Category',
+  'dialog.task.subcategories': 'Subcategories',
   'dialog.task.deleteTask': 'Delete task',
   'dialog.task.cancel': 'Cancel',
   'dialog.task.save': 'Save task',
@@ -200,11 +201,13 @@ export const en = {
   'cat.noSubs': 'No sub categories yet — add one below.',
   'cat.tasksCount': '{count} tasks',
   'cat.newSubPlaceholder': 'New sub category…',
+  'cat.error.mainInUse': 'This category is the main category of existing tasks — reassign those tasks first.',
 
   // ---- import view ----
   'import.title': 'Import bank file',
   'import.sub': 'Paste a statement — one transaction per line. Each row becomes a task.',
   'import.pasteTransactions': 'Paste transactions',
+  'import.mainCategory': 'Category',
   'import.bankAccount': 'Bank account',
   'import.none': '— None —',
   'import.deleteAccount': 'Delete this account',

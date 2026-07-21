@@ -126,7 +126,8 @@ export const sv: Record<TranslationKey, string> = {
   'dialog.task.bankAccount': 'Bankkonto',
   'dialog.task.optional': '· valfritt',
   'dialog.task.none': '— Inget —',
-  'dialog.task.categories': 'Kategorier',
+  'dialog.task.category': 'Kategori',
+  'dialog.task.subcategories': 'Underkategorier',
   'dialog.task.deleteTask': 'Ta bort uppgift',
   'dialog.task.cancel': 'Avbryt',
   'dialog.task.save': 'Spara uppgift',
@@ -200,11 +201,13 @@ export const sv: Record<TranslationKey, string> = {
   'cat.noSubs': 'Inga underkategorier än — lägg till en nedan.',
   'cat.tasksCount': '{count} uppgifter',
   'cat.newSubPlaceholder': 'Ny underkategori…',
+  'cat.error.mainInUse': 'Den här kategorin är huvudkategori för befintliga uppgifter — flytta uppgifterna först.',
 
   // ---- import view ----
   'import.title': 'Importera bankfil',
   'import.sub': 'Klistra in ett kontoutdrag — en transaktion per rad. Varje rad blir en uppgift.',
   'import.pasteTransactions': 'Klistra in transaktioner',
+  'import.mainCategory': 'Kategori',
   'import.bankAccount': 'Bankkonto',
   'import.none': '— Inget —',
   'import.deleteAccount': 'Ta bort det här kontot',

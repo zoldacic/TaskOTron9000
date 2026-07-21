@@ -13,6 +13,7 @@ internal static class Mapping
         t.Due?.ToString("yyyy-MM-dd"),
         t.Amount,
         t.DateKind,
+        t.MainId,
         t.Categories.Select(c => c.Id).OrderBy(x => x).ToList(),
         t.BankAccountId);
 

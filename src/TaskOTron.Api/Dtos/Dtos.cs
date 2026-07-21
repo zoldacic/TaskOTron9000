@@ -10,6 +10,7 @@ public record TodoDto(
     string? Due,           // ISO yyyy-MM-dd
     decimal? Amount,
     DateKind DateKind,
+    string MainId,         // required single main category
     List<string> CatIds,
     string? BankAccountId);
 
@@ -18,6 +19,7 @@ public record TodoWriteDto(
     string? Due,
     decimal? Amount,
     DateKind DateKind = DateKind.Due,
+    string? MainId = null, // required; validated in the endpoint
     List<string>? CatIds = null,
     string? BankAccountId = null);
 
@@ -61,7 +63,7 @@ public record TitleDefaultWriteDto(List<string> CatIds);
 // ---- Import ----
 public record ImportParseRequest(string Text);
 public record ImportRowDto(int Key, string Title, string? Date, decimal? Amount, bool Ok, List<string> CatIds);
-public record ImportCommitRow(string Title, string? Date, decimal? Amount, List<string>? CatIds, string? BankAccountId = null);
+public record ImportCommitRow(string Title, string? Date, decimal? Amount, List<string>? CatIds, string? MainId = null, string? BankAccountId = null);
 public record ImportCommitRequest(List<ImportCommitRow> Rows);
 
 // ---- Reports ----

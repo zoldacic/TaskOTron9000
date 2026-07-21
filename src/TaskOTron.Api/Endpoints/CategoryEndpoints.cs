@@ -44,10 +44,13 @@ public static class CategoryEndpoints
         });
 
         // Deleting a main cascades to its subs and strips those subs from tasks + title defaults.
+        // Blocked (409) if the main is still the required category of any task.
         mainG.MapDelete("/{id}", async (string id, AppDbContext db) =>
         {
             var m = await db.Mains.FindAsync(id);
             if (m is null) return Results.NotFound();
+            if (await db.Todos.AnyAsync(t => t.MainId == id))
+                return Results.Conflict("This category is the main category of existing tasks.");
             db.Mains.Remove(m);
             await db.SaveChangesAsync();
             return Results.NoContent();

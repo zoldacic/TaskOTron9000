@@ -27,6 +27,17 @@ public static class ImportEndpoints
             var rows = (req.Rows ?? []).Where(r => r.Amount is not null).ToList();
             if (rows.Count == 0) return Results.BadRequest("No importable rows (each needs a detected amount).");
 
+            // Every imported task needs a main category. Validate the ones referenced.
+            var wantedMains = rows.Select(r => r.MainId)
+                .Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+            if (rows.Any(r => string.IsNullOrEmpty(r.MainId)))
+                return Results.BadRequest("A main category is required for imported tasks.");
+            var knownMains = await db.Mains.Where(m => wantedMains.Contains(m.Id))
+                .Select(m => m.Id).ToListAsync();
+            var missingMain = wantedMains.Except(knownMains).ToList();
+            if (missingMain.Count > 0)
+                return Results.BadRequest($"Unknown main category '{missingMain[0]}'.");
+
             // Resolve all referenced sub ids up front.
             var wantedIds = rows.SelectMany(r => r.CatIds ?? []).Distinct().ToList();
             var subs = await db.Subs.Where(s => wantedIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id);
@@ -53,6 +64,7 @@ public static class ImportEndpoints
                     Due = Mapping.ParseDate(r.Date),
                     Amount = r.Amount,
                     DateKind = DateKind.Transaction,
+                    MainId = r.MainId!,
                     BankAccountId = string.IsNullOrEmpty(r.BankAccountId) ? null : r.BankAccountId,
                     Categories = (r.CatIds ?? [])
                         .Where(subs.ContainsKey)

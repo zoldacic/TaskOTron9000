@@ -30,11 +30,11 @@ public static class ReportEndpoints
             var todos = await db.Todos.Include(t => t.Categories).AsNoTracking().ToListAsync();
 
             var reportMains = mains
-                .Select(m => new ReportMain(m.Name, subs.Where(s => s.MainId == m.Id).Select(s => s.Id).ToList()))
+                .Select(m => new ReportMain(m.Id, m.Name, subs.Where(s => s.MainId == m.Id).Select(s => s.Id).ToList()))
                 .ToList();
             var allSubIds = subs.Select(s => s.Id).ToList();
             var tasks = todos
-                .Select(t => new ReportTask(t.Due, t.Amount, t.Categories.Select(c => c.Id).ToList()))
+                .Select(t => new ReportTask(t.Due, t.Amount, t.MainId, t.Categories.Select(c => c.Id).ToList()))
                 .ToList();
 
             var r = ReportBuilder.Build(tasks, repStart, repEnd, repSel, reportMains, allSubIds);

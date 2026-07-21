@@ -68,8 +68,20 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
             }
           }
 
+          <!-- required single main category -->
           <div class="field mt">
-            <span class="kicker">{{ store.t('dialog.task.categories') }}</span>
+            <span class="kicker">{{ store.t('dialog.task.category') }} <span class="req">*</span></span>
+            <div class="chips">
+              @for (m of store.mains(); track m.id) {
+                <button class="chip main" [class.on]="d.mainId === m.id"
+                        (click)="store.setDraftMain(m.id)">{{ m.name }}</button>
+              }
+            </div>
+          </div>
+
+          <!-- optional subcategories; may belong to any main -->
+          <div class="field mt">
+            <span class="kicker">{{ store.t('dialog.task.subcategories') }} <span class="hint">{{ store.t('dialog.task.optional') }}</span></span>
             <div class="chips">
               @for (m of store.mains(); track m.id) {
                 <button class="chip main" [class.on]="store.isMainExpanded(m.id)"
@@ -112,6 +124,7 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
     .acct { max-width: 240px; }
     .human { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
     .cat-main { font-weight: 700; font-size: 12px; margin: 10px 0 6px; }
+    .req { color: var(--color-accent); }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip.main.on { border-color: var(--color-accent); color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 16%, transparent); }
     .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

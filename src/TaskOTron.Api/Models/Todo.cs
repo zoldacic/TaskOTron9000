@@ -20,6 +20,12 @@ public class Todo
     public string? BankAccountId { get; set; }
     public BankAccount? BankAccount { get; set; }
 
-    // Many-to-many with Sub (the prototype's catIds[]).
+    // The required single "main" category. Exactly one per task (business rule);
+    // independent of the sub-categories below, which may span other mains.
+    public string MainId { get; set; } = default!;
+    public Main Main { get; set; } = default!;
+
+    // Many-to-many with Sub (the prototype's catIds[]). Zero-to-many, and a sub
+    // may belong to a different main than MainId.
     public ICollection<Sub> Categories { get; set; } = new List<Sub>();
 }

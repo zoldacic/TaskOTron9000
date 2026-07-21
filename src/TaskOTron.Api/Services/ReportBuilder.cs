@@ -1,9 +1,9 @@
 namespace TaskOTron.Api.Services;
 
-public record ReportTask(DateOnly? Due, decimal? Amount, IReadOnlyList<string> CatIds);
+public record ReportTask(DateOnly? Due, decimal? Amount, string? MainId, IReadOnlyList<string> CatIds);
 
 /// <summary>A main category with the ids of its subs, in display order.</summary>
-public record ReportMain(string Name, IReadOnlyList<string> SubIds);
+public record ReportMain(string Id, string Name, IReadOnlyList<string> SubIds);
 
 public record ReportBucket(string Label, decimal Net);
 public record ReportCategory(string Name, decimal Net);
@@ -45,23 +45,25 @@ public static class ReportBuilder
                 && (t.CatIds.Count > 0
                     ? t.CatIds.Any(c => repSet.Contains(c))
                     : repSet.Contains(Uncategorized)))
-            .Select(t => (Due: t.Due!.Value, Amount: t.Amount!.Value, t.CatIds))
+            .Select(t => (Due: t.Due!.Value, Amount: t.Amount!.Value, t.MainId, t.CatIds))
             .ToList();
 
         var moneyIn = repTasks.Where(t => t.Amount > 0).Sum(t => t.Amount);
         var moneyOut = repTasks.Where(t => t.Amount < 0).Sum(t => t.Amount);
         var net = moneyIn + moneyOut;
 
-        // ---- category breakdown: per main (+ Uncategorized) ----
+        // ---- category breakdown: grouped by each task's explicit main ----
+        // Every task now has exactly one main, so a task contributes to a single
+        // bucket (no double-counting across subs). Mains are emitted in display order.
         var catAgg = new List<ReportCategory>();
         foreach (var m in mains)
         {
-            var subIds = new HashSet<string>(m.SubIds);
-            var items = repTasks.Where(t => t.CatIds.Any(c => subIds.Contains(c))).ToList();
+            var items = repTasks.Where(t => t.MainId == m.Id).ToList();
             if (items.Count > 0)
                 catAgg.Add(new ReportCategory(m.Name, items.Sum(t => t.Amount)));
         }
-        var uncat = repTasks.Where(t => t.CatIds.Count == 0).ToList();
+        // Defensive: legacy tasks with no main (should not occur post-backfill).
+        var uncat = repTasks.Where(t => string.IsNullOrEmpty(t.MainId)).ToList();
         if (uncat.Count > 0)
             catAgg.Add(new ReportCategory("Uncategorized", uncat.Sum(t => t.Amount)));
 

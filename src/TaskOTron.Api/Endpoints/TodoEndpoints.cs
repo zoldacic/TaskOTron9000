@@ -28,6 +28,10 @@ public static class TodoEndpoints
             var title = dto.Title?.Trim();
             if (string.IsNullOrEmpty(title))
                 return Results.BadRequest("Title is required.");
+            if (string.IsNullOrEmpty(dto.MainId))
+                return Results.BadRequest("A main category is required.");
+            if (!await MainValid(db, dto.MainId))
+                return Results.BadRequest($"Unknown main category '{dto.MainId}'.");
             if (!await BankAccountValid(db, dto.BankAccountId))
                 return Results.BadRequest($"Unknown bank account '{dto.BankAccountId}'.");
 
@@ -38,6 +42,7 @@ public static class TodoEndpoints
                 Due = Mapping.ParseDate(dto.Due),
                 Amount = dto.Amount,
                 DateKind = dto.DateKind,
+                MainId = dto.MainId,
                 BankAccountId = dto.BankAccountId,
                 Categories = await LoadSubs(db, dto.CatIds),
             };
@@ -54,6 +59,10 @@ public static class TodoEndpoints
             var title = dto.Title?.Trim();
             if (string.IsNullOrEmpty(title))
                 return Results.BadRequest("Title is required.");
+            if (string.IsNullOrEmpty(dto.MainId))
+                return Results.BadRequest("A main category is required.");
+            if (!await MainValid(db, dto.MainId))
+                return Results.BadRequest($"Unknown main category '{dto.MainId}'.");
             if (!await BankAccountValid(db, dto.BankAccountId))
                 return Results.BadRequest($"Unknown bank account '{dto.BankAccountId}'.");
 
@@ -61,6 +70,7 @@ public static class TodoEndpoints
             t.Due = Mapping.ParseDate(dto.Due);
             t.Amount = dto.Amount;
             t.DateKind = dto.DateKind;
+            t.MainId = dto.MainId;
             t.BankAccountId = dto.BankAccountId;
             t.Categories.Clear();
             foreach (var s in await LoadSubs(db, dto.CatIds)) t.Categories.Add(s);
@@ -104,6 +114,12 @@ public static class TodoEndpoints
     {
         if (ids is null || ids.Count == 0) return [];
         return await db.Subs.Where(s => ids.Contains(s.Id)).ToListAsync();
+    }
+
+    private static async Task<bool> MainValid(AppDbContext db, string? id)
+    {
+        if (string.IsNullOrEmpty(id)) return false; // main is required
+        return await db.Mains.AnyAsync(m => m.Id == id);
     }
 
     private static async Task<bool> BankAccountValid(AppDbContext db, string? id)

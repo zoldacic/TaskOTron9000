@@ -9,7 +9,8 @@ export interface Todo {
   due: string | null; // ISO yyyy-MM-dd
   amount: number | null; // null = no amount
   dateKind: DateKind;
-  catIds: string[];
+  mainId: string; // required single main category
+  catIds: string[]; // subcategories; may belong to other mains
   bankAccountId: string | null;
 }
 
@@ -18,6 +19,7 @@ export interface TodoWrite {
   due: string | null;
   amount: number | null;
   dateKind: DateKind;
+  mainId: string; // required single main category
   catIds: string[];
   bankAccountId: string | null;
 }
@@ -85,6 +87,7 @@ export interface ImportCommitRow {
   title: string;
   date: string | null;
   amount: number | null;
+  mainId: string; // required single main category for imported tasks
   catIds: string[];
   bankAccountId: string | null;
 }

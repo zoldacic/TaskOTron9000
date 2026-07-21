@@ -22,6 +22,15 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
         <section class="col">
           <div class="kicker col-kicker">{{ store.t('import.pasteTransactions') }}</div>
           <div class="acct-field">
+            <span class="acct-label">{{ store.t('import.mainCategory') }}</span>
+            <select class="input acct-select" [value]="store.importMainId() ?? ''"
+                    (change)="store.importMainId.set(selectValueStr($event) || null)">
+              @for (m of store.mains(); track m.id) {
+                <option [value]="m.id">{{ m.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="acct-field">
             <span class="acct-label">{{ store.t('import.bankAccount') }}</span>
             <div class="acct-row">
               <select class="input acct-select" [value]="store.importAccountId() ?? ''"
@@ -184,6 +193,7 @@ export class ImportViewComponent {
   }
 
   selectValue(e: Event): BankFileType { return (e.target as HTMLSelectElement).value as BankFileType; }
+  selectValueStr(e: Event): string { return (e.target as HTMLSelectElement).value; }
   value(e: Event): string { return (e.target as HTMLTextAreaElement).value; }
   amountLabel(r: ImportRow): string { return r.amount != null ? fmtMoney(r.amount) : this.store.t('import.amountNone'); }
   amountColor(r: ImportRow): string {

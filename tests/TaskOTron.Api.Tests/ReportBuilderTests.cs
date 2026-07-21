@@ -8,30 +8,32 @@ public class ReportBuilderTests
     // Mirrors the seed category structure and the amount-bearing seed todos.
     private static readonly List<ReportMain> Mains =
     [
-        new("Work", ["wr", "wm", "we", "wp"]),
-        new("Home", ["he", "hc", "hr"]),
-        new("Personal", ["ph", "pf", "pl"]),
+        new("work", "Work", ["wr", "wm", "we", "wp"]),
+        new("home", "Home", ["he", "hc", "hr"]),
+        new("personal", "Personal", ["ph", "pf", "pl"]),
     ];
     private static readonly List<string> AllSubIds =
         ["wr", "wm", "we", "wp", "he", "hc", "hr", "ph", "pf", "pl"];
 
-    private static ReportTask T(string due, decimal amount, params string[] cats) =>
-        new(DateOnly.Parse(due), amount, cats.ToList());
+    // main = each task's required category (matches the DbInitializer seed);
+    // cats = its subs (may span other mains).
+    private static ReportTask T(string due, decimal amount, string main, params string[] cats) =>
+        new(DateOnly.Parse(due), amount, main, cats.ToList());
 
     private static List<ReportTask> SeedTasks() =>
     [
-        T("2026-07-22", -120m, "ph"),
-        T("2026-07-20", -84.5m, "pf"),
-        T("2026-07-17", -76.2m, "he"),
-        new(null, -45m, ["hr"]),                 // no due → excluded
-        T("2026-07-31", -18.99m, "pl"),
-        T("2026-08-03", -320m, "pf"),            // out of July range
-        T("2026-07-01", 4200m, "pf"),
-        T("2026-07-09", 650m, "pf", "wr"),
-        T("2026-07-11", 32.4m, "he"),
-        T("2026-07-05", -15.99m, "pl"),
-        T("2026-07-08", -52.4m, "he"),
-        T("2026-07-03", -39m, "ph"),
+        T("2026-07-22", -120m, "personal", "ph"),
+        T("2026-07-20", -84.5m, "personal", "pf"),
+        T("2026-07-17", -76.2m, "home", "he"),
+        new(null, -45m, "home", ["hr"]),           // no due → excluded
+        T("2026-07-31", -18.99m, "personal", "pl"),
+        T("2026-08-03", -320m, "personal", "pf"),  // out of July range
+        T("2026-07-01", 4200m, "personal", "pf"),
+        T("2026-07-09", 650m, "personal", "pf", "wr"),
+        T("2026-07-11", 32.4m, "home", "he"),
+        T("2026-07-05", -15.99m, "personal", "pl"),
+        T("2026-07-08", -52.4m, "home", "he"),
+        T("2026-07-03", -39m, "personal", "ph"),
     ];
 
     [Fact]
@@ -93,7 +95,11 @@ public class ReportBuilderTests
             repSel: null, Mains, AllSubIds);
 
         var personal = r.CategoryBreakdown.Single(c => c.Name == "Personal");
-        // pf: -84.5 + 4200 + 650(also wr) ; pl: -18.99 -15.99 ; ph: -120 -39
+        // All in-range tasks whose main is "personal" (the freelance +650 counts here
+        // only, not under Work, even though it carries a "wr" sub).
         Assert.Equal(4200m + 650m - 84.5m - 18.99m - 15.99m - 120m - 39m, personal.Net);
+
+        // Work has no amount-bearing July task as its main → no breakdown row.
+        Assert.DoesNotContain(r.CategoryBreakdown, c => c.Name == "Work");
     }
 }

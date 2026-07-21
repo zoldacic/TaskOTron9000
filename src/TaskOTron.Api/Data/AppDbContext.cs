@@ -49,6 +49,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(a => a.Todos)
                 .HasForeignKey(t => t.BankAccountId)
                 .OnDelete(DeleteBehavior.Restrict);
+            // The required single main category. Restrict delete so a main in use
+            // as a task's category can't be removed (the API guards this too, 409).
+            e.HasOne(t => t.Main)
+                .WithMany()
+                .HasForeignKey(t => t.MainId)
+                .OnDelete(DeleteBehavior.Restrict);
             // Todo <-> Sub many-to-many (the prototype's catIds[]).
             // Deleting a sub strips it from every task (join rows cascade automatically).
             e.HasMany(t => t.Categories)
