@@ -6,9 +6,9 @@
   --color-surface: #141826;
   --color-text: #e8ebf5;
   --color-divider: color-mix(in srgb, #93a4cc 24%, transparent);
-  --color-accent: #ff3b1e;
-  --color-accent-400: #ff6a52;
-  --color-accent-500: #e63316;
+  --color-accent: #3b82f6;
+  --color-accent-400: #60a5fa;
+  --color-accent-500: #2563eb;
   /* danger: reserved for destructive/warning actions (e.g. Delete) */
   --color-danger: #ff3b1e;
   --color-danger-hover: #e63316;
@@ -121,7 +121,7 @@ button { font-family: inherit; }
   transition: background 0.12s, color 0.12s;
 }
 .btn-icon:hover { background: var(--tint-hover); color: var(--color-text); }
-.btn-icon.danger:hover { color: var(--color-accent); }
+.btn-icon.danger:hover { color: var(--color-danger); }
 
 /* ===== inputs ===== */
 .input {

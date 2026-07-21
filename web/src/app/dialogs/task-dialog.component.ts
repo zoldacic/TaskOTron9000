@@ -134,7 +134,7 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
     .switch.on .knob { transform: translateX(18px); background: var(--color-accent); }
     .spacer { flex: 1; }
     .del { color: var(--muted); }
-    .del:hover { color: var(--color-accent); }
+    .del:hover { color: var(--color-danger); }
   `],
 })
 export class TaskDialogComponent {

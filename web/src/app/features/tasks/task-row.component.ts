@@ -36,7 +36,7 @@ import { fmtMoney } from '../../core/money-util';
       </button>
 
       @if (todo.amount != null) {
-        <span class="amount" [style.color]="todo.amount >= 0 ? 'var(--color-income)' : 'var(--color-accent)'">
+        <span class="amount" [style.color]="todo.amount >= 0 ? 'var(--color-income)' : 'var(--color-danger)'">
           {{ fmt(todo.amount) }}
         </span>
       }
@@ -89,6 +89,6 @@ export class TaskRowComponent {
     const t = this.todo;
     if (!t.due || this.isTxn()) return 'var(--muted)';
     const tone = dueTone(t.due, t.done);
-    return tone === 'over' ? 'var(--color-accent)' : tone === 'today' ? 'var(--color-amber)' : 'var(--muted)';
+    return tone === 'over' ? 'var(--color-danger)' : tone === 'today' ? 'var(--color-amber)' : 'var(--muted)';
   }
 }

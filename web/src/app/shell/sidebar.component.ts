@@ -110,7 +110,7 @@ import { IconComponent } from '../shared/icon.component';
     .row .filter { flex: 1; min-width: 0; }
     .row .del { flex: none; color: var(--muted); opacity: 0; }
     .row:hover .del { opacity: 1; }
-    .row .del:hover { color: var(--color-accent); }
+    .row .del:hover { color: var(--color-danger); }
     .sq { width: 9px; height: 9px; flex: none; }
     .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .count {

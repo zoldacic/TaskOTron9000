@@ -129,14 +129,14 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
     .acct-row { display: flex; align-items: center; gap: 8px; }
     .acct-select { max-width: 280px; }
     .acct-del { padding: 6px 12px; font-size: 12px; color: var(--muted); }
-    .acct-del:not(:disabled):hover { color: var(--color-accent); }
+    .acct-del:not(:disabled):hover { color: var(--color-danger); }
     .acct-del:disabled { opacity: 0.4; cursor: not-allowed; }
     .acct-add { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
     .acct-new { max-width: 210px; }
     .file-import { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
     .file-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
     .file-type { width: auto; padding: 6px 10px; }
-    .file-error { color: var(--color-accent); font-size: 12px; }
+    .file-error { color: var(--color-danger); font-size: 12px; }
     .help { color: var(--muted); font-size: 12px; margin-top: 12px; }
     .empty-box {
       border: 1px dashed var(--color-divider); padding: 40px 24px; text-align: center;
@@ -201,7 +201,7 @@ export class ImportViewComponent {
   value(e: Event): string { return (e.target as HTMLTextAreaElement).value; }
   amountLabel(r: ImportRow): string { return r.amount != null ? fmtMoney(r.amount) : this.store.t('import.amountNone'); }
   amountColor(r: ImportRow): string {
-    return r.amount == null ? 'var(--muted-strong)' : r.amount >= 0 ? 'var(--color-income)' : 'var(--color-accent)';
+    return r.amount == null ? 'var(--muted-strong)' : r.amount >= 0 ? 'var(--color-income)' : 'var(--color-danger)';
   }
   isDefault(r: ImportRow): boolean {
     const norm = r.title.trim().toLowerCase();

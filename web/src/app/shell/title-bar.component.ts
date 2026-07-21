@@ -55,7 +55,7 @@ import { IconComponent } from '../shared/icon.component';
       color: var(--color-text); cursor: pointer; display: grid; place-items: center;
     }
     .win button:hover { background: color-mix(in srgb, var(--color-text) 9%, transparent); }
-    .win button.close:hover { background: var(--color-accent); color: var(--color-bg); }
+    .win button.close:hover { background: var(--color-danger); color: #fff; }
   `],
 })
 export class TitleBarComponent {

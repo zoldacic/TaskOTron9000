@@ -121,7 +121,7 @@ import { fmtMoney } from '../../core/money-util';
     .stat { background: var(--color-bg); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
     .fig { font-family: var(--font-mono); font-size: 26px; font-weight: 700; }
     .in { color: var(--color-income); }
-    .out { color: var(--color-accent); }
+    .out { color: var(--color-danger); }
     .chart-kicker { margin-bottom: 16px; }
     .chart { display: flex; align-items: stretch; gap: 6px; height: 200px; }
     .bucket { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -129,7 +129,7 @@ import { fmtMoney } from '../../core/money-util';
     .neg-area { flex: 1; display: flex; align-items: flex-start; justify-content: center; }
     .bar { width: 66%; }
     .bar.pos { background: var(--color-income); box-shadow: 0 0 12px -4px var(--color-income); }
-    .bar.neg { background: var(--color-accent); box-shadow: 0 0 12px -4px var(--color-accent); }
+    .bar.neg { background: var(--color-danger); box-shadow: 0 0 12px -4px var(--color-danger); }
     .axis { height: 2px; background: var(--color-divider); }
     .b-label { text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 6px; }
     .cat-bar { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
@@ -138,7 +138,7 @@ import { fmtMoney } from '../../core/money-util';
     .track-axis { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--color-divider); }
     .cbar { position: absolute; top: 3px; bottom: 3px; }
     .cbar.pos { background: var(--color-income); }
-    .cbar.neg { background: var(--color-accent); }
+    .cbar.neg { background: var(--color-danger); }
     .cat-net { width: 90px; flex: none; font-family: var(--font-mono); font-size: 13px; font-weight: 700; text-align: right; }
     .empty { text-align: center; padding: 60px 24px; color: var(--muted); }
     .empty h2 { font-family: var(--font-heading); font-weight: 800; text-transform: uppercase; color: var(--color-text); margin-bottom: 8px; }

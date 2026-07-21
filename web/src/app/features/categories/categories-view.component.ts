@@ -81,7 +81,7 @@ import { IconComponent } from '../../shared/icon.component';
     .add { display: flex; gap: 10px; margin-top: 16px; }
     .sub-add { max-width: 420px; }
     .empty { color: var(--muted); font-family: var(--font-mono); font-size: 13px; }
-    .cat-error { color: var(--color-accent); font-size: 12px; margin-top: 10px; }
+    .cat-error { color: var(--color-danger); font-size: 12px; margin-top: 10px; }
   `],
 })
 export class CategoriesViewComponent {
