@@ -141,6 +141,16 @@ button { font-family: inherit; }
 .input:focus { outline: none; border-color: var(--color-accent); }
 /* native <select> popup: dark background so options stay readable */
 .input option { background: var(--color-surface); color: var(--color-text); }
+/* custom chevron so the arrow sits inset from the right edge, not flush against it */
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b95b5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  padding-right: 38px;
+}
 
 .field { display: block; }
 .field > .kicker { display: block; margin-bottom: 6px; }
