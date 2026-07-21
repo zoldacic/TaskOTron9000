@@ -12,7 +12,7 @@ import { TaskStore } from '../core/task.store';
           <h2 class="dialog-title">{{ c.title }}</h2>
           <p class="msg">{{ c.message }}</p>
           <div class="dialog-actions">
-            <button class="btn btn-secondary" (click)="store.cancelConfirm()">Cancel</button>
+            <button class="btn btn-secondary" (click)="store.cancelConfirm()">{{ store.t('common.cancel') }}</button>
             <button class="btn btn-primary" (click)="store.runConfirm()" autofocus>{{ c.confirmLabel }}</button>
           </div>
         </div>
