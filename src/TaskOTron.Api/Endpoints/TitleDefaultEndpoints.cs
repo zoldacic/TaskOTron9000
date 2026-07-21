@@ -45,7 +45,9 @@ public static class TitleDefaultEndpoints
         {
             var norm = title.Trim().ToLowerInvariant();
             var td = await db.TitleDefaults.FirstOrDefaultAsync(x => x.NormalizedTitle == norm);
-            if (td is null) return Results.NotFound();
+            // Idempotent: deleting an absent default is a no-op, not a 404. Callers clear
+            // a remembered default unconditionally, so this is the common (empty) case.
+            if (td is null) return Results.NoContent();
             db.TitleDefaults.Remove(td);
             await db.SaveChangesAsync();
             return Results.NoContent();

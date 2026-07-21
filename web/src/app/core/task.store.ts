@@ -628,10 +628,11 @@ export class TaskStore {
     this.importRows.set((this.importRows() ?? []).map((r) =>
       r.key === c.key || (c.applyAll && match !== '' && r.title.trim().toLowerCase().includes(match))
         ? { ...r, mainId: c.mainId, catIds: [...c.catIds] } : r));
+    // Close now: the row change above is applied, so persistence below must not gate the dialog.
+    this.importCat.set(null);
     // Persist / clear the remembered default (main + subs).
     if (c.remember) await firstValueFrom(this.api.putTitleDefault(norm, c.catIds, c.mainId));
     else await firstValueFrom(this.api.deleteTitleDefault(norm));
-    this.importCat.set(null);
     await this.refreshTitleDefaults();
   }
 
