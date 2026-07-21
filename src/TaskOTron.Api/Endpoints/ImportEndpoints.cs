@@ -66,6 +66,7 @@ public static class ImportEndpoints
                     DateKind = DateKind.Transaction,
                     MainId = r.MainId!,
                     BankAccountId = string.IsNullOrEmpty(r.BankAccountId) ? null : r.BankAccountId,
+                    Note = string.IsNullOrWhiteSpace(r.Note) ? null : r.Note.Trim(),
                     Categories = (r.CatIds ?? [])
                         .Where(subs.ContainsKey)
                         .Select(id => subs[id])

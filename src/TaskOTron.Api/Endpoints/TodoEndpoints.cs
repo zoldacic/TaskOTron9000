@@ -44,6 +44,7 @@ public static class TodoEndpoints
                 DateKind = dto.DateKind,
                 MainId = dto.MainId,
                 BankAccountId = dto.BankAccountId,
+                Note = NormalizeNote(dto.Note),
                 Categories = await LoadSubs(db, dto.CatIds),
             };
             db.Todos.Add(t);
@@ -72,6 +73,7 @@ public static class TodoEndpoints
             t.DateKind = dto.DateKind;
             t.MainId = dto.MainId;
             t.BankAccountId = dto.BankAccountId;
+            t.Note = NormalizeNote(dto.Note);
             t.Categories.Clear();
             foreach (var s in await LoadSubs(db, dto.CatIds)) t.Categories.Add(s);
             // Done is intentionally preserved (matches the prototype's edit path).
@@ -108,6 +110,13 @@ public static class TodoEndpoints
             await db.SaveChangesAsync();
             return Results.Ok(new { deleted = toDelete.Count });
         });
+    }
+
+    /// <summary>Trim a note; blank/whitespace becomes null ("no note").</summary>
+    private static string? NormalizeNote(string? note)
+    {
+        var trimmed = note?.Trim();
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
 
     private static async Task<List<Sub>> LoadSubs(AppDbContext db, List<string>? ids)

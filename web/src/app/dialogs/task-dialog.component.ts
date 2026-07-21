@@ -100,6 +100,13 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
             }
           </div>
 
+          <!-- optional free-text note -->
+          <label class="field mt">
+            <span class="kicker">{{ store.t('dialog.task.note') }} <span class="hint">{{ store.t('dialog.task.optional') }}</span></span>
+            <textarea class="input note" rows="3" [value]="d.note" [placeholder]="store.t('dialog.task.notePlaceholder')"
+                      (input)="patch({ note: value($event) })"></textarea>
+          </label>
+
           <div class="dialog-actions">
             @if (d.id != null) {
               <button class="btn btn-ghost del" (click)="store.askDeleteFromDialog()">{{ store.t('dialog.task.deleteTask') }}</button>
@@ -122,6 +129,7 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
     .date-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
     .date { max-width: 200px; font-family: var(--font-mono); }
     .acct { max-width: 240px; }
+    .note { resize: vertical; min-height: 60px; font-family: inherit; line-height: 1.5; }
     .human { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
     .cat-main { font-weight: 700; font-size: 12px; margin: 10px 0 6px; }
     .req { color: var(--color-accent); }

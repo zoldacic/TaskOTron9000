@@ -103,6 +103,7 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
                     }
                     @if (isDefault(r)) { <span class="saved"><app-icon name="star" [size]="12" /> {{ store.t('import.saved') }}</span> }
                   </div>
+                  @if (r.note) { <div class="row-note">{{ r.note }}</div> }
                 </div>
               }
             </div>
@@ -150,6 +151,7 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
     .t-date { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
     .t-amount { font-family: var(--font-mono); font-size: 13px; font-weight: 700; text-align: right; }
     .row-cats { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .row-note { margin-top: 6px; font-size: 12px; line-height: 1.4; color: var(--muted); white-space: pre-wrap; }
     .cat-edit {
       border: 1px dashed var(--color-divider); background: transparent; color: var(--muted);
       font-size: 11px; padding: 3px 8px; cursor: pointer;

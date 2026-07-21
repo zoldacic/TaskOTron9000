@@ -35,6 +35,13 @@ import { TaskStore } from '../core/task.store';
             }
           </div>
 
+          <!-- optional free-text note -->
+          <label class="field">
+            <span class="kicker">{{ store.t('dialog.importCat.note') }} <span class="hint">{{ store.t('dialog.task.optional') }}</span></span>
+            <textarea class="input note" rows="2" [value]="c.note" [placeholder]="store.t('dialog.importCat.notePlaceholder')"
+                      (input)="store.setImportCatNote(value($event))"></textarea>
+          </label>
+
           <label class="check">
             <input type="checkbox" [checked]="c.applyAll" (change)="flag('applyAll', $event)">
             <span>{{ store.t('dialog.importCat.applyAll', { count: matchCount(), match: c.match }) }}</span>
@@ -65,6 +72,7 @@ import { TaskStore } from '../core/task.store';
     .cat-main { font-weight: 700; font-size: 12px; margin: 10px 0 6px; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip.main.on { border-color: var(--color-accent); color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 16%, transparent); }
+    .note { resize: vertical; min-height: 44px; font-family: inherit; line-height: 1.5; }
     .check { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; cursor: pointer; }
     .check input { accent-color: var(--color-accent); width: 16px; height: 16px; }
     .match-picker { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 0 24px; }
@@ -94,6 +102,8 @@ export class ImportCatDialogComponent {
     const text = window.getSelection()?.toString() ?? '';
     if (text.trim()) this.store.setImportCatMatch(text);
   }
+
+  value(e: Event): string { return (e.target as HTMLTextAreaElement).value; }
 
   flag(k: 'applyAll' | 'remember', e: Event): void {
     this.store.setImportCatFlag(k, (e.target as HTMLInputElement).checked);

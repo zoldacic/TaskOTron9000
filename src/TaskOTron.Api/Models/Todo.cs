@@ -8,6 +8,9 @@ public class Todo
     public string Title { get; set; } = default!;
     public bool Done { get; set; }
 
+    // Free-text note attached to the task. null/blank = no note.
+    public string? Note { get; set; }
+
     // ISO yyyy-MM-dd, nullable. Stored as TEXT by SQLite; sorts lexically like the prototype's strings.
     public DateOnly? Due { get; set; }
 

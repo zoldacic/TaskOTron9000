@@ -7,7 +7,7 @@ const iso = (offset: number) => toISO(addDays(startOfToday(), offset));
 function todo(p: Partial<Todo>): Todo {
   return {
     id: 1, title: 't', done: false, due: null, amount: null, dateKind: 'due', mainId: 'work', catIds: [],
-    bankAccountId: null, ...p,
+    bankAccountId: null, note: null, ...p,
   };
 }
 

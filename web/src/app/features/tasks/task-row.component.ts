@@ -33,6 +33,7 @@ import { fmtMoney } from '../../core/money-util';
             @if (store.subName(id); as n) { <span class="tag tag-neutral">{{ n }}</span> }
           }
         </div>
+        @if (todo.note) { <div class="note">{{ todo.note }}</div> }
       </button>
 
       @if (todo.amount != null) {
@@ -61,6 +62,7 @@ import { fmtMoney } from '../../core/money-util';
     .title { font-size: 15px; line-height: 1.3; }
     .title.done { text-decoration: line-through; color: color-mix(in srgb, var(--color-text) 42%, transparent); }
     .meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .note { margin-top: 6px; font-size: 13px; line-height: 1.4; color: var(--muted); white-space: pre-wrap; }
     .due {
       display: inline-flex; align-items: center; gap: 5px;
       font-family: var(--font-mono); font-size: 11px; font-weight: 700;

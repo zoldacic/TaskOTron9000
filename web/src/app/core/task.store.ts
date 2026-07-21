@@ -21,6 +21,7 @@ export interface TaskDraft {
   amountStr: string;
   dateKind: DateKind;
   bankAccountId: string | null;
+  note: string;
 }
 export interface CatDraft {
   kind: 'main' | 'sub';
@@ -34,6 +35,7 @@ export interface ImportCatDraft {
   match: string;
   mainId: string; // required single main category (radio behaviour)
   catIds: string[];
+  note: string;
   applyAll: boolean;
   remember: boolean;
 }
@@ -377,7 +379,7 @@ export class TaskStore {
     if (!title) return;
     await firstValueFrom(this.api.createTodo({
       title, due: null, amount: null, dateKind: 'due',
-      mainId: this.inheritedMainId(), catIds: this.inheritedCatIds(), bankAccountId: null,
+      mainId: this.inheritedMainId(), catIds: this.inheritedCatIds(), bankAccountId: null, note: null,
     }));
     this.quickAdd.set('');
     await this.refreshTodos();
@@ -389,7 +391,7 @@ export class TaskStore {
     this.expandedMains.set(this.mainsWithSelection(catIds));
     this.taskDialog.set({
       id: null, title: '', due, mainId: this.inheritedMainId(), catIds, amountStr: '', dateKind: 'due',
-      bankAccountId: null,
+      bankAccountId: null, note: '',
     });
   }
   openEdit(id: number): void {
@@ -399,7 +401,7 @@ export class TaskStore {
     this.taskDialog.set({
       id, title: t.title, due: t.due, mainId: t.mainId || this.firstMainId(), catIds: [...t.catIds],
       amountStr: t.amount == null ? '' : String(t.amount), dateKind: t.dateKind ?? 'due',
-      bankAccountId: t.bankAccountId,
+      bankAccountId: t.bankAccountId, note: t.note ?? '',
     });
   }
   isMainExpanded(id: string): boolean { return this.expandedMains().has(id); }
@@ -430,9 +432,10 @@ export class TaskStore {
     if (!d || !d.title.trim() || !d.mainId) return;
     const parsed = d.amountStr.trim() !== '' ? parseFloat(d.amountStr) : NaN;
     const amount = Number.isNaN(parsed) ? null : parsed;
+    const note = d.note.trim() || null;
     const body = {
       title: d.title.trim(), due: d.due, amount, dateKind: d.dateKind,
-      mainId: d.mainId, catIds: d.catIds, bankAccountId: d.bankAccountId,
+      mainId: d.mainId, catIds: d.catIds, bankAccountId: d.bankAccountId, note,
     };
     if (d.id == null) await firstValueFrom(this.api.createTodo(body));
     else await firstValueFrom(this.api.updateTodo(d.id, body));
@@ -535,7 +538,7 @@ export class TaskStore {
     const rows = await firstValueFrom(this.api.parseImport(this.importText()));
     // Each row needs a main: keep any remembered from a title default, else the batch default.
     const def = this.importMainId() ?? this.firstMainId();
-    this.importRows.set(rows.map((r) => ({ ...r, mainId: r.mainId ?? def })));
+    this.importRows.set(rows.map((r) => ({ ...r, mainId: r.mainId ?? def, note: r.note ?? '' })));
   }
   /** Set the batch default main and apply it to every parsed row. */
   setImportMain(mainId: string | null): void {
@@ -551,6 +554,7 @@ export class TaskStore {
     const body: ImportCommitRow[] = rows.map((r) => ({
       title: r.title, date: r.date, amount: r.amount,
       mainId: r.mainId ?? fallback, catIds: r.catIds, bankAccountId,
+      note: (r.note ?? '').trim() || null,
     }));
     await firstValueFrom(this.api.commitImport(body));
     this.importText.set('');
@@ -593,7 +597,7 @@ export class TaskStore {
     this.importCat.set({
       key, title: r.title, match: r.title,
       mainId: r.mainId || this.importMainId() || this.firstMainId(),
-      catIds: [...(r.catIds ?? [])], applyAll: false,
+      catIds: [...(r.catIds ?? [])], note: r.note ?? '', applyAll: false,
       remember: this.titleDefaults().some((d) => d.normalizedTitle === norm),
     });
   }
@@ -608,6 +612,10 @@ export class TaskStore {
   setImportCatMain(mainId: string): void {
     const c = this.importCat();
     if (c) this.importCat.set({ ...c, mainId });
+  }
+  setImportCatNote(note: string): void {
+    const c = this.importCat();
+    if (c) this.importCat.set({ ...c, note });
   }
   toggleImportCat(id: string): void {
     const c = this.importCat();
@@ -624,10 +632,10 @@ export class TaskStore {
     if (!c || !c.mainId) return;
     const norm = c.title.trim().toLowerCase();
     const match = c.match.trim().toLowerCase();
-    // Apply the main + subs to this row (and rows whose title contains the match, if requested).
+    // Apply the main + subs + note to this row (and rows whose title contains the match, if requested).
     this.importRows.set((this.importRows() ?? []).map((r) =>
       r.key === c.key || (c.applyAll && match !== '' && r.title.trim().toLowerCase().includes(match))
-        ? { ...r, mainId: c.mainId, catIds: [...c.catIds] } : r));
+        ? { ...r, mainId: c.mainId, catIds: [...c.catIds], note: c.note } : r));
     // Close now: the row change above is applied, so persistence below must not gate the dialog.
     this.importCat.set(null);
     // Persist / clear the remembered default (main + subs).

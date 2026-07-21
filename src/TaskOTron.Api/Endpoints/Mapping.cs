@@ -15,7 +15,8 @@ internal static class Mapping
         t.DateKind,
         t.MainId,
         t.Categories.Select(c => c.Id).OrderBy(x => x).ToList(),
-        t.BankAccountId);
+        t.BankAccountId,
+        t.Note);
 
     /// <summary>Parse an ISO yyyy-MM-dd string to DateOnly; blank/null → null.</summary>
     public static DateOnly? ParseDate(string? iso)

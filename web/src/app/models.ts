@@ -12,6 +12,7 @@ export interface Todo {
   mainId: string; // required single main category
   catIds: string[]; // subcategories; may belong to other mains
   bankAccountId: string | null;
+  note: string | null; // free-text note; null = no note
 }
 
 export interface TodoWrite {
@@ -22,6 +23,7 @@ export interface TodoWrite {
   mainId: string; // required single main category
   catIds: string[];
   bankAccountId: string | null;
+  note: string | null;
 }
 
 export interface Main {
@@ -83,6 +85,7 @@ export interface ImportRow {
   ok: boolean;
   mainId: string | null; // required main category; null until defaulted client-side
   catIds: string[];
+  note: string; // per-row note, entered client-side; '' = none
 }
 
 export interface ImportCommitRow {
@@ -92,6 +95,7 @@ export interface ImportCommitRow {
   mainId: string; // required single main category for imported tasks
   catIds: string[];
   bankAccountId: string | null;
+  note: string | null;
 }
 
 export interface ReportBucket {
