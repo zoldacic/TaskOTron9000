@@ -97,6 +97,9 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
                   </div>
                   <div class="row-cats">
                     <button class="cat-edit" (click)="store.openImportCat(r.key)">{{ store.t('import.editCategories') }}</button>
+                    @if (r.amount != null) {
+                      <button class="cat-edit" (click)="store.openImportSplit(r.key)">{{ store.t('import.split') }}</button>
+                    }
                     @if (store.mainName(r.mainId); as mn) { <span class="tag tag-main">{{ mn }}</span> }
                     @for (id of r.catIds; track id) {
                       @if (store.subName(id); as n) { <span class="tag tag-neutral">{{ n }}</span> }

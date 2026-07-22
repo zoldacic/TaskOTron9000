@@ -154,6 +154,17 @@ export const sv: Record<TranslationKey, string> = {
   'dialog.importCat.remember': 'Kom ihåg som standard för den här titeln vid framtida importer',
   'dialog.importCat.apply': 'Tillämpa',
 
+  // ---- import-split dialog ----
+  'dialog.importSplit.title': 'Dela raden i två',
+  'dialog.importSplit.sub': 'Ursprungligt belopp {total}. Fördela det mellan två rader.',
+  'dialog.importSplit.partA': 'Del 1',
+  'dialog.importSplit.partB': 'Del 2',
+  'dialog.importSplit.titlePlaceholder': 'Titel',
+  'dialog.importSplit.combined': 'Totalt: {sum}',
+  'dialog.importSplit.mismatch': 'stämmer inte med {total}',
+  'dialog.importSplit.hint': 'Varje del blir en egen rad — tilldela kategorier till dem separat efteråt.',
+  'dialog.importSplit.apply': 'Dela',
+
   // ---- save-query dialog ----
   'dialog.saveQuery.title': 'Spara sökning',
   'dialog.saveQuery.msg': 'Namnge den här sökningen så att du kan använda den igen från sidofältet.',
@@ -237,6 +248,7 @@ export const sv: Record<TranslationKey, string> = {
   'import.colDate': 'Datum',
   'import.colAmount': 'Belopp',
   'import.editCategories': 'Redigera kategorier',
+  'import.split': 'Dela',
   'import.addCategories': '+ kategorier',
   'import.saved': 'sparad',
   'import.rowsReady': '{ok} / {total} rader klara',

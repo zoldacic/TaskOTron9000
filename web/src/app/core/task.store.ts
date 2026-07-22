@@ -39,6 +39,15 @@ export interface ImportCatDraft {
   applyAll: boolean;
   remember: boolean;
 }
+export interface ImportSplitDraft {
+  key: number; // the original row being split
+  title: string; // original title (display only)
+  total: number; // original amount, for the running-total hint
+  aTitle: string;
+  aAmount: string; // kept as strings so the inputs edit freely (blank, '-', '.')
+  bTitle: string;
+  bAmount: string;
+}
 export interface Confirm {
   title: string;
   message: string;
@@ -105,6 +114,7 @@ export class TaskStore {
   readonly expandedMains = signal<Set<string>>(new Set());
   readonly catDialog = signal<CatDraft | null>(null);
   readonly importCat = signal<ImportCatDraft | null>(null);
+  readonly importSplit = signal<ImportSplitDraft | null>(null);
   readonly confirm = signal<Confirm | null>(null);
 
   // ---- import ----
@@ -644,6 +654,40 @@ export class TaskStore {
     if (c.remember) await firstValueFrom(this.api.putTitleDefault(norm, c.catIds, c.mainId));
     else await firstValueFrom(this.api.deleteTitleDefault(norm));
     await this.refreshTitleDefaults();
+  }
+
+  /** Open the split dialog for a row, pre-filling two halves of its amount. */
+  openImportSplit(key: number): void {
+    const r = (this.importRows() ?? []).find((x) => x.key === key);
+    if (!r || r.amount == null) return; // only amount-bearing rows can be split
+    const half = Math.round((r.amount / 2) * 100) / 100;
+    const rest = Math.round((r.amount - half) * 100) / 100;
+    this.importSplit.set({
+      key, title: r.title, total: r.amount,
+      aTitle: r.title, aAmount: String(half),
+      bTitle: r.title, bAmount: String(rest),
+    });
+  }
+  setImportSplitField(k: 'aTitle' | 'aAmount' | 'bTitle' | 'bAmount', v: string): void {
+    const s = this.importSplit();
+    if (s) this.importSplit.set({ ...s, [k]: v });
+  }
+  /** Replace the split row with its two parts (part A keeps the key, part B gets a fresh one). */
+  saveImportSplit(): void {
+    const s = this.importSplit();
+    if (!s) return;
+    const rows = this.importRows();
+    if (!rows) return;
+    const a = Number(s.aAmount);
+    const b = Number(s.bAmount);
+    if (!s.aAmount.trim() || !s.bAmount.trim() || Number.isNaN(a) || Number.isNaN(b)) return;
+    const orig = rows.find((r) => r.key === s.key);
+    if (!orig) return;
+    const nextKey = Math.max(...rows.map((r) => r.key)) + 1;
+    const partA: ImportRow = { ...orig, title: s.aTitle.trim() || orig.title, amount: a, ok: true };
+    const partB: ImportRow = { ...orig, key: nextKey, title: s.bTitle.trim() || orig.title, amount: b, ok: true };
+    this.importRows.set(rows.flatMap((r) => (r.key === s.key ? [partA, partB] : [r])));
+    this.importSplit.set(null);
   }
 
   // ---- reports ----

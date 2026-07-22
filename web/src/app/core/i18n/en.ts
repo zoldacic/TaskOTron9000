@@ -154,6 +154,17 @@ export const en = {
   'dialog.importCat.remember': 'Remember as default for this title in future imports',
   'dialog.importCat.apply': 'Apply',
 
+  // ---- import-split dialog ----
+  'dialog.importSplit.title': 'Split row into two',
+  'dialog.importSplit.sub': 'Original amount {total}. Divide it between two rows.',
+  'dialog.importSplit.partA': 'Part 1',
+  'dialog.importSplit.partB': 'Part 2',
+  'dialog.importSplit.titlePlaceholder': 'Title',
+  'dialog.importSplit.combined': 'Combined: {sum}',
+  'dialog.importSplit.mismatch': 'doesn’t add up to {total}',
+  'dialog.importSplit.hint': 'Each part becomes its own row — assign categories to them separately afterwards.',
+  'dialog.importSplit.apply': 'Split',
+
   // ---- save-query dialog ----
   'dialog.saveQuery.title': 'Save query',
   'dialog.saveQuery.msg': 'Name this query so you can reapply it later from the sidebar.',
@@ -237,6 +248,7 @@ export const en = {
   'import.colDate': 'Date',
   'import.colAmount': 'Amount',
   'import.editCategories': 'Edit categories',
+  'import.split': 'Split',
   'import.addCategories': '+ categories',
   'import.saved': 'saved',
   'import.rowsReady': '{ok} / {total} rows ready',
