@@ -57,6 +57,17 @@ export interface Confirm {
 const SMART: Filter[] = ['all', 'today', 'upcoming', 'done'];
 const isSmart = (f: Filter) => SMART.includes(f);
 
+const IMPORT_MAIN_KEY = 'tot.importMain';
+function readStoredImportMain(): string | null {
+  try { return localStorage.getItem(IMPORT_MAIN_KEY); } catch { return null; }
+}
+function writeStoredImportMain(mainId: string | null): void {
+  try {
+    if (mainId) localStorage.setItem(IMPORT_MAIN_KEY, mainId);
+    else localStorage.removeItem(IMPORT_MAIN_KEY);
+  } catch { /* storage may be unavailable */ }
+}
+
 const SAMPLE_IMPORT = [
   '2026-07-15\tACME CORP PAYROLL\t+4200.00',
   '2026-07-14\tWHOLE FOODS MARKET\t-76.20',
@@ -119,7 +130,8 @@ export class TaskStore {
   // ---- import ----
   readonly importText = signal('');
   readonly importAccountId = signal<string | null>(null);
-  readonly importMainId = signal<string | null>(null); // batch default main for imported tasks
+  // batch default main for imported tasks; last choice remembered across sessions (validated on load)
+  readonly importMainId = signal<string | null>(readStoredImportMain());
   readonly importRows = signal<ImportRow[] | null>(null);
 
   // ---- bank accounts ----
@@ -201,9 +213,9 @@ export class TaskStore {
     const c: Categories = await firstValueFrom(this.api.getCategories());
     this.mains.set(c.mains);
     this.subs.set(c.subs);
-    // Default the import main to the first category once one is known / if it vanished.
+    // Keep the remembered import main if it still exists, else fall back to the first category.
     if (!this.importMainId() || !c.mains.some((m) => m.id === this.importMainId())) {
-      this.importMainId.set(c.mains[0]?.id ?? null);
+      this.setImportMain(c.mains[0]?.id ?? null);
     }
   }
   async refreshTitleDefaults(): Promise<void> {
@@ -551,9 +563,10 @@ export class TaskStore {
     const def = this.importMainId() ?? this.firstMainId();
     this.importRows.set(rows.map((r) => ({ ...r, mainId: r.mainId ?? def, note: r.note ?? '' })));
   }
-  /** Set the batch default main and apply it to every parsed row. */
+  /** Set the batch default main, remember it across sessions, and apply it to every parsed row. */
   setImportMain(mainId: string | null): void {
     this.importMainId.set(mainId);
+    writeStoredImportMain(mainId);
     const rows = this.importRows();
     if (mainId && rows) this.importRows.set(rows.map((r) => ({ ...r, mainId })));
   }
