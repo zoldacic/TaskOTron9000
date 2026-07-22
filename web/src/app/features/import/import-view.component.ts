@@ -86,9 +86,17 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
           } @else {
             <div class="table">
               <div class="thead">
-                <span>{{ store.t('import.colTitle') }}</span><span>{{ store.t('import.colDate') }}</span><span>{{ store.t('import.colAmount') }}</span>
+                <button type="button" class="sort-h" [class.active]="sortCol() === 'title'" (click)="toggleSort('title')">
+                  {{ store.t('import.colTitle') }}<span class="sort-caret">{{ sortCaret('title') }}</span>
+                </button>
+                <button type="button" class="sort-h" [class.active]="sortCol() === 'date'" (click)="toggleSort('date')">
+                  {{ store.t('import.colDate') }}<span class="sort-caret">{{ sortCaret('date') }}</span>
+                </button>
+                <button type="button" class="sort-h sort-h-end" [class.active]="sortCol() === 'amount'" (click)="toggleSort('amount')">
+                  {{ store.t('import.colAmount') }}<span class="sort-caret">{{ sortCaret('amount') }}</span>
+                </button>
               </div>
-              @for (r of store.importRows(); track r.key) {
+              @for (r of sortedRows(); track r.key) {
                 <div class="trow rule-1" [style.opacity]="r.ok ? 1 : 0.45">
                   <div class="cells">
                     <span class="t-title" [title]="r.title">{{ r.title }}</span>
@@ -149,6 +157,15 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
     .table { border: 1px solid var(--color-divider); }
     .thead, .cells { display: grid; grid-template-columns: 1fr 92px 96px; gap: 10px; align-items: center; }
     .thead { padding: 10px; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); border-bottom: 2px solid var(--color-divider); }
+    .sort-h {
+      display: inline-flex; align-items: center; gap: 4px; padding: 0; min-width: 0;
+      background: transparent; border: 0; cursor: pointer;
+      font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; text-align: left;
+    }
+    .sort-h:hover { color: var(--color-text); }
+    .sort-h.active { color: var(--color-text); }
+    .sort-h-end { justify-self: end; text-align: right; }
+    .sort-caret { font-size: 9px; opacity: 0.7; }
     .trow { padding: 10px; }
     .t-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .t-date { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
@@ -172,6 +189,47 @@ export class ImportViewComponent {
   readonly fileTypes = BANK_FILE_TYPES;
   readonly fileType = signal<BankFileType>(BANK_FILE_TYPES[0]);
   readonly fileError = signal<string | null>(null);
+
+  readonly sortCol = signal<'title' | 'date' | 'amount' | null>(null);
+  readonly sortDir = signal<'asc' | 'desc'>('asc');
+
+  readonly sortedRows = computed<ImportRow[]>(() => {
+    const rows = this.store.importRows() ?? [];
+    const col = this.sortCol();
+    if (!col) return rows;
+    const dir = this.sortDir() === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      if (col === 'title') {
+        return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }) * dir;
+      }
+      if (col === 'date') {
+        return this.nullCmp(a.date, b.date, dir, (x, y) => x.localeCompare(y));
+      }
+      return this.nullCmp(a.amount, b.amount, dir, (x, y) => x - y);
+    });
+  });
+
+  // Compares two values, keeping empty (null) values last regardless of sort direction.
+  private nullCmp<T>(a: T | null, b: T | null, dir: number, cmp: (x: T, y: T) => number): number {
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+    return cmp(a, b) * dir;
+  }
+
+  toggleSort(col: 'title' | 'date' | 'amount'): void {
+    if (this.sortCol() === col) {
+      this.sortDir.set(this.sortDir() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set('asc');
+    }
+  }
+
+  sortCaret(col: 'title' | 'date' | 'amount'): string {
+    if (this.sortCol() !== col) return '';
+    return this.sortDir() === 'asc' ? '▲' : '▼';
+  }
 
   readonly selectedAccount = computed<BankAccount | null>(() =>
     this.store.bankAccounts().find((a) => a.id === this.store.importAccountId()) ?? null);
