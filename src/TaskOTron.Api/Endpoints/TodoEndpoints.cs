@@ -110,6 +110,30 @@ public static class TodoEndpoints
             await db.SaveChangesAsync();
             return Results.Ok(new { deleted = toDelete.Count });
         });
+
+        // Apply a main category (+ optional subs) to every task whose title contains the match
+        // substring (case-insensitive). Returns the count actually updated.
+        g.MapPost("/bulk-categorize", async (BulkCategorizeDto dto, AppDbContext db) =>
+        {
+            var match = dto.Match?.Trim().ToLower() ?? "";
+            if (match.Length == 0) return Results.Ok(new { updated = 0 });
+            if (string.IsNullOrEmpty(dto.MainId))
+                return Results.BadRequest("A main category is required.");
+            if (!await MainValid(db, dto.MainId))
+                return Results.BadRequest($"Unknown main category '{dto.MainId}'.");
+
+            var todos = await db.Todos.Include(t => t.Categories)
+                .Where(t => t.Title.ToLower().Contains(match)).ToListAsync();
+            var subs = await LoadSubs(db, dto.CatIds);
+            foreach (var t in todos)
+            {
+                t.MainId = dto.MainId;
+                t.Categories.Clear();
+                foreach (var s in subs) t.Categories.Add(s);
+            }
+            await db.SaveChangesAsync();
+            return Results.Ok(new { updated = todos.Count });
+        });
     }
 
     /// <summary>Trim a note; blank/whitespace becomes null ("no note").</summary>

@@ -130,6 +130,8 @@ export const sv: Record<TranslationKey, string> = {
   'dialog.task.subcategories': 'Underkategorier',
   'dialog.task.note': 'Anteckning',
   'dialog.task.notePlaceholder': 'Något värt att minnas?',
+  'dialog.task.applyAll': 'Tillämpa denna kategori på alla {count} uppgifter som innehåller "{match}"',
+  'dialog.task.applyAllHint': 'Markera en del av namnet för att träffa fler uppgifter:',
   'dialog.task.deleteTask': 'Ta bort uppgift',
   'dialog.task.cancel': 'Avbryt',
   'dialog.task.save': 'Spara uppgift',

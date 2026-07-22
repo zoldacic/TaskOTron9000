@@ -22,6 +22,10 @@ export interface TaskDraft {
   dateKind: DateKind;
   bankAccountId: string | null;
   note: string;
+  /** When set (edit only), also apply this main + subs to every task whose title contains `match`. */
+  applyAll: boolean;
+  /** Substring "Apply to all" matches on (case-insensitive). Defaults to the full title. */
+  match: string;
 }
 export interface CatDraft {
   kind: 'main' | 'sub';
@@ -414,7 +418,7 @@ export class TaskStore {
     this.expandedMains.set(this.mainsWithSelection(catIds));
     this.taskDialog.set({
       id: null, title: '', due, mainId: this.inheritedMainId(), catIds, amountStr: '', dateKind: 'due',
-      bankAccountId: null, note: '',
+      bankAccountId: null, note: '', applyAll: false, match: '',
     });
   }
   openEdit(id: number): void {
@@ -424,7 +428,7 @@ export class TaskStore {
     this.taskDialog.set({
       id, title: t.title, due: t.due, mainId: t.mainId || this.firstMainId(), catIds: [...t.catIds],
       amountStr: t.amount == null ? '' : String(t.amount), dateKind: t.dateKind ?? 'due',
-      bankAccountId: t.bankAccountId, note: t.note ?? '',
+      bankAccountId: t.bankAccountId, note: t.note ?? '', applyAll: false, match: t.title.trim(),
     });
   }
   isMainExpanded(id: string): boolean { return this.expandedMains().has(id); }
@@ -450,6 +454,21 @@ export class TaskStore {
     const has = d.catIds.includes(subId);
     this.updateDialog({ catIds: has ? d.catIds.filter((x) => x !== subId) : [...d.catIds, subId] });
   }
+  /** Narrow the "apply to all" match to a selected part of the title (empty resets to the full title). */
+  setDraftMatch(text: string): void {
+    const d = this.taskDialog();
+    if (!d) return;
+    const m = text.trim();
+    this.updateDialog({ match: m || d.title.trim() });
+  }
+  /** How many existing tasks contain the draft's match substring (drives the "apply to all" count). */
+  draftMatchCount(): number {
+    const d = this.taskDialog();
+    if (!d) return 0;
+    const m = d.match.trim().toLowerCase();
+    if (!m) return 0;
+    return this.todos().filter((t) => t.title.trim().toLowerCase().includes(m)).length;
+  }
   async saveTask(): Promise<void> {
     const d = this.taskDialog();
     if (!d || !d.title.trim() || !d.mainId) return;
@@ -462,6 +481,11 @@ export class TaskStore {
     };
     if (d.id == null) await firstValueFrom(this.api.createTodo(body));
     else await firstValueFrom(this.api.updateTodo(d.id, body));
+    // Optionally push this main + subs onto every other task whose title contains the match.
+    const match = d.match.trim();
+    if (d.id != null && d.applyAll && match) {
+      await firstValueFrom(this.api.bulkCategorizeTodos(match, d.mainId, d.catIds));
+    }
     this.taskDialog.set(null);
     await this.refreshTodos();
   }

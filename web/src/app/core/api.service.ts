@@ -31,6 +31,10 @@ export class ApiService {
   bulkDeleteTodos(ids: number[]): Observable<{ deleted: number }> {
     return this.http.post<{ deleted: number }>(`${this.base}/api/todos/bulk-delete`, { ids });
   }
+  // Apply a main category (+ optional subs) to every task whose title contains `match`.
+  bulkCategorizeTodos(match: string, mainId: string, catIds: string[]): Observable<{ updated: number }> {
+    return this.http.post<{ updated: number }>(`${this.base}/api/todos/bulk-categorize`, { match, mainId, catIds });
+  }
 
   // ---- categories ----
   getCategories(): Observable<Categories> {

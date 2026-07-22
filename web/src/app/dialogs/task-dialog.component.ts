@@ -107,6 +107,20 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
                       (input)="patch({ note: value($event) })"></textarea>
           </label>
 
+          <!-- apply this category to every task with a similar name (edit only) -->
+          @if (d.id != null) {
+            <label class="check mt">
+              <input type="checkbox" [checked]="d.applyAll" (change)="toggleApplyAll($event)">
+              <span>{{ store.t('dialog.task.applyAll', { count: store.draftMatchCount(), match: d.match }) }}</span>
+            </label>
+            @if (d.applyAll) {
+              <div class="match-picker">
+                <span class="match-hint">{{ store.t('dialog.task.applyAllHint') }}</span>
+                <span class="match-title" (mouseup)="captureSelection()" (dblclick)="captureSelection()">{{ d.title }}</span>
+              </div>
+            }
+          }
+
           <div class="dialog-actions">
             @if (d.id != null) {
               <button class="btn btn-ghost del" (click)="store.askDeleteFromDialog()">{{ store.t('dialog.task.deleteTask') }}</button>
@@ -152,6 +166,16 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
     .spacer { flex: 1; }
     .del { color: var(--muted); }
     .del:hover { color: var(--color-danger); }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+    .check input { accent-color: var(--color-accent); width: 16px; height: 16px; }
+    .match-picker { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 0 24px; }
+    .match-hint { font-size: 12px; color: var(--muted-strong); }
+    .match-title {
+      align-self: flex-start; font-family: var(--font-mono); font-size: 13px;
+      padding: 4px 8px; background: var(--tint-surface); border: 1px solid var(--color-divider);
+      user-select: text; cursor: text; white-space: pre-wrap; word-break: break-all;
+    }
+    .match-title::selection { background: var(--color-accent); color: #fff; }
   `],
 })
 export class TaskDialogComponent {
@@ -169,6 +193,14 @@ export class TaskDialogComponent {
   humanDate(): string {
     const due = this.store.taskDialog()?.due;
     return due ? dueLabel(due, this.store.lang()) : this.store.t('dialog.task.noDate');
+  }
+
+  toggleApplyAll(e: Event): void { this.patch({ applyAll: (e.target as HTMLInputElement).checked }); }
+
+  /** Use the user's text selection within the title as the match; a bare click leaves it unchanged. */
+  captureSelection(): void {
+    const text = window.getSelection()?.toString() ?? '';
+    if (text.trim()) this.store.setDraftMatch(text);
   }
 
   value(e: Event): string { return (e.target as HTMLInputElement).value; }
