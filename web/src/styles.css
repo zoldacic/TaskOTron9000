@@ -181,6 +181,12 @@ select.input {
   letter-spacing: 0.06em;
 }
 .tag-neutral { background: color-mix(in srgb, #93a4cc 14%, transparent); color: var(--color-text); }
+.tag-main {
+  font-weight: 700;
+  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  color: var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
 .tag-account {
   gap: 4px;
   background: color-mix(in srgb, var(--color-accent) 14%, transparent);

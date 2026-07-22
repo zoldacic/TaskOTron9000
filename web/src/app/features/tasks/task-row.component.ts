@@ -26,6 +26,9 @@ import { fmtMoney } from '../../core/money-util';
         <div class="title" [class.done]="todo.done">{{ todo.title }}</div>
         <div class="meta">
           @if (badge()) { <span class="due" [style.color]="dueColor()">{{ badge() }}</span> }
+          @if (store.mainName(todo.mainId); as main) {
+            <span class="tag tag-main">{{ main }}</span>
+          }
           @if (store.accountName(todo.bankAccountId); as acct) {
             <span class="tag tag-account"><app-icon name="upload" [size]="11" /> {{ acct }}</span>
           }
