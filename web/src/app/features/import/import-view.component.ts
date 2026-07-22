@@ -86,6 +86,9 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
           } @else {
             <div class="table">
               <div class="thead">
+                <input type="checkbox" class="sel-box" [title]="store.t('import.selectAll')"
+                       [checked]="allSelected()" [indeterminate]="someSelected()"
+                       [disabled]="okCount() === 0" (change)="store.setAllImportSelected(checked($event))" />
                 <button type="button" class="sort-h" [class.active]="sortCol() === 'title'" (click)="toggleSort('title')">
                   {{ store.t('import.colTitle') }}<span class="sort-caret">{{ sortCaret('title') }}</span>
                 </button>
@@ -97,8 +100,10 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
                 </button>
               </div>
               @for (r of sortedRows(); track r.key) {
-                <div class="trow rule-1" [style.opacity]="r.ok ? 1 : 0.45">
+                <div class="trow rule-1" [style.opacity]="r.ok ? (isSelected(r) ? 1 : 0.5) : 0.45">
                   <div class="cells">
+                    <input type="checkbox" class="sel-box" [checked]="isSelected(r)" [disabled]="!r.ok"
+                           [title]="store.t('import.selectRow')" (change)="store.toggleImportSelected(r.key)" />
                     <span class="t-title" [title]="r.title">{{ r.title }}</span>
                     <span class="t-date">{{ r.date ?? '—' }}</span>
                     <span class="t-amount" [style.color]="amountColor(r)">{{ amountLabel(r) }}</span>
@@ -119,8 +124,8 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
               }
             </div>
             <div class="foot">
-              <span class="ready">{{ store.t('import.rowsReady', { ok: okCount(), total: store.importRows()!.length }) }}</span>
-              <button class="btn btn-primary" [disabled]="okCount() === 0" (click)="commit()">{{ store.t('import.importAsTasks') }}</button>
+              <span class="ready">{{ store.t('import.rowsSelected', { selected: selectedCount(), ok: okCount() }) }}</span>
+              <button class="btn btn-primary" [disabled]="selectedCount() === 0" (click)="commit()">{{ store.t('import.importSelected', { count: selectedCount() }) }}</button>
             </div>
           }
         </section>
@@ -155,7 +160,9 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
       color: var(--muted); font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
     }
     .table { border: 1px solid var(--color-divider); }
-    .thead, .cells { display: grid; grid-template-columns: 1fr 92px 96px; gap: 10px; align-items: center; }
+    .thead, .cells { display: grid; grid-template-columns: 20px 1fr 92px 96px; gap: 10px; align-items: center; }
+    .sel-box { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--color-accent); }
+    .sel-box:disabled { cursor: not-allowed; }
     .thead { padding: 10px; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); border-bottom: 2px solid var(--color-divider); }
     .sort-h {
       display: inline-flex; align-items: center; gap: 4px; padding: 0; min-width: 0;
@@ -236,8 +243,9 @@ export class ImportViewComponent {
   selectAccount(e: Event): string | null { return (e.target as HTMLSelectElement).value || null; }
 
   async commit(): Promise<void> {
-    await this.store.commitImport();
-    void this.router.navigate(['/tasks']); // jump to Tasks view, like the prototype
+    const done = await this.store.commitImport();
+    // Only leave the import view once nothing is left; otherwise stay to finish the rest.
+    if (done) void this.router.navigate(['/tasks']);
   }
 
   async onFile(e: Event): Promise<void> {
@@ -261,7 +269,9 @@ export class ImportViewComponent {
 
   selectValue(e: Event): BankFileType { return (e.target as HTMLSelectElement).value as BankFileType; }
   selectValueStr(e: Event): string { return (e.target as HTMLSelectElement).value; }
+  checked(e: Event): boolean { return (e.target as HTMLInputElement).checked; }
   value(e: Event): string { return (e.target as HTMLTextAreaElement).value; }
+  isSelected(r: ImportRow): boolean { return this.store.importSelected().has(r.key); }
   amountLabel(r: ImportRow): string { return r.amount != null ? fmtMoney(r.amount) : this.store.t('import.amountNone'); }
   amountColor(r: ImportRow): string {
     return r.amount == null ? 'var(--muted-strong)' : r.amount >= 0 ? 'var(--color-income)' : 'var(--color-danger)';
@@ -271,4 +281,9 @@ export class ImportViewComponent {
     return this.store.titleDefaults().some((d) => d.normalizedTitle && norm.includes(d.normalizedTitle));
   }
   okCount = computed(() => (this.store.importRows() ?? []).filter((r) => r.ok).length);
+  selectedCount = computed(() =>
+    (this.store.importRows() ?? []).filter((r) => r.ok && this.store.importSelected().has(r.key)).length);
+  // Header checkbox: ticked when every importable row is picked, dashed when only some are.
+  allSelected = computed(() => this.okCount() > 0 && this.selectedCount() === this.okCount());
+  someSelected = computed(() => this.selectedCount() > 0 && this.selectedCount() < this.okCount());
 }

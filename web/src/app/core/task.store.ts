@@ -136,6 +136,8 @@ export class TaskStore {
   // batch default main for imported tasks; last choice remembered across sessions (validated on load)
   readonly importMainId = signal<string | null>(readStoredImportMain());
   readonly importRows = signal<ImportRow[] | null>(null);
+  // Keys of the preview rows the user has picked to import; the rest are left in place to keep working on.
+  readonly importSelected = signal<ReadonlySet<number>>(new Set());
 
   // ---- bank accounts ----
   readonly newBankAccount = signal('');
@@ -569,8 +571,8 @@ export class TaskStore {
   }
 
   // ---- import ----
-  loadSampleImport(): void { this.importText.set(SAMPLE_IMPORT); this.importRows.set(null); }
-  clearImport(): void { this.importText.set(''); this.importRows.set(null); }
+  loadSampleImport(): void { this.importText.set(SAMPLE_IMPORT); this.importRows.set(null); this.importSelected.set(new Set()); }
+  clearImport(): void { this.importText.set(''); this.importRows.set(null); this.importSelected.set(new Set()); }
   /** Appends parsed rows (each already `date\ttitle\tamount`) to the import text box. */
   appendImportRows(rows: string[]): void {
     if (rows.length === 0) return;
@@ -582,7 +584,22 @@ export class TaskStore {
     const rows = await firstValueFrom(this.api.parseImport(this.importText()));
     // Each row needs a main: keep any remembered from a title default, else the batch default.
     const def = this.importMainId() ?? this.firstMainId();
-    this.importRows.set(rows.map((r) => ({ ...r, mainId: r.mainId ?? def, note: r.note ?? '' })));
+    const mapped = rows.map((r) => ({ ...r, mainId: r.mainId ?? def, note: r.note ?? '' }));
+    this.importRows.set(mapped);
+    // Pre-select every importable (ok) row, matching the old "import everything" default.
+    this.importSelected.set(new Set(mapped.filter((r) => r.ok).map((r) => r.key)));
+  }
+  /** Toggle whether a single preview row is selected for import. */
+  toggleImportSelected(key: number): void {
+    const next = new Set(this.importSelected());
+    if (next.has(key)) next.delete(key); else next.add(key);
+    this.importSelected.set(next);
+  }
+  /** Select or clear every importable (ok) preview row at once. */
+  setAllImportSelected(on: boolean): void {
+    this.importSelected.set(on
+      ? new Set((this.importRows() ?? []).filter((r) => r.ok).map((r) => r.key))
+      : new Set());
   }
   /** Set the batch default main, remember it across sessions, and apply it to every parsed row. */
   setImportMain(mainId: string | null): void {
@@ -591,9 +608,15 @@ export class TaskStore {
     const rows = this.importRows();
     if (mainId && rows) this.importRows.set(rows.map((r) => ({ ...r, mainId })));
   }
-  async commitImport(): Promise<void> {
-    const rows = (this.importRows() ?? []).filter((r) => r.ok);
-    if (!rows.length) return;
+  /**
+   * Import the selected, importable rows and leave the rest in the preview to keep working on.
+   * Returns true when nothing is left to import (the preview was fully cleared).
+   */
+  async commitImport(): Promise<boolean> {
+    const all = this.importRows() ?? [];
+    const sel = this.importSelected();
+    const rows = all.filter((r) => r.ok && sel.has(r.key));
+    if (!rows.length) return false;
     const bankAccountId = this.importAccountId();
     const fallback = this.importMainId() ?? this.firstMainId();
     const body: ImportCommitRow[] = rows.map((r) => ({
@@ -602,11 +625,21 @@ export class TaskStore {
       note: (r.note ?? '').trim() || null,
     }));
     await firstValueFrom(this.api.commitImport(body));
-    this.importText.set('');
-    this.importRows.set(null);
+    // Keep whatever wasn't just imported so the user can continue with it.
+    const imported = new Set(rows.map((r) => r.key));
+    const remaining = all.filter((r) => !imported.has(r.key));
+    if (remaining.length) {
+      this.importRows.set(remaining);
+      this.importSelected.set(new Set(remaining.filter((r) => r.ok).map((r) => r.key)));
+    } else {
+      this.importText.set('');
+      this.importRows.set(null);
+      this.importSelected.set(new Set());
+    }
     this.filter.set('all');
     // Imported tasks now use this account, so refresh usage counts too.
     await Promise.all([this.refreshTodos(), this.refreshBankAccounts()]);
+    return remaining.length === 0;
   }
 
   // ---- bank accounts ----
@@ -732,6 +765,10 @@ export class TaskStore {
     const partA: ImportRow = { ...orig, title: s.aTitle.trim() || orig.title, amount: a, ok: true };
     const partB: ImportRow = { ...orig, key: nextKey, title: s.bTitle.trim() || orig.title, amount: b, ok: true };
     this.importRows.set(rows.flatMap((r) => (r.key === s.key ? [partA, partB] : [r])));
+    // The new part inherits the original row's selection (part 1 keeps its key, so it's unaffected).
+    if (this.importSelected().has(s.key)) {
+      this.importSelected.set(new Set(this.importSelected()).add(nextKey));
+    }
     this.importSplit.set(null);
   }
 
