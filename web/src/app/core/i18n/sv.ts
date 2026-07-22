@@ -160,9 +160,8 @@ export const sv: Record<TranslationKey, string> = {
   'dialog.importSplit.partA': 'Del 1',
   'dialog.importSplit.partB': 'Del 2',
   'dialog.importSplit.titlePlaceholder': 'Titel',
-  'dialog.importSplit.combined': 'Totalt: {sum}',
-  'dialog.importSplit.mismatch': 'stämmer inte med {total}',
-  'dialog.importSplit.hint': 'Varje del blir en egen rad — tilldela kategorier till dem separat efteråt.',
+  'dialog.importSplit.remainder': 'Beräknas automatiskt: resten av ursprungsbeloppet',
+  'dialog.importSplit.hint': 'Del 2 får det som återstår av ursprungsbeloppet. Varje del blir en egen rad — tilldela kategorier till dem separat efteråt.',
   'dialog.importSplit.apply': 'Dela',
 
   // ---- save-query dialog ----

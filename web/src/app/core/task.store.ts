@@ -42,11 +42,10 @@ export interface ImportCatDraft {
 export interface ImportSplitDraft {
   key: number; // the original row being split
   title: string; // original title (display only)
-  total: number; // original amount, for the running-total hint
+  total: number; // original amount; part 2 is derived as total − part 1
   aTitle: string;
-  aAmount: string; // kept as strings so the inputs edit freely (blank, '-', '.')
+  aAmount: string; // kept as a string so the input edits freely (blank, '-', '.')
   bTitle: string;
-  bAmount: string;
 }
 export interface Confirm {
   title: string;
@@ -656,31 +655,30 @@ export class TaskStore {
     await this.refreshTitleDefaults();
   }
 
-  /** Open the split dialog for a row, pre-filling two halves of its amount. */
+  /** Open the split dialog for a row, pre-filling part 1 with half its amount. */
   openImportSplit(key: number): void {
     const r = (this.importRows() ?? []).find((x) => x.key === key);
     if (!r || r.amount == null) return; // only amount-bearing rows can be split
     const half = Math.round((r.amount / 2) * 100) / 100;
-    const rest = Math.round((r.amount - half) * 100) / 100;
-    this.importSplit.set({
-      key, title: r.title, total: r.amount,
-      aTitle: r.title, aAmount: String(half),
-      bTitle: r.title, bAmount: String(rest),
-    });
+    this.importSplit.set({ key, title: r.title, total: r.amount, aTitle: r.title, aAmount: String(half), bTitle: r.title });
   }
-  setImportSplitField(k: 'aTitle' | 'aAmount' | 'bTitle' | 'bAmount', v: string): void {
+  setImportSplitField(k: 'aTitle' | 'aAmount' | 'bTitle', v: string): void {
     const s = this.importSplit();
     if (s) this.importSplit.set({ ...s, [k]: v });
   }
-  /** Replace the split row with its two parts (part A keeps the key, part B gets a fresh one). */
+  /**
+   * Replace the split row with its two parts. Part 1 keeps the row's key and takes the
+   * entered amount; part 2 gets a fresh key and the remainder (total − part 1), so the two
+   * always add back up to the original.
+   */
   saveImportSplit(): void {
     const s = this.importSplit();
     if (!s) return;
     const rows = this.importRows();
     if (!rows) return;
-    const a = Number(s.aAmount);
-    const b = Number(s.bAmount);
-    if (!s.aAmount.trim() || !s.bAmount.trim() || Number.isNaN(a) || Number.isNaN(b)) return;
+    if (!s.aAmount.trim() || Number.isNaN(Number(s.aAmount))) return;
+    const a = Math.round(Number(s.aAmount) * 100) / 100;
+    const b = Math.round((s.total - a) * 100) / 100;
     const orig = rows.find((r) => r.key === s.key);
     if (!orig) return;
     const nextKey = Math.max(...rows.map((r) => r.key)) + 1;

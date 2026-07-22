@@ -160,9 +160,8 @@ export const en = {
   'dialog.importSplit.partA': 'Part 1',
   'dialog.importSplit.partB': 'Part 2',
   'dialog.importSplit.titlePlaceholder': 'Title',
-  'dialog.importSplit.combined': 'Combined: {sum}',
-  'dialog.importSplit.mismatch': 'doesn’t add up to {total}',
-  'dialog.importSplit.hint': 'Each part becomes its own row — assign categories to them separately afterwards.',
+  'dialog.importSplit.remainder': 'Auto-derived: the rest of the original amount',
+  'dialog.importSplit.hint': 'Part 2 gets whatever is left of the original amount. Each part becomes its own row — assign categories to them separately afterwards.',
   'dialog.importSplit.apply': 'Split',
 
   // ---- save-query dialog ----

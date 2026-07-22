@@ -25,15 +25,7 @@ import { fmtMoney } from '../core/money-util';
             <input class="input part-title" [value]="s.bTitle"
                    [placeholder]="store.t('dialog.importSplit.titlePlaceholder')"
                    (input)="set('bTitle', $event)">
-            <input class="input part-amount" type="text" inputmode="decimal" [value]="s.bAmount"
-                   (input)="set('bAmount', $event)">
-          </div>
-
-          <div class="sum" [class.off]="!balanced()">
-            <span>{{ store.t('dialog.importSplit.combined', { sum: money(sum()) }) }}</span>
-            @if (!balanced()) {
-              <span class="sum-warn">{{ store.t('dialog.importSplit.mismatch', { total: money(s.total) }) }}</span>
-            }
+            <span class="part-amount derived" [title]="store.t('dialog.importSplit.remainder')">{{ valid() ? money(remainder()) : '—' }}</span>
           </div>
 
           <p class="hint">{{ store.t('dialog.importSplit.hint') }}</p>
@@ -50,36 +42,28 @@ import { fmtMoney } from '../core/money-util';
     .part { display: grid; grid-template-columns: 64px 1fr 120px; gap: 10px; align-items: center; margin-top: var(--space-4); }
     .part-label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
     .part-amount { font-family: var(--font-mono); text-align: right; }
-    .sum { display: flex; flex-direction: column; gap: 4px; margin-top: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
-    .sum.off { color: var(--color-danger); }
-    .sum-warn { color: var(--color-danger); }
+    .derived { font-weight: 700; color: var(--muted); align-self: center; }
     .hint { color: var(--muted-strong); font-size: 12px; margin-top: 12px; }
   `],
 })
 export class ImportSplitDialogComponent {
   store = inject(TaskStore);
 
-  readonly sum = computed(() => {
-    const s = this.store.importSplit();
-    if (!s) return 0;
-    return (Number(s.aAmount) || 0) + (Number(s.bAmount) || 0);
-  });
-  /** Both amounts present and numeric — the split can be applied. */
+  /** Part 1 amount is present and numeric — the split can be applied. */
   readonly valid = computed(() => {
     const s = this.store.importSplit();
     if (!s) return false;
-    return s.aAmount.trim() !== '' && s.bAmount.trim() !== ''
-      && !Number.isNaN(Number(s.aAmount)) && !Number.isNaN(Number(s.bAmount));
+    return s.aAmount.trim() !== '' && !Number.isNaN(Number(s.aAmount));
   });
-  /** The two parts add back up to the original amount (within a cent). */
-  readonly balanced = computed(() => {
+  /** Part 2's auto-derived amount: whatever is left of the original after part 1. */
+  readonly remainder = computed(() => {
     const s = this.store.importSplit();
-    if (!s || !this.valid()) return true; // don't flag a mismatch while the numbers are incomplete
-    return Math.abs(this.sum() - s.total) < 0.005;
+    if (!s) return 0;
+    return Math.round((s.total - Number(s.aAmount)) * 100) / 100;
   });
 
   money(n: number): string { return fmtMoney(n); }
-  set(k: 'aTitle' | 'aAmount' | 'bTitle' | 'bAmount', e: Event): void {
+  set(k: 'aTitle' | 'aAmount' | 'bTitle', e: Event): void {
     this.store.setImportSplitField(k, (e.target as HTMLInputElement).value);
   }
   close(): void { this.store.importSplit.set(null); }
