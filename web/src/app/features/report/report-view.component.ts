@@ -32,28 +32,44 @@ import { fmtMoney } from '../../core/money-util';
       <!-- category selection -->
       <section class="block rule-2">
         <div class="sel-head">
-          <span class="kicker">{{ store.t('report.categories') }}</span>
+          <div class="seg">
+            <button class="seg-opt" [class.active]="store.repMode() === 'main'"
+                    (click)="store.setRepMode('main')">{{ store.t('report.byMain') }}</button>
+            <button class="seg-opt" [class.active]="store.repMode() === 'sub'"
+                    (click)="store.setRepMode('sub')">{{ store.t('report.bySub') }}</button>
+          </div>
           <div class="sel-actions">
             <button class="btn btn-ghost" (click)="store.repAll()">{{ store.t('report.all') }}</button>
             <button class="btn btn-ghost" (click)="store.repNone()">{{ store.t('report.none') }}</button>
           </div>
         </div>
-        @for (m of store.mains(); track m.id) {
+        @if (store.repMode() === 'main') {
           <div class="sel-row">
-            <span class="sel-label">{{ m.name }}</span>
             <div class="chips">
-              @for (s of store.subsOf(m.id); track s.id) {
-                <button class="chip" [class.on]="isSel(s.id)" (click)="store.repToggleSub(s.id)">{{ s.name }}</button>
+              @for (m of store.mains(); track m.id) {
+                <button class="chip" [class.on]="isSel(m.id)" (click)="store.repToggle(m.id)">{{ m.name }}</button>
               }
+              <button class="chip" [class.on]="isSel('__none__')" (click)="store.repToggle('__none__')">{{ store.t('report.uncategorized') }}</button>
+            </div>
+          </div>
+        } @else {
+          @for (m of store.mains(); track m.id) {
+            <div class="sel-row">
+              <span class="sel-label">{{ m.name }}</span>
+              <div class="chips">
+                @for (s of store.subsOf(m.id); track s.id) {
+                  <button class="chip" [class.on]="isSel(s.id)" (click)="store.repToggle(s.id)">{{ s.name }}</button>
+                }
+              </div>
+            </div>
+          }
+          <div class="sel-row">
+            <span class="sel-label">{{ store.t('report.other') }}</span>
+            <div class="chips">
+              <button class="chip" [class.on]="isSel('__none__')" (click)="store.repToggle('__none__')">{{ store.t('report.uncategorized') }}</button>
             </div>
           </div>
         }
-        <div class="sel-row">
-          <span class="sel-label">{{ store.t('report.other') }}</span>
-          <div class="chips">
-            <button class="chip" [class.on]="isSel('__none__')" (click)="store.repToggleSub('__none__')">{{ store.t('report.uncategorized') }}</button>
-          </div>
-        </div>
       </section>
 
       @if (store.report(); as r) {

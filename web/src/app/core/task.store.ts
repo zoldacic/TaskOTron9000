@@ -120,6 +120,8 @@ export class TaskStore {
   // ---- reports ----
   readonly repStart = signal('2026-07-01');
   readonly repEnd = signal('2026-07-31');
+  // Selection grain: 'main' → repSel holds main ids; 'sub' → repSel holds sub ids.
+  readonly repMode = signal<'main' | 'sub'>('main');
   readonly repSel = signal<string[] | null>(null); // null = all
   readonly report = signal<Report | null>(null);
 
@@ -647,15 +649,29 @@ export class TaskStore {
   // ---- reports ----
   async loadReport(): Promise<void> {
     this.report.set(await firstValueFrom(
-      this.api.getReport(this.repStart(), this.repEnd(), this.repSel())));
+      this.api.getReport(this.repStart(), this.repEnd(), this.repSel(), this.repMode())));
   }
   allSubIds(): string[] { return this.subs().map((s) => s.id); }
-  repToggleSub(id: string): void {
-    const base = [...this.allSubIds(), '__none__'];
-    const cur = this.repSel() == null ? [...base] : [...this.repSel()!];
+  /** Every selectable id in the current grain, plus the "uncategorized" pseudo-id. */
+  private repUniverse(): string[] {
+    const ids = this.repMode() === 'main'
+      ? this.mains().map((m) => m.id)
+      : this.allSubIds();
+    return [...ids, '__none__'];
+  }
+  /** Toggle a single main/sub id in the current grain. */
+  repToggle(id: string): void {
+    const cur = this.repSel() == null ? [...this.repUniverse()] : [...this.repSel()!];
     const i = cur.indexOf(id);
     if (i >= 0) cur.splice(i, 1); else cur.push(id);
     this.repSel.set(cur);
+    void this.loadReport();
+  }
+  /** Switch selection grain; resets to "all" since ids live in different namespaces. */
+  setRepMode(mode: 'main' | 'sub'): void {
+    if (this.repMode() === mode) return;
+    this.repMode.set(mode);
+    this.repSel.set(null);
     void this.loadReport();
   }
   repAll(): void { this.repSel.set(null); void this.loadReport(); }

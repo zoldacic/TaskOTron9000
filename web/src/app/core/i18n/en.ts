@@ -254,6 +254,8 @@ export const en = {
   'report.last30': 'Last 30 days',
   'report.year': 'Year',
   'report.categories': 'Categories',
+  'report.byMain': 'Categories',
+  'report.bySub': 'Sub-categories',
   'report.all': 'All',
   'report.none': 'None',
   'report.other': 'Other',

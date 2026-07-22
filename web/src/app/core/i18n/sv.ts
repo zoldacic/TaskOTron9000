@@ -254,6 +254,8 @@ export const sv: Record<TranslationKey, string> = {
   'report.last30': 'Senaste 30 dagarna',
   'report.year': 'År',
   'report.categories': 'Kategorier',
+  'report.byMain': 'Kategorier',
+  'report.bySub': 'Underkategorier',
   'report.all': 'Alla',
   'report.none': 'Inga',
   'report.other': 'Övrigt',

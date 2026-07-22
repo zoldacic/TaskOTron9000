@@ -5,6 +5,9 @@ public record ReportTask(DateOnly? Due, decimal? Amount, string? MainId, IReadOn
 /// <summary>A main category with the ids of its subs, in display order.</summary>
 public record ReportMain(string Id, string Name, IReadOnlyList<string> SubIds);
 
+/// <summary>A sub category, in display order.</summary>
+public record ReportSub(string Id, string Name, string MainId);
+
 public record ReportBucket(string Label, decimal Net);
 public record ReportCategory(string Name, decimal Net);
 
@@ -26,25 +29,37 @@ public static class ReportBuilder
     private static readonly string[] Months =
         ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    /// <param name="repSel">Selected sub ids (may include "__none__"). Null = all categories.</param>
+    /// <param name="repSel">
+    /// Selected ids (may include "__none__"). Null = all. When <paramref name="groupBy"/>
+    /// is "main" these are main ids; when "sub" they are sub ids.
+    /// </param>
+    /// <param name="groupBy">"main" filters/breaks down by main category; "sub" by sub category.</param>
     public static ReportResult Build(
         IEnumerable<ReportTask> tasks,
         DateOnly repStart,
         DateOnly repEnd,
         IReadOnlyCollection<string>? repSel,
+        string groupBy,
         IReadOnlyList<ReportMain> mains,
-        IReadOnlyList<string> allSubIds)
+        IReadOnlyList<ReportSub> subs)
     {
+        var bySub = groupBy == "sub";
+        var universe = bySub ? subs.Select(s => s.Id) : mains.Select(m => m.Id);
         var repSet = repSel is null
-            ? new HashSet<string>(allSubIds) { Uncategorized }
+            ? new HashSet<string>(universe) { Uncategorized }
             : new HashSet<string>(repSel);
+
+        // A task is included when its selection key matches the chosen set. In "sub"
+        // mode the key is any of its subs; in "main" mode its single main. Tasks with
+        // no key (no subs / no main) fall under the "__none__" bucket.
+        bool Included(ReportTask t) => bySub
+            ? (t.CatIds.Count > 0 ? t.CatIds.Any(c => repSet.Contains(c)) : repSet.Contains(Uncategorized))
+            : (!string.IsNullOrEmpty(t.MainId) ? repSet.Contains(t.MainId) : repSet.Contains(Uncategorized));
 
         var repTasks = tasks.Where(t =>
                 t.Amount is not null
                 && t.Due is DateOnly d && d >= repStart && d <= repEnd
-                && (t.CatIds.Count > 0
-                    ? t.CatIds.Any(c => repSet.Contains(c))
-                    : repSet.Contains(Uncategorized)))
+                && Included(t))
             .Select(t => (Due: t.Due!.Value, Amount: t.Amount!.Value, t.MainId, t.CatIds))
             .ToList();
 
@@ -52,20 +67,41 @@ public static class ReportBuilder
         var moneyOut = repTasks.Where(t => t.Amount < 0).Sum(t => t.Amount);
         var net = moneyIn + moneyOut;
 
-        // ---- category breakdown: grouped by each task's explicit main ----
-        // Every task now has exactly one main, so a task contributes to a single
-        // bucket (no double-counting across subs). Mains are emitted in display order.
+        // ---- category breakdown: one bar per selected item, following the group-by
+        // grain. Each task contributes to exactly one bucket (no double-counting): its
+        // single main, or — in "sub" mode — the first of its subs that is selected.
+        // Buckets are emitted in category display order.
         var catAgg = new List<ReportCategory>();
-        foreach (var m in mains)
+        if (bySub)
         {
-            var items = repTasks.Where(t => t.MainId == m.Id).ToList();
-            if (items.Count > 0)
-                catAgg.Add(new ReportCategory(m.Name, items.Sum(t => t.Amount)));
+            var sums = new Dictionary<string, decimal>();
+            decimal uncatSum = 0m;
+            var anyUncat = false;
+            foreach (var t in repTasks)
+            {
+                var sub = t.CatIds.FirstOrDefault(c => repSet.Contains(c));
+                if (sub is null) { uncatSum += t.Amount; anyUncat = true; }
+                else sums[sub] = sums.GetValueOrDefault(sub) + t.Amount;
+            }
+            foreach (var s in subs)
+                if (sums.TryGetValue(s.Id, out var v))
+                    catAgg.Add(new ReportCategory(s.Name, v));
+            if (anyUncat)
+                catAgg.Add(new ReportCategory("Uncategorized", uncatSum));
         }
-        // Defensive: legacy tasks with no main (should not occur post-backfill).
-        var uncat = repTasks.Where(t => string.IsNullOrEmpty(t.MainId)).ToList();
-        if (uncat.Count > 0)
-            catAgg.Add(new ReportCategory("Uncategorized", uncat.Sum(t => t.Amount)));
+        else
+        {
+            foreach (var m in mains)
+            {
+                var items = repTasks.Where(t => t.MainId == m.Id).ToList();
+                if (items.Count > 0)
+                    catAgg.Add(new ReportCategory(m.Name, items.Sum(t => t.Amount)));
+            }
+            // Defensive: legacy tasks with no main (should not occur post-backfill).
+            var uncat = repTasks.Where(t => string.IsNullOrEmpty(t.MainId)).ToList();
+            if (uncat.Count > 0)
+                catAgg.Add(new ReportCategory("Uncategorized", uncat.Sum(t => t.Amount)));
+        }
 
         // ---- time buckets with auto-granularity ----
         var spanDays = (repEnd.DayNumber - repStart.DayNumber) + 1;

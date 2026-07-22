@@ -14,6 +14,10 @@ public class ReportBuilderTests
     ];
     private static readonly List<string> AllSubIds =
         ["wr", "wm", "we", "wp", "he", "hc", "hr", "ph", "pf", "pl"];
+    // Sub display order mirrors the mains' sub order; names = ids here (breakdown-by-sub
+    // tests only assert on ids/totals, so a name-as-id stand-in is sufficient).
+    private static readonly List<ReportSub> Subs =
+        Mains.SelectMany(m => m.SubIds.Select(s => new ReportSub(s, s, m.Id))).ToList();
 
     // main = each task's required category (matches the DbInitializer seed);
     // cats = its subs (may span other mains).
@@ -41,7 +45,7 @@ public class ReportBuilderTests
     {
         var r = ReportBuilder.Build(SeedTasks(),
             new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31),
-            repSel: null, Mains, AllSubIds);
+            repSel: null, groupBy: "main", Mains, Subs);
 
         Assert.Equal(4882.4m, r.MoneyIn);
         Assert.Equal(-407.08m, r.MoneyOut);
@@ -55,7 +59,7 @@ public class ReportBuilderTests
     {
         var r = ReportBuilder.Build(SeedTasks(),
             new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31),
-            repSel: ["pf"], Mains, AllSubIds);
+            repSel: ["pf"], groupBy: "sub", Mains, Subs);
 
         // Salary +4200, Freelance +650 (has pf), Pay electricity -84.5.
         Assert.Equal(4850m, r.MoneyIn);
@@ -68,7 +72,7 @@ public class ReportBuilderTests
     {
         var r = ReportBuilder.Build(SeedTasks(),
             new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31),
-            repSel: [ReportBuilder.Uncategorized], Mains, AllSubIds);
+            repSel: [ReportBuilder.Uncategorized], groupBy: "sub", Mains, Subs);
 
         Assert.Equal(0m, r.MoneyIn);
         Assert.Equal(0m, r.MoneyOut);
@@ -83,7 +87,7 @@ public class ReportBuilderTests
     public void Granularity_boundaries(string from, string to, string expected)
     {
         var r = ReportBuilder.Build(SeedTasks(),
-            DateOnly.Parse(from), DateOnly.Parse(to), repSel: null, Mains, AllSubIds);
+            DateOnly.Parse(from), DateOnly.Parse(to), repSel: null, groupBy: "main", Mains, Subs);
         Assert.Equal(expected, r.Granularity);
     }
 
@@ -92,7 +96,7 @@ public class ReportBuilderTests
     {
         var r = ReportBuilder.Build(SeedTasks(),
             new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31),
-            repSel: null, Mains, AllSubIds);
+            repSel: null, groupBy: "main", Mains, Subs);
 
         var personal = r.CategoryBreakdown.Single(c => c.Name == "Personal");
         // All in-range tasks whose main is "personal" (the freelance +650 counts here
@@ -101,5 +105,21 @@ public class ReportBuilderTests
 
         // Work has no amount-bearing July task as its main → no breakdown row.
         Assert.DoesNotContain(r.CategoryBreakdown, c => c.Name == "Work");
+    }
+
+    [Fact]
+    public void Sub_breakdown_emits_one_row_per_selected_sub()
+    {
+        var r = ReportBuilder.Build(SeedTasks(),
+            new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31),
+            repSel: ["pf", "pl"], groupBy: "sub", Mains, Subs);
+
+        // pf: salary +4200, freelance +650 (first selected sub of {pf,wr} is pf), electricity -84.5.
+        // pl: two small buys. Each task counts once, so pf and pl are distinct bars.
+        Assert.Equal(2, r.CategoryBreakdown.Count);
+        Assert.Equal(4200m + 650m - 84.5m, r.CategoryBreakdown.Single(c => c.Name == "pf").Net);
+        Assert.Equal(-15.99m - 18.99m, r.CategoryBreakdown.Single(c => c.Name == "pl").Net);
+        // Emitted in sub display order: pf before pl.
+        Assert.Equal("pf", r.CategoryBreakdown[0].Name);
     }
 }

@@ -103,8 +103,8 @@ export class ApiService {
 
   // ---- reports ----
   // `categories` null => all; empty array => none selected.
-  getReport(from: string, to: string, categories: string[] | null): Observable<Report> {
-    let params = new HttpParams().set('from', from).set('to', to);
+  getReport(from: string, to: string, categories: string[] | null, groupBy: 'main' | 'sub'): Observable<Report> {
+    let params = new HttpParams().set('from', from).set('to', to).set('groupBy', groupBy);
     if (categories !== null) params = params.set('categories', categories.join(','));
     return this.http.get<Report>(`${this.base}/api/report`, { params });
   }
