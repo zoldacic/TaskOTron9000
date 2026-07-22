@@ -267,6 +267,7 @@ export const en = {
   'report.emptyBody': 'Widen the dates, select more categories, or import a bank file to see the damage.',
   'report.netOverTime': 'Net over time',
   'report.netByCategory': 'Net by category',
+  'report.netBySubcategory': 'Net by sub-category',
   'report.gran.daily': 'daily',
   'report.gran.weekly': 'weekly',
   'report.gran.monthly': 'monthly',

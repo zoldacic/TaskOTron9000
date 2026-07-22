@@ -103,7 +103,7 @@ import { fmtMoney } from '../../core/money-util';
 
           <!-- net by category -->
           <section class="block">
-            <div class="kicker chart-kicker">{{ store.t('report.netByCategory') }}</div>
+            <div class="kicker chart-kicker">{{ store.t(store.repMode() === 'sub' ? 'report.netBySubcategory' : 'report.netByCategory') }}</div>
             @for (c of r.categoryBreakdown; track c.name; let i = $index) {
               <div class="cat-bar">
                 @if (multiColor()) {

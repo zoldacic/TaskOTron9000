@@ -267,6 +267,7 @@ export const sv: Record<TranslationKey, string> = {
   'report.emptyBody': 'Vidga datumen, välj fler kategorier eller importera en bankfil för att se skadan.',
   'report.netOverTime': 'Netto över tid',
   'report.netByCategory': 'Netto per kategori',
+  'report.netBySubcategory': 'Netto per underkategori',
   'report.gran.daily': 'dagligen',
   'report.gran.weekly': 'veckovis',
   'report.gran.monthly': 'månadsvis',
