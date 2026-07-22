@@ -26,7 +26,7 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
             <select class="input acct-select" [value]="store.importMainId() ?? ''"
                     (change)="store.setImportMain(selectValueStr($event) || null)">
               @for (m of store.mains(); track m.id) {
-                <option [value]="m.id">{{ m.name }}</option>
+                <option [value]="m.id" [selected]="m.id === store.importMainId()">{{ m.name }}</option>
               }
             </select>
             <span class="acct-hint">{{ store.t('import.mainCategoryHint') }}</span>
