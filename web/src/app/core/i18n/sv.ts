@@ -37,8 +37,6 @@ export const sv: Record<TranslationKey, string> = {
   'tasks.new': 'Ny uppgift',
   'tasks.searchPlaceholder': 'Sök uppgifter efter titel…',
   'tasks.clear': 'Rensa',
-  'tasks.quickAddPlaceholder': 'Logga en uppgift innan den loggar dig…',
-  'tasks.add': 'Lägg till',
   'tasks.selectAll': 'Markera alla',
   'tasks.clearAll': 'Avmarkera alla',
   'tasks.selectedCount': '{count} markerade',

@@ -37,8 +37,6 @@ export const en = {
   'tasks.new': 'New task',
   'tasks.searchPlaceholder': 'Search tasks by title…',
   'tasks.clear': 'Clear',
-  'tasks.quickAddPlaceholder': 'Log a task before it logs you…',
-  'tasks.add': 'Add',
   'tasks.selectAll': 'Select all',
   'tasks.clearAll': 'Clear all',
   'tasks.selectedCount': '{count} selected',

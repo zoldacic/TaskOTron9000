@@ -113,7 +113,6 @@ export class TaskStore {
   readonly saveQueryName = signal<string | null>(null); // non-null => "name this query" dialog open
   readonly saveQueryError = signal<string | null>(null);
   readonly layout = signal<'list' | 'grouped'>('list');
-  readonly quickAdd = signal('');
   readonly selectedMain = signal<string | null>(null);
   readonly newMain = signal('');
   readonly newSub = signal('');
@@ -399,17 +398,6 @@ export class TaskStore {
   private inheritedMainId(): string {
     const f = this.filter();
     return (!isSmart(f) && this.mainOfSub(f)) || this.firstMainId();
-  }
-
-  async addQuick(): Promise<void> {
-    const title = this.quickAdd().trim();
-    if (!title) return;
-    await firstValueFrom(this.api.createTodo({
-      title, due: null, amount: null, dateKind: 'due',
-      mainId: this.inheritedMainId(), catIds: this.inheritedCatIds(), bankAccountId: null, note: null,
-    }));
-    this.quickAdd.set('');
-    await this.refreshTodos();
   }
 
   openNew(): void {
