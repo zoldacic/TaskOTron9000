@@ -27,8 +27,9 @@ public record TodoWriteDto(
 
 public record BulkDeleteDto(List<int> Ids);
 
-// Apply one main category (+ optional subs) to every task whose title contains Match (case-insensitive).
-public record BulkCategorizeDto(string Match, string? MainId = null, List<string>? CatIds = null);
+// Apply one main category (+ optional subs) to the given tasks by id. The caller scopes the
+// set (e.g. tasks in the current query whose title matches), so the endpoint just applies it.
+public record BulkCategorizeDto(List<int> Ids, string? MainId = null, List<string>? CatIds = null);
 
 // ---- Categories ----
 public record MainDto(string Id, string Name);

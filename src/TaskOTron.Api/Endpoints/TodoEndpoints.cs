@@ -111,19 +111,19 @@ public static class TodoEndpoints
             return Results.Ok(new { deleted = toDelete.Count });
         });
 
-        // Apply a main category (+ optional subs) to every task whose title contains the match
-        // substring (case-insensitive). Returns the count actually updated.
+        // Apply a main category (+ optional subs) to the given tasks by id. The caller decides the
+        // set (e.g. the current query's tasks whose title matches). Returns the count updated.
         g.MapPost("/bulk-categorize", async (BulkCategorizeDto dto, AppDbContext db) =>
         {
-            var match = dto.Match?.Trim().ToLower() ?? "";
-            if (match.Length == 0) return Results.Ok(new { updated = 0 });
+            var ids = dto.Ids?.Distinct().ToList() ?? [];
+            if (ids.Count == 0) return Results.Ok(new { updated = 0 });
             if (string.IsNullOrEmpty(dto.MainId))
                 return Results.BadRequest("A main category is required.");
             if (!await MainValid(db, dto.MainId))
                 return Results.BadRequest($"Unknown main category '{dto.MainId}'.");
 
             var todos = await db.Todos.Include(t => t.Categories)
-                .Where(t => t.Title.ToLower().Contains(match)).ToListAsync();
+                .Where(t => ids.Contains(t.Id)).ToListAsync();
             var subs = await LoadSubs(db, dto.CatIds);
             foreach (var t in todos)
             {

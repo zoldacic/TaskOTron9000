@@ -461,13 +461,21 @@ export class TaskStore {
     const m = text.trim();
     this.updateDialog({ match: m || d.title.trim() });
   }
-  /** How many existing tasks contain the draft's match substring (drives the "apply to all" count). */
-  draftMatchCount(): number {
+  /**
+   * Tasks the "apply to all" would recategorize: those in the current query/filter view
+   * (`visibleTodos`) whose title contains the draft's match substring. Scoping to the visible
+   * set means editing never reaches tasks the user has filtered out.
+   */
+  private draftMatchTargets(): Todo[] {
     const d = this.taskDialog();
-    if (!d) return 0;
+    if (!d) return [];
     const m = d.match.trim().toLowerCase();
-    if (!m) return 0;
-    return this.todos().filter((t) => t.title.trim().toLowerCase().includes(m)).length;
+    if (!m) return [];
+    return this.visibleTodos().filter((t) => t.title.trim().toLowerCase().includes(m));
+  }
+  /** How many tasks in the current query the "apply to all" would recategorize. */
+  draftMatchCount(): number {
+    return this.draftMatchTargets().length;
   }
   async saveTask(): Promise<void> {
     const d = this.taskDialog();
@@ -479,12 +487,13 @@ export class TaskStore {
       title: d.title.trim(), due: d.due, amount, dateKind: d.dateKind,
       mainId: d.mainId, catIds: d.catIds, bankAccountId: d.bankAccountId, note,
     };
+    // Capture the "apply to all" targets from the current query before the update refreshes state.
+    const targetIds = d.id != null && d.applyAll ? this.draftMatchTargets().map((t) => t.id) : [];
     if (d.id == null) await firstValueFrom(this.api.createTodo(body));
     else await firstValueFrom(this.api.updateTodo(d.id, body));
-    // Optionally push this main + subs onto every other task whose title contains the match.
-    const match = d.match.trim();
-    if (d.id != null && d.applyAll && match) {
-      await firstValueFrom(this.api.bulkCategorizeTodos(match, d.mainId, d.catIds));
+    // Push this main + subs onto the current query's tasks whose title contains the match.
+    if (targetIds.length) {
+      await firstValueFrom(this.api.bulkCategorizeTodos(targetIds, d.mainId, d.catIds));
     }
     this.taskDialog.set(null);
     await this.refreshTodos();

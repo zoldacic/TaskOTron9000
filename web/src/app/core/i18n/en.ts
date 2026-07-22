@@ -130,7 +130,7 @@ export const en = {
   'dialog.task.subcategories': 'Subcategories',
   'dialog.task.note': 'Note',
   'dialog.task.notePlaceholder': 'Anything worth remembering?',
-  'dialog.task.applyAll': 'Apply this category to all {count} tasks containing "{match}"',
+  'dialog.task.applyAll': 'Apply this category to all {count} tasks in this view containing "{match}"',
   'dialog.task.applyAllHint': 'Select part of the name to match more tasks:',
   'dialog.task.deleteTask': 'Delete task',
   'dialog.task.cancel': 'Cancel',
