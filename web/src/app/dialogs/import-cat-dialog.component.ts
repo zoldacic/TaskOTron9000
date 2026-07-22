@@ -66,6 +66,7 @@ import { TaskStore } from '../core/task.store';
     }
   `,
   styles: [`
+    .dialog { max-height: 90vh; overflow-y: auto; }
     .field { margin-top: var(--space-4); }
     .req { color: var(--color-accent); }
     .hint { text-transform: none; letter-spacing: 0; color: var(--muted-strong); }
