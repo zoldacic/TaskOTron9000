@@ -604,13 +604,25 @@ export class TaskStore {
   openImportCat(key: number): void {
     const r = (this.importRows() ?? []).find((x) => x.key === key);
     if (!r) return;
-    const norm = r.title.trim().toLowerCase();
+    // Pre-select a remembered default whose merchant substring occurs in this title
+    // (longest wins), so re-opening a remembered row keeps its match, not the whole title.
+    const remembered = this.rememberedMatch(r.title);
     this.importCat.set({
-      key, title: r.title, match: r.title,
+      key, title: r.title, match: remembered ?? r.title,
       mainId: r.mainId || this.importMainId() || this.firstMainId(),
       catIds: [...(r.catIds ?? [])], note: r.note ?? '', applyAll: false,
-      remember: this.titleDefaults().some((d) => d.normalizedTitle === norm),
+      remember: remembered !== null,
     });
+  }
+  /** The original-case slice of `title` for the longest remembered default matching it, or null. */
+  private rememberedMatch(title: string): string | null {
+    const norm = title.trim().toLowerCase();
+    const best = this.titleDefaults()
+      .filter((d) => d.normalizedTitle && norm.includes(d.normalizedTitle))
+      .sort((a, b) => b.normalizedTitle.length - a.normalizedTitle.length)[0];
+    if (!best) return null;
+    const i = title.toLowerCase().indexOf(best.normalizedTitle);
+    return i >= 0 ? title.substring(i, i + best.normalizedTitle.length) : best.normalizedTitle;
   }
   /** Narrow the "apply to all" match to a selected part of the title (empty resets to the full title). */
   setImportCatMatch(text: string): void {
@@ -641,7 +653,6 @@ export class TaskStore {
   async saveImportCat(): Promise<void> {
     const c = this.importCat();
     if (!c || !c.mainId) return;
-    const norm = c.title.trim().toLowerCase();
     const match = c.match.trim().toLowerCase();
     // Apply the main + subs + note to this row (and rows whose title contains the match, if requested).
     this.importRows.set((this.importRows() ?? []).map((r) =>
@@ -649,9 +660,11 @@ export class TaskStore {
         ? { ...r, mainId: c.mainId, catIds: [...c.catIds], note: c.note } : r));
     // Close now: the row change above is applied, so persistence below must not gate the dialog.
     this.importCat.set(null);
-    // Persist / clear the remembered default (main + subs).
-    if (c.remember) await firstValueFrom(this.api.putTitleDefault(norm, c.catIds, c.mainId));
-    else await firstValueFrom(this.api.deleteTitleDefault(norm));
+    // Persist / clear the remembered default under the chosen merchant substring (main + subs).
+    if (match) {
+      if (c.remember) await firstValueFrom(this.api.putTitleDefault(match, c.catIds, c.mainId));
+      else await firstValueFrom(this.api.deleteTitleDefault(match));
+    }
     await this.refreshTitleDefaults();
   }
 

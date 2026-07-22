@@ -210,7 +210,7 @@ export class ImportViewComponent {
   }
   isDefault(r: ImportRow): boolean {
     const norm = r.title.trim().toLowerCase();
-    return this.store.titleDefaults().some((d) => d.normalizedTitle === norm);
+    return this.store.titleDefaults().some((d) => d.normalizedTitle && norm.includes(d.normalizedTitle));
   }
   okCount = computed(() => (this.store.importRows() ?? []).filter((r) => r.ok).length);
 }

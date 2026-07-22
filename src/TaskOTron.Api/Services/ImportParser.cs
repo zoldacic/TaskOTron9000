@@ -13,7 +13,7 @@ public record ParsedImportRow(
     List<string> CatIds,
     string? MainId);
 
-/// <summary>A remembered categorization for a title: one main + its subcategories.</summary>
+/// <summary>A remembered categorization for a merchant: one main + its subcategories.</summary>
 public record TitleDefaultEntry(string? MainId, List<string> CatIds);
 
 /// <summary>
@@ -73,8 +73,9 @@ public static partial class ImportParser
 
     /// <summary>
     /// Parses raw pasted text into rows. <paramref name="titleDefaults"/> maps normalized
-    /// (lowercased, trimmed) titles to a remembered main + sub-category ids, used to
-    /// pre-fill a row's categories.
+    /// (lowercased, trimmed) merchant substrings to a remembered main + sub-category ids.
+    /// A default pre-fills a row when its key appears anywhere in the row's normalized title,
+    /// so a remembered "ica" fills every "MAXI ICA STO/26-07-15" regardless of the trailing date.
     /// </summary>
     public static List<ParsedImportRow> Parse(
         string? text,
@@ -108,9 +109,15 @@ public static partial class ImportParser
 
             var title = rest.Count > 0 ? string.Join(" ", rest) : "Untitled row";
             var norm = title.Trim().ToLowerInvariant();
-            var hasDef = titleDefaults.TryGetValue(norm, out var def);
-            var catIds = hasDef ? new List<string>(def!.CatIds) : new List<string>();
-            var mainId = hasDef ? def!.MainId : null;
+            // A default matches when its remembered substring occurs in the title. If several
+            // match, the longest (most specific) key wins — e.g. "maxi ica" beats "ica".
+            var def = titleDefaults
+                .Where(kv => kv.Key.Length > 0 && norm.Contains(kv.Key, StringComparison.Ordinal))
+                .OrderByDescending(kv => kv.Key.Length)
+                .Select(kv => kv.Value)
+                .FirstOrDefault();
+            var catIds = def is not null ? new List<string>(def.CatIds) : new List<string>();
+            var mainId = def?.MainId;
 
             rows.Add(new ParsedImportRow(i, title, date, amount, amount is not null, catIds, mainId));
         }

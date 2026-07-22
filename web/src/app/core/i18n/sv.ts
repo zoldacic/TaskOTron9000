@@ -151,7 +151,7 @@ export const sv: Record<TranslationKey, string> = {
   'dialog.importCat.notePlaceholder': 'Något värt att minnas?',
   'dialog.importCat.applyAll': 'Tillämpa på alla {count} rader som innehåller "{match}"',
   'dialog.importCat.applyAllHint': 'Markera en del av titeln för att träffa fler rader:',
-  'dialog.importCat.remember': 'Kom ihåg som standard för den här titeln vid framtida importer',
+  'dialog.importCat.remember': 'Kom ihåg för framtida importer av rader som matchar ”{match}”',
   'dialog.importCat.apply': 'Tillämpa',
 
   // ---- import-split dialog ----

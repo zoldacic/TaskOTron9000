@@ -60,7 +60,7 @@ public record SavedQueryWriteDto(string Name, TaskQueryDto Query);
 
 // ---- Title defaults ----
 public record TitleDefaultDto(string NormalizedTitle, List<string> CatIds, string? MainId);
-public record TitleDefaultWriteDto(List<string> CatIds, string? MainId = null);
+public record TitleDefaultWriteDto(string Match, List<string> CatIds, string? MainId = null);
 
 // ---- Import ----
 public record ImportParseRequest(string Text);

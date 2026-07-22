@@ -151,7 +151,7 @@ export const en = {
   'dialog.importCat.notePlaceholder': 'Anything worth remembering?',
   'dialog.importCat.applyAll': 'Apply to all {count} rows containing "{match}"',
   'dialog.importCat.applyAllHint': 'Select part of the title to match more rows:',
-  'dialog.importCat.remember': 'Remember as default for this title in future imports',
+  'dialog.importCat.remember': 'Remember for future imports of rows matching "{match}"',
   'dialog.importCat.apply': 'Apply',
 
   // ---- import-split dialog ----

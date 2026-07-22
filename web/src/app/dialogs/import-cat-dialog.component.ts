@@ -46,16 +46,16 @@ import { TaskStore } from '../core/task.store';
             <input type="checkbox" [checked]="c.applyAll" (change)="flag('applyAll', $event)">
             <span>{{ store.t('dialog.importCat.applyAll', { count: matchCount(), match: c.match }) }}</span>
           </label>
-          @if (c.applyAll) {
+          <label class="check">
+            <input type="checkbox" [checked]="c.remember" (change)="flag('remember', $event)">
+            <span>{{ store.t('dialog.importCat.remember', { match: c.match }) }}</span>
+          </label>
+          @if (c.applyAll || c.remember) {
             <div class="match-picker">
               <span class="match-hint">{{ store.t('dialog.importCat.applyAllHint') }}</span>
               <span class="match-title" (mouseup)="captureSelection()" (dblclick)="captureSelection()">{{ c.title }}</span>
             </div>
           }
-          <label class="check">
-            <input type="checkbox" [checked]="c.remember" (change)="flag('remember', $event)">
-            <span>{{ store.t('dialog.importCat.remember') }}</span>
-          </label>
 
           <div class="dialog-actions">
             <button class="btn btn-secondary" (click)="close()">{{ store.t('common.cancel') }}</button>

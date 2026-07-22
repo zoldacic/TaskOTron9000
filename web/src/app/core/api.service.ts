@@ -84,13 +84,12 @@ export class ApiService {
   getTitleDefaults(): Observable<TitleDefault[]> {
     return this.http.get<TitleDefault[]>(`${this.base}/api/title-defaults`);
   }
-  putTitleDefault(normalizedTitle: string, catIds: string[], mainId: string | null): Observable<TitleDefault> {
-    return this.http.put<TitleDefault>(
-      `${this.base}/api/title-defaults/${encodeURIComponent(normalizedTitle)}`, { catIds, mainId });
+  putTitleDefault(match: string, catIds: string[], mainId: string | null): Observable<TitleDefault> {
+    // Match travels in the body (not the URL path) so titles with '/' aren't mangled.
+    return this.http.put<TitleDefault>(`${this.base}/api/title-defaults`, { match, catIds, mainId });
   }
-  deleteTitleDefault(normalizedTitle: string): Observable<void> {
-    return this.http.delete<void>(
-      `${this.base}/api/title-defaults/${encodeURIComponent(normalizedTitle)}`);
+  deleteTitleDefault(match: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/api/title-defaults`, { params: { match } });
   }
 
   // ---- import ----
