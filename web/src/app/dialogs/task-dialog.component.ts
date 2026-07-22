@@ -120,6 +120,15 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
     }
   `,
   styles: [`
+    .dialog { max-height: 90vh; overflow-y: auto; }
+    .dialog-actions {
+      position: sticky;
+      bottom: calc(-1 * var(--space-6));
+      margin: var(--space-6) calc(-1 * var(--space-6)) calc(-1 * var(--space-6));
+      padding: var(--space-4) var(--space-6);
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-divider);
+    }
     .mt { margin-top: var(--space-4); }
     .hint { text-transform: none; letter-spacing: 0; color: var(--muted-strong); }
     .presets { display: flex; flex-wrap: wrap; gap: 6px; }
