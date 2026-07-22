@@ -241,6 +241,8 @@ export const en = {
   'import.clear': 'Clear',
   'import.help': 'Dates and amounts are auto-detected (currency symbols, +/- signs and thousands separators are handled). Importing a file appends its rows to the box below. The selected bank account is attached to every imported task. An account can only be deleted while no saved task uses it.',
   'import.preview': 'Preview',
+  'import.filterTitle': 'Filter by title…',
+  'import.filterNoMatch': 'No rows match “{query}”.',
   'import.nothingParsedBefore': 'Nothing parsed yet. Paste some lines (or load the sample) and hit ',
   'import.nothingParsedAfter': '.',
   'import.colTitle': 'Title',

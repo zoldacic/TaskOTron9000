@@ -241,6 +241,8 @@ export const sv: Record<TranslationKey, string> = {
   'import.clear': 'Rensa',
   'import.help': 'Datum och belopp identifieras automatiskt (valutasymboler, +/- tecken och tusentalsavgränsare hanteras). Att importera en fil lägger till dess rader i rutan nedan. Det valda bankkontot kopplas till varje importerad uppgift. Ett konto kan bara tas bort när ingen sparad uppgift använder det.',
   'import.preview': 'Förhandsvisning',
+  'import.filterTitle': 'Filtrera på titel…',
+  'import.filterNoMatch': 'Inga rader matchar ”{query}”.',
   'import.nothingParsedBefore': 'Inget tolkat än. Klistra in några rader (eller ladda exemplet) och tryck på ',
   'import.nothingParsedAfter': '.',
   'import.colTitle': 'Titel',

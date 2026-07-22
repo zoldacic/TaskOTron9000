@@ -84,6 +84,8 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
           @if (store.importRows() === null) {
             <div class="empty-box">{{ store.t('import.nothingParsedBefore') }}<b>{{ store.t('import.parseRows') }}</b>{{ store.t('import.nothingParsedAfter') }}</div>
           } @else {
+            <input class="input filter" type="text" [placeholder]="store.t('import.filterTitle')"
+                   [value]="titleFilter()" (input)="titleFilter.set(value($event))" />
             <div class="table">
               <div class="thead">
                 <input type="checkbox" class="sel-box" [title]="store.t('import.selectAll')"
@@ -99,7 +101,7 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
                   {{ store.t('import.colAmount') }}<span class="sort-caret">{{ sortCaret('amount') }}</span>
                 </button>
               </div>
-              @for (r of sortedRows(); track r.key) {
+              @for (r of filteredRows(); track r.key) {
                 <div class="trow rule-1" [style.opacity]="r.ok ? (isSelected(r) ? 1 : 0.5) : 0.45">
                   <div class="cells">
                     <input type="checkbox" class="sel-box" [checked]="isSelected(r)" [disabled]="!r.ok"
@@ -121,6 +123,9 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
                   </div>
                   @if (r.note) { <div class="row-note">{{ r.note }}</div> }
                 </div>
+              }
+              @if (titleFilter().trim() && filteredRows().length === 0) {
+                <div class="filter-empty">{{ store.t('import.filterNoMatch', { query: titleFilter().trim() }) }}</div>
               }
             </div>
             <div class="foot">
@@ -159,6 +164,8 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
       border: 1px dashed var(--color-divider); padding: 40px 24px; text-align: center;
       color: var(--muted); font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
     }
+    .filter { margin-bottom: 12px; }
+    .filter-empty { padding: 24px; text-align: center; color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
     .table { border: 1px solid var(--color-divider); }
     .thead, .cells { display: grid; grid-template-columns: 20px 1fr 92px 96px; gap: 10px; align-items: center; }
     .sel-box { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--color-accent); }
@@ -200,6 +207,8 @@ export class ImportViewComponent {
   readonly sortCol = signal<'title' | 'date' | 'amount' | null>(null);
   readonly sortDir = signal<'asc' | 'desc'>('asc');
 
+  readonly titleFilter = signal('');
+
   readonly sortedRows = computed<ImportRow[]>(() => {
     const rows = this.store.importRows() ?? [];
     const col = this.sortCol();
@@ -214,6 +223,14 @@ export class ImportViewComponent {
       }
       return this.nullCmp(a.amount, b.amount, dir, (x, y) => x - y);
     });
+  });
+
+  // Preview rows narrowed to those whose title contains the (case-insensitive) filter text.
+  readonly filteredRows = computed<ImportRow[]>(() => {
+    const q = this.titleFilter().trim().toLowerCase();
+    const rows = this.sortedRows();
+    if (!q) return rows;
+    return rows.filter((r) => r.title.toLowerCase().includes(q));
   });
 
   // Compares two values, keeping empty (null) values last regardless of sort direction.
