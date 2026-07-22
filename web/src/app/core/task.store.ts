@@ -595,11 +595,13 @@ export class TaskStore {
     if (next.has(key)) next.delete(key); else next.add(key);
     this.importSelected.set(next);
   }
-  /** Select or clear every importable (ok) preview row at once. */
-  setAllImportSelected(on: boolean): void {
-    this.importSelected.set(on
-      ? new Set((this.importRows() ?? []).filter((r) => r.ok).map((r) => r.key))
-      : new Set());
+  /** Add or remove the given preview-row keys from the current selection. */
+  setImportSelected(keys: Iterable<number>, on: boolean): void {
+    const next = new Set(this.importSelected());
+    for (const key of keys) {
+      if (on) next.add(key); else next.delete(key);
+    }
+    this.importSelected.set(next);
   }
   /** Set the batch default main, remember it across sessions, and apply it to every parsed row. */
   setImportMain(mainId: string | null): void {

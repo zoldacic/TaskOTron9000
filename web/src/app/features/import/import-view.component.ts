@@ -89,8 +89,8 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
             <div class="table">
               <div class="thead">
                 <input type="checkbox" class="sel-box" [title]="store.t('import.selectAll')"
-                       [checked]="allSelected()" [indeterminate]="someSelected()"
-                       [disabled]="okCount() === 0" (change)="store.setAllImportSelected(checked($event))" />
+                       [checked]="allVisibleSelected()" [indeterminate]="someVisibleSelected()"
+                       [disabled]="visibleOkCount() === 0" (change)="setAllVisibleSelected(checked($event))" />
                 <button type="button" class="sort-h" [class.active]="sortCol() === 'title'" (click)="toggleSort('title')">
                   {{ store.t('import.colTitle') }}<span class="sort-caret">{{ sortCaret('title') }}</span>
                 </button>
@@ -300,7 +300,20 @@ export class ImportViewComponent {
   okCount = computed(() => (this.store.importRows() ?? []).filter((r) => r.ok).length);
   selectedCount = computed(() =>
     (this.store.importRows() ?? []).filter((r) => r.ok && this.store.importSelected().has(r.key)).length);
-  // Header checkbox: ticked when every importable row is picked, dashed when only some are.
-  allSelected = computed(() => this.okCount() > 0 && this.selectedCount() === this.okCount());
-  someSelected = computed(() => this.selectedCount() > 0 && this.selectedCount() < this.okCount());
+
+  // Importable rows currently shown under the title filter — what select-all acts on.
+  private visibleOkRows = computed<ImportRow[]>(() => this.filteredRows().filter((r) => r.ok));
+  visibleOkCount = computed(() => this.visibleOkRows().length);
+  private visibleSelectedCount = computed(() => {
+    const sel = this.store.importSelected();
+    return this.visibleOkRows().filter((r) => sel.has(r.key)).length;
+  });
+  // Header checkbox: ticked when every shown importable row is picked, dashed when only some are.
+  allVisibleSelected = computed(() => this.visibleOkCount() > 0 && this.visibleSelectedCount() === this.visibleOkCount());
+  someVisibleSelected = computed(() => this.visibleSelectedCount() > 0 && this.visibleSelectedCount() < this.visibleOkCount());
+
+  // Select-all toggles only the rows currently shown by the filter, leaving hidden rows untouched.
+  setAllVisibleSelected(on: boolean): void {
+    this.store.setImportSelected(this.visibleOkRows().map((r) => r.key), on);
+  }
 }
