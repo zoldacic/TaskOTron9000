@@ -69,7 +69,7 @@ public record ImportCommitRow(string Title, string? Date, decimal? Amount, List<
 public record ImportCommitRequest(List<ImportCommitRow> Rows);
 
 // ---- Reports ----
-public record BucketDto(string Label, decimal Net);
+public record BucketDto(string Label, decimal Net, List<decimal> Parts);
 public record CategoryNetDto(string Name, decimal Net);
 public record ReportDto(
     decimal MoneyIn,

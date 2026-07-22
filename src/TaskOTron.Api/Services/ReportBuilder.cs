@@ -8,7 +8,9 @@ public record ReportMain(string Id, string Name, IReadOnlyList<string> SubIds);
 /// <summary>A sub category, in display order.</summary>
 public record ReportSub(string Id, string Name, string MainId);
 
-public record ReportBucket(string Label, decimal Net);
+/// <param name="Parts">Per-category net for this bucket, aligned index-for-index with
+/// <see cref="ReportResult.CategoryBreakdown"/> so the frontend can color segments to match.</param>
+public record ReportBucket(string Label, decimal Net, IReadOnlyList<decimal> Parts);
 public record ReportCategory(string Name, decimal Net);
 
 public record ReportResult(
@@ -71,7 +73,13 @@ public static class ReportBuilder
         // grain. Each task contributes to exactly one bucket (no double-counting): its
         // single main, or — in "sub" mode — the first of its subs that is selected.
         // Buckets are emitted in category display order.
+        // The key that maps a task to its single breakdown bucket, matching the grain.
+        string CatKey(string? mainId, IReadOnlyList<string> catIds) => bySub
+            ? (catIds.FirstOrDefault(c => repSet.Contains(c)) ?? Uncategorized)
+            : (!string.IsNullOrEmpty(mainId) ? mainId! : Uncategorized);
+
         var catAgg = new List<ReportCategory>();
+        var catKeys = new List<string>(); // key parallel to catAgg, used to index bucket parts
         if (bySub)
         {
             var sums = new Dictionary<string, decimal>();
@@ -85,9 +93,9 @@ public static class ReportBuilder
             }
             foreach (var s in subs)
                 if (sums.TryGetValue(s.Id, out var v))
-                    catAgg.Add(new ReportCategory(s.Name, v));
+                { catAgg.Add(new ReportCategory(s.Name, v)); catKeys.Add(s.Id); }
             if (anyUncat)
-                catAgg.Add(new ReportCategory("Uncategorized", uncatSum));
+            { catAgg.Add(new ReportCategory("Uncategorized", uncatSum)); catKeys.Add(Uncategorized); }
         }
         else
         {
@@ -95,13 +103,16 @@ public static class ReportBuilder
             {
                 var items = repTasks.Where(t => t.MainId == m.Id).ToList();
                 if (items.Count > 0)
-                    catAgg.Add(new ReportCategory(m.Name, items.Sum(t => t.Amount)));
+                { catAgg.Add(new ReportCategory(m.Name, items.Sum(t => t.Amount))); catKeys.Add(m.Id); }
             }
             // Defensive: legacy tasks with no main (should not occur post-backfill).
             var uncat = repTasks.Where(t => string.IsNullOrEmpty(t.MainId)).ToList();
             if (uncat.Count > 0)
-                catAgg.Add(new ReportCategory("Uncategorized", uncat.Sum(t => t.Amount)));
+            { catAgg.Add(new ReportCategory("Uncategorized", uncat.Sum(t => t.Amount))); catKeys.Add(Uncategorized); }
         }
+
+        var catIndex = new Dictionary<string, int>();
+        for (var i = 0; i < catKeys.Count; i++) catIndex[catKeys[i]] = i;
 
         // ---- time buckets with auto-granularity ----
         var spanDays = (repEnd.DayNumber - repStart.DayNumber) + 1;
@@ -146,14 +157,22 @@ public static class ReportBuilder
             _ => $"{dd.Year}-{dd.Month - 1}",
         };
 
+        // parts[bucket][category] — per-category net within each time bucket, so the
+        // time chart can stack a colored segment per category aligned to catAgg order.
+        var parts = new decimal[buckets.Count][];
+        for (var i = 0; i < buckets.Count; i++) parts[i] = new decimal[catAgg.Count];
+
         foreach (var t in repTasks)
         {
             var k = BKey(t.Due);
             if (index.TryGetValue(k, out var idx))
+            {
                 buckets[idx] = buckets[idx] with { Net = buckets[idx].Net + t.Amount };
+                parts[idx][catIndex[CatKey(t.MainId, t.CatIds)]] += t.Amount;
+            }
         }
 
-        var bucketOut = buckets.Select(b => new ReportBucket(b.Label, b.Net)).ToList();
+        var bucketOut = buckets.Select((b, i) => new ReportBucket(b.Label, b.Net, parts[i])).ToList();
         return new ReportResult(moneyIn, moneyOut, net, gran, bucketOut, catAgg);
     }
 

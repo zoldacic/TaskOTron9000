@@ -101,6 +101,7 @@ export interface ImportCommitRow {
 export interface ReportBucket {
   label: string;
   net: number;
+  parts: number[]; // per-category net, aligned to Report.categoryBreakdown order
 }
 
 export interface ReportCategory {

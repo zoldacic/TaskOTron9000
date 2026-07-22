@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { TaskStore } from '../../core/task.store';
 import { fmtMoney } from '../../core/money-util';
+import { ReportBucket } from '../../models';
 
 @Component({
   selector: 'app-report-view',
@@ -92,9 +93,23 @@ import { fmtMoney } from '../../core/money-util';
             <div class="chart">
               @for (b of r.buckets; track $index) {
                 <div class="bucket">
-                  <div class="pos-area"><div class="bar pos" [style.height.%]="b.net > 0 ? b.net / maxBucket() * 100 : 0"></div></div>
-                  <div class="axis"></div>
-                  <div class="neg-area"><div class="bar neg" [style.height.%]="b.net < 0 ? -b.net / maxBucket() * 100 : 0"></div></div>
+                  @if (multiColor()) {
+                    <div class="pos-area"><div class="stack up">
+                      @for (seg of segsUp(b); track seg.ci) {
+                        <div class="seg" [style.height.%]="seg.pct" [style.background]="catColor(seg.ci)"></div>
+                      }
+                    </div></div>
+                    <div class="axis"></div>
+                    <div class="neg-area"><div class="stack down">
+                      @for (seg of segsDown(b); track seg.ci) {
+                        <div class="seg" [style.height.%]="seg.pct" [style.background]="catColor(seg.ci)"></div>
+                      }
+                    </div></div>
+                  } @else {
+                    <div class="pos-area"><div class="bar pos" [style.height.%]="b.net > 0 ? b.net / maxBucket() * 100 : 0"></div></div>
+                    <div class="axis"></div>
+                    <div class="neg-area"><div class="bar neg" [style.height.%]="b.net < 0 ? -b.net / maxBucket() * 100 : 0"></div></div>
+                  }
                   <div class="b-label">{{ b.label }}</div>
                 </div>
               }
@@ -150,6 +165,10 @@ import { fmtMoney } from '../../core/money-util';
     .bar { width: 66%; }
     .bar.pos { background: var(--color-income); box-shadow: 0 0 12px -4px var(--color-income); }
     .bar.neg { background: var(--color-danger); box-shadow: 0 0 12px -4px var(--color-danger); }
+    .stack { width: 66%; height: 100%; display: flex; }
+    .stack.up { flex-direction: column-reverse; }
+    .stack.down { flex-direction: column; }
+    .seg { width: 100%; }
     .axis { height: 2px; background: var(--color-divider); }
     .b-label { text-align: center; font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 6px; }
     .cat-bar { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
@@ -185,6 +204,32 @@ export class ReportViewComponent implements OnInit {
 
   maxBucket = computed(() =>
     Math.max(1, ...(this.store.report()?.buckets ?? []).map((b) => Math.abs(b.net))));
+
+  // When stacking per-category segments a bucket can carry both inflow and outflow,
+  // so scale by the largest gross positive/negative stack across all buckets (not net).
+  private bucketScale = computed(() => {
+    let m = 1;
+    for (const b of this.store.report()?.buckets ?? []) {
+      let pos = 0, neg = 0;
+      for (const p of b.parts) { if (p > 0) pos += p; else neg -= p; }
+      m = Math.max(m, pos, neg);
+    }
+    return m;
+  });
+
+  segsUp(b: ReportBucket) { return this.segs(b, +1); }
+  segsDown(b: ReportBucket) { return this.segs(b, -1); }
+
+  // Positive (sign +1) or negative (sign -1) per-category segments for one bucket,
+  // as a stack-height percentage keyed by category index (for its palette color).
+  private segs(b: ReportBucket, sign: number) {
+    const scale = this.bucketScale();
+    const out: { ci: number; pct: number }[] = [];
+    b.parts.forEach((v, ci) => {
+      if (Math.sign(v) === sign) out.push({ ci, pct: Math.abs(v) / scale * 100 });
+    });
+    return out;
+  }
 
   private maxCat = computed(() =>
     Math.max(1, ...(this.store.report()?.categoryBreakdown ?? []).map((c) => Math.abs(c.net))));
