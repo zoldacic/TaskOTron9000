@@ -115,8 +115,11 @@ public static class ReportBuilder
         for (var i = 0; i < catKeys.Count; i++) catIndex[catKeys[i]] = i;
 
         // ---- time buckets with auto-granularity ----
+        // Favour finer buckets so the time chart has many points (a smoother line and
+        // more bars): weeks cover up to ~18 months — a year-long range gives ~53 weekly
+        // points rather than 12 monthly ones — and months kick in only beyond that.
         var spanDays = (repEnd.DayNumber - repStart.DayNumber) + 1;
-        var gran = spanDays <= 16 ? "day" : spanDays <= 95 ? "week" : "month";
+        var gran = spanDays <= 16 ? "day" : spanDays <= 550 ? "week" : "month";
 
         var buckets = new List<(string Id, string Label, decimal Net)>();
         if (gran == "day")

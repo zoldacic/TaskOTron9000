@@ -82,8 +82,9 @@ public class ReportBuilderTests
     [Theory]
     [InlineData("2026-01-01", "2026-01-16", "day")]   // span 16
     [InlineData("2026-01-01", "2026-01-17", "week")]  // span 17
-    [InlineData("2026-01-01", "2026-04-05", "week")]  // span 95
-    [InlineData("2026-01-01", "2026-04-06", "month")] // span 96
+    [InlineData("2026-01-01", "2026-12-31", "week")]  // a full year → weekly, not monthly
+    [InlineData("2026-01-01", "2027-07-04", "week")]  // span 550
+    [InlineData("2026-01-01", "2027-07-05", "month")] // span 551
     public void Granularity_boundaries(string from, string to, string expected)
     {
         var r = ReportBuilder.Build(SeedTasks(),

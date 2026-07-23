@@ -149,6 +149,10 @@ export class TaskStore {
   // Selection grain: 'main' → repSel holds main ids; 'sub' → repSel holds sub ids.
   readonly repMode = signal<'main' | 'sub'>('main');
   readonly repSel = signal<string[] | null>(null); // null = all
+  // Time-series chart style; purely presentational, so switching needs no reload.
+  readonly repChart = signal<'bars' | 'line' | 'cumulative'>('bars');
+  // Category-breakdown chart style; also purely presentational.
+  readonly repCatChart = signal<'bars' | 'donut'>('bars');
   readonly report = signal<Report | null>(null);
 
   // ---- computed ----
@@ -805,6 +809,10 @@ export class TaskStore {
   }
   repAll(): void { this.repSel.set(null); void this.loadReport(); }
   repNone(): void { this.repSel.set([]); void this.loadReport(); }
+  /** Pick the time-series chart style. No server reload — same data, drawn differently. */
+  setRepChart(chart: 'bars' | 'line' | 'cumulative'): void { this.repChart.set(chart); }
+  /** Pick the category-breakdown chart style. No server reload. */
+  setRepCatChart(chart: 'bars' | 'donut'): void { this.repCatChart.set(chart); }
   setRange(from: string, to: string): void {
     this.repStart.set(from);
     this.repEnd.set(to);
