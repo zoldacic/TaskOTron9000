@@ -216,7 +216,7 @@ import { ReportBucket } from '../../models';
                             [attr.stroke-dashoffset]="s.offset"></circle>
                   }
                   <text class="donut-center-lbl" x="21" y="19.5">{{ store.t('report.netChange') }}</text>
-                  <text class="donut-center-val" x="21" y="24" [class.in]="d.total >= 0" [class.out]="d.total < 0">{{ fmt(d.total) }}</text>
+                  <text class="donut-center-val" x="21" y="23.6" [style.font-size.px]="d.centerFs" [class.in]="d.total >= 0" [class.out]="d.total < 0">{{ fmt(d.total) }}</text>
                 </svg>
                 <ul class="donut-legend">
                   @for (s of d.slices; track s.name) {
@@ -528,7 +528,12 @@ export class ReportViewComponent implements OnInit {
       return slice;
     });
     const total = cats.reduce((sum, c) => sum + c.net, 0);
-    return { slices, total };
+    // Shrink the center value to fit inside the hole (clear width ~24 units in
+    // the 42-unit viewBox). Mono glyphs advance ~0.6em, so a long amount like
+    // "−1,730.88" would overflow the ring at the base 5px size — scale down.
+    const len = this.fmt(total).length;
+    const centerFs = Math.min(5, 23 / (len * 0.6));
+    return { slices, total, centerFs: centerFs.toFixed(2) };
   });
 
   // Distinct per-category colors, used when more than one category is charted.
