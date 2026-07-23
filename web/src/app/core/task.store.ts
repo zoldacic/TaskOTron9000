@@ -586,8 +586,8 @@ export class TaskStore {
     const def = this.importMainId() ?? this.firstMainId();
     const mapped = rows.map((r) => ({ ...r, mainId: r.mainId ?? def, note: r.note ?? '' }));
     this.importRows.set(mapped);
-    // Pre-select every importable (ok) row, matching the old "import everything" default.
-    this.importSelected.set(new Set(mapped.filter((r) => r.ok).map((r) => r.key)));
+    // Start with nothing selected so the user opts rows in deliberately.
+    this.importSelected.set(new Set());
   }
   /** Toggle whether a single preview row is selected for import. */
   toggleImportSelected(key: number): void {
@@ -632,7 +632,8 @@ export class TaskStore {
     const remaining = all.filter((r) => !imported.has(r.key));
     if (remaining.length) {
       this.importRows.set(remaining);
-      this.importSelected.set(new Set(remaining.filter((r) => r.ok).map((r) => r.key)));
+      // The leftovers are the rows the user chose not to import — keep them unselected.
+      this.importSelected.set(new Set());
     } else {
       this.importText.set('');
       this.importRows.set(null);
