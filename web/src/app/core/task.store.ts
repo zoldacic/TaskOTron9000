@@ -103,6 +103,10 @@ export class TaskStore {
 
   // ---- view state ----
   readonly filter = signal<Filter>('all');
+  // Mobile navigation drawer: off-canvas on narrow screens, always-visible on wide ones (CSS-driven).
+  readonly sidebarOpen = signal(false);
+  toggleSidebar(): void { this.sidebarOpen.update((v) => !v); }
+  closeSidebar(): void { this.sidebarOpen.set(false); }
 
   // ---- querying ----
   // activeQuery non-null => the composable query drives visibleTodos, overriding `filter`.

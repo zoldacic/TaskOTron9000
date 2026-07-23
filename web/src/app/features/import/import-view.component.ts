@@ -194,6 +194,21 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
     .saved { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--color-accent); }
     .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
     .ready { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+    @media (max-width: 760px) {
+      .head { padding: 16px 16px 12px; }
+      /* Paste and preview panels stack vertically on narrow screens. */
+      .cols { grid-template-columns: 1fr; gap: 20px; padding: 4px 16px 24px; }
+      .acct-select, .acct-new { max-width: none; }
+      .buttons { flex-wrap: wrap; }
+      .foot { flex-wrap: wrap; gap: 10px; }
+      .foot .btn { flex: 1 1 auto; justify-content: center; }
+    }
+    @media (max-width: 420px) {
+      /* Tighten fixed columns so the title keeps usable width on the smallest screens. */
+      .thead, .cells { grid-template-columns: 16px 1fr 66px 74px; gap: 6px; }
+      .t-date, .t-amount { font-size: 11px; }
+    }
   `],
 })
 export class ImportViewComponent {

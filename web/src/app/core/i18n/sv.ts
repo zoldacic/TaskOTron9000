@@ -27,6 +27,8 @@ export const sv: Record<TranslationKey, string> = {
   'titlebar.minimize': 'Minimera',
   'titlebar.maximize': 'Maximera',
   'titlebar.close': 'Stäng',
+  'titlebar.menu': 'Meny',
+  'sidebar.close': 'Stäng meny',
 
   // ---- tasks view: header + controls ----
   'tasks.layout.list': 'Lista',

@@ -9,19 +9,22 @@ import { IconComponent } from '../shared/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive, IconComponent],
   template: `
-    <aside class="sidebar om-scroll">
+    <!-- backdrop: only rendered/interactive while the drawer is open on narrow screens -->
+    <div class="scrim" [class.show]="store.sidebarOpen()" (click)="store.closeSidebar()"></div>
+
+    <aside class="sidebar om-scroll" [class.open]="store.sidebarOpen()">
       <!-- nav -->
       <nav class="section rule-2">
-        <a class="nav" routerLink="/tasks" routerLinkActive="active">
+        <a class="nav" routerLink="/tasks" routerLinkActive="active" (click)="store.closeSidebar()">
           <app-icon name="tasks" /><span>{{ store.t('nav.tasks') }}</span>
         </a>
-        <a class="nav" routerLink="/categories" routerLinkActive="active">
+        <a class="nav" routerLink="/categories" routerLinkActive="active" (click)="store.closeSidebar()">
           <app-icon name="folder" /><span>{{ store.t('nav.categories') }}</span>
         </a>
-        <a class="nav" routerLink="/import" routerLinkActive="active">
+        <a class="nav" routerLink="/import" routerLinkActive="active" (click)="store.closeSidebar()">
           <app-icon name="upload" /><span>{{ store.t('nav.import') }}</span>
         </a>
-        <a class="nav" routerLink="/reports" routerLinkActive="active">
+        <a class="nav" routerLink="/reports" routerLinkActive="active" (click)="store.closeSidebar()">
           <app-icon name="bar-chart" /><span>{{ store.t('nav.reports') }}</span>
         </a>
       </nav>
@@ -81,6 +84,9 @@ import { IconComponent } from '../shared/icon.component';
     </aside>
   `,
   styles: [`
+    :host { display: contents; }
+    /* Backdrop is inert (and invisible) on wide screens; the media query switches it on. */
+    .scrim { display: none; }
     .sidebar {
       width: 248px; flex: none; height: 100%; overflow-y: auto;
       background: var(--color-surface);
@@ -128,6 +134,24 @@ import { IconComponent } from '../shared/icon.component';
     }
     .lang-seg { flex: none; }
     .lang-seg .seg-opt { padding: 5px 12px; font-family: var(--font-mono); font-size: 12px; }
+
+    /* Below this width the sidebar becomes an off-canvas drawer over the content. */
+    @media (max-width: 860px) {
+      .sidebar {
+        position: fixed; top: 40px; left: 0; bottom: 0; z-index: 40;
+        width: min(84vw, 300px);
+        transform: translateX(-100%);
+        transition: transform 0.22s ease;
+        box-shadow: 0 0 40px -8px rgba(0, 0, 0, 0.6);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .scrim {
+        display: block; position: fixed; inset: 40px 0 0 0; z-index: 39;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0; pointer-events: none; transition: opacity 0.22s ease;
+      }
+      .scrim.show { opacity: 1; pointer-events: auto; }
+    }
   `],
 })
 export class SidebarComponent {
@@ -146,11 +170,13 @@ export class SidebarComponent {
 
   pick(f: Filter): void {
     this.store.pickFilter(f);
+    this.store.closeSidebar();
     void this.router.navigate(['/tasks']);
   }
 
   applyQuery(id: string): void {
     this.store.applySavedQuery(id);
+    this.store.closeSidebar();
     void this.router.navigate(['/tasks']);
   }
 }
