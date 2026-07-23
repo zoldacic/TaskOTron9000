@@ -59,6 +59,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
         @case ('filter') {
           <path d="M3 4h18" /><path d="M6 10h12" /><path d="M10 16h4" />
         }
+        @case ('menu') { <path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /> }
         @case ('minus') { <path d="M5 12h14" /> }
         @case ('square') { <rect x="4" y="4" width="16" height="16" /> }
         @case ('star') {

@@ -82,6 +82,14 @@ import { IconComponent } from '../../shared/icon.component';
     .sub-add { max-width: 420px; }
     .empty { color: var(--muted); font-family: var(--font-mono); font-size: 13px; }
     .cat-error { color: var(--color-danger); font-size: 12px; margin-top: 10px; }
+
+    @media (max-width: 760px) {
+      .head { padding: 16px 16px 12px; }
+      /* Stack the two columns and scroll them as one panel on narrow screens. */
+      .cols { grid-template-columns: 1fr; overflow-y: auto; }
+      .col { overflow-y: visible; padding: 16px; }
+      .mains { border-right: 0; border-bottom: 2px solid var(--color-divider); }
+    }
   `],
 })
 export class CategoriesViewComponent {

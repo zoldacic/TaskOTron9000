@@ -27,6 +27,8 @@ export const en = {
   'titlebar.minimize': 'Minimize',
   'titlebar.maximize': 'Maximize',
   'titlebar.close': 'Close',
+  'titlebar.menu': 'Menu',
+  'sidebar.close': 'Close menu',
 
   // ---- tasks view: header + controls ----
   'tasks.layout.list': 'List',

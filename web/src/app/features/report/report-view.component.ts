@@ -301,7 +301,20 @@ import { ReportBucket } from '../../models';
     .empty { text-align: center; padding: 60px 24px; color: var(--muted); }
     .empty h2 { font-family: var(--font-heading); font-weight: 800; text-transform: uppercase; color: var(--color-text); margin-bottom: 8px; }
     .empty p { font-family: var(--font-mono); font-size: 13px; }
-  `],
+
+    @media (max-width: 760px) {
+      .head { padding: 16px 16px 12px; }
+      .block { padding: 16px; }
+      .stats { grid-template-columns: 1fr; margin: 8px 16px; }
+      .stat { padding: 16px; }
+      .fig { font-size: 22px; }
+      .sel-head { flex-wrap: wrap; gap: 10px; }
+      /* Sub-mode rows put the category label above its chips instead of beside them. */
+      .sel-row { flex-direction: column; gap: 6px; }
+      .sel-label { width: auto; padding-top: 0; }
+      .cat-name { width: 84px; }
+      .cat-net { width: 72px; }
+    }`],
 })
 export class ReportViewComponent implements OnInit {
   store = inject(TaskStore);

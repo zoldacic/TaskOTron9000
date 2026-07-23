@@ -126,6 +126,18 @@ import { QueryPanelComponent } from './query-panel.component';
     .empty { text-align: center; padding: 80px 24px; color: var(--muted); }
     .empty h2 { font-family: var(--font-heading); font-weight: 800; text-transform: uppercase; color: var(--color-text); margin: 16px 0 8px; }
     .empty p { font-family: var(--font-mono); font-size: 13px; }
+
+    @media (max-width: 860px) {
+      .head { flex-wrap: wrap; gap: 12px; padding: 16px 16px 12px; }
+      .actions { width: 100%; flex-wrap: wrap; gap: 8px; }
+      .search { padding: 0 16px 12px; }
+      .selbar { margin: 0 16px 12px; flex-wrap: wrap; }
+      .scroll { padding: 0 16px 16px; }
+    }
+    @media (max-width: 480px) {
+      /* Let each control grow to share the row evenly instead of overflowing. */
+      .actions .btn, .actions .seg { flex: 1 1 auto; justify-content: center; }
+    }
   `],
 })
 export class TasksViewComponent {
