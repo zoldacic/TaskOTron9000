@@ -131,23 +131,35 @@ import { ReportBucket } from '../../models';
             } @else {
               @if (traces(); as tg) {
                 <div class="line-wrap">
-                  <svg class="linechart" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                    <line class="zero-line" x1="0" [attr.y1]="tg.zeroY" x2="100" [attr.y2]="tg.zeroY"></line>
-                    @if (tg.area) {
-                      <path class="area" [attr.d]="tg.area" [class.balance]="store.repChart() === 'cumulative'"></path>
-                    }
-                    @for (ln of tg.lines; track ln.name) {
-                      <polyline class="line"
-                                [class.balance]="!tg.multi && store.repChart() === 'cumulative'"
-                                [class.total]="ln.total && tg.multi"
-                                [style.stroke]="ln.color"
-                                [attr.points]="ln.points"></polyline>
-                    }
-                  </svg>
-                  <div class="line-labels">
-                    @for (b of r.dailyBuckets; track $index) {
-                      <span class="b-label" [class.hide]="!showDailyAxisLabel($index)">{{ b.label }}</span>
-                    }
+                  <div class="line-main">
+                    <!-- Y-axis value scale: without it the line's shape is readable
+                         but its magnitude isn't. Ticks label the top/bottom of the
+                         plotted range and the zero axis. -->
+                    <div class="y-axis" aria-hidden="true">
+                      @for (t of tg.yTicks; track t.y) {
+                        <span class="y-tick" [style.top.%]="t.y">{{ fmt(t.v) }}</span>
+                      }
+                    </div>
+                    <div class="line-plot">
+                      <svg class="linechart" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                        <line class="zero-line" x1="0" [attr.y1]="tg.zeroY" x2="100" [attr.y2]="tg.zeroY"></line>
+                        @if (tg.area) {
+                          <path class="area" [attr.d]="tg.area" [class.balance]="store.repChart() === 'cumulative'"></path>
+                        }
+                        @for (ln of tg.lines; track ln.name) {
+                          <polyline class="line"
+                                    [class.balance]="!tg.multi && store.repChart() === 'cumulative'"
+                                    [class.total]="ln.total && tg.multi"
+                                    [style.stroke]="ln.color"
+                                    [attr.points]="ln.points"></polyline>
+                        }
+                      </svg>
+                      <div class="line-labels">
+                        @for (b of r.dailyBuckets; track $index) {
+                          <span class="b-label" [class.hide]="!showDailyAxisLabel($index)">{{ b.label }}</span>
+                        }
+                      </div>
+                    </div>
                   </div>
                   @if (tg.multi) {
                     <ul class="line-legend">
@@ -259,6 +271,13 @@ import { ReportBucket } from '../../models';
     .b-label.hide { visibility: hidden; }
     /* line / balance charts */
     .line-wrap { display: flex; flex-direction: column; }
+    /* Y-axis gutter beside the plot; ticks are absolutely placed over its 200px
+       height so they line up with the same 0..100 space the SVG is stretched into. */
+    .line-main { display: flex; align-items: flex-start; }
+    .y-axis { position: relative; width: 68px; height: 200px; flex: none; }
+    .y-tick { position: absolute; right: 8px; transform: translateY(-50%);
+              font-family: var(--font-mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+    .line-plot { flex: 1; min-width: 0; }
     .linechart { width: 100%; height: 200px; overflow: visible; }
     .zero-line { stroke: var(--color-divider); stroke-width: 2px; vector-effect: non-scaling-stroke; }
     .line { fill: none; stroke: var(--color-accent); stroke-width: 2px;
@@ -314,6 +333,9 @@ import { ReportBucket } from '../../models';
       .sel-label { width: auto; padding-top: 0; }
       .cat-name { width: 84px; }
       .cat-net { width: 72px; }
+      /* Tighter Y-axis gutter so the plot keeps most of the narrow width. */
+      .y-axis { width: 52px; }
+      .y-tick { right: 6px; font-size: 9px; }
     }`],
 })
 export class ReportViewComponent implements OnInit {
@@ -407,18 +429,34 @@ export class ReportViewComponent implements OnInit {
     // Shared Y mapping across every series so the lines are directly comparable.
     const all = series.flatMap((s) => s.vals);
     let toY: (v: number) => number;
+    let domMin: number, domMax: number;
     if (cumulative) {
-      const domMin = Math.min(0, ...all);
-      const domMax = Math.max(0, ...all);
+      domMin = Math.min(0, ...all);
+      domMax = Math.max(0, ...all);
       const span = Math.max(1e-9, domMax - domMin);
       toY = (v) => 100 - ((v - domMin) / span) * 100;
     } else {
       const maxAbs = Math.max(1, ...all.map((v) => Math.abs(v)));
+      domMin = -maxAbs;
+      domMax = maxAbs;
       toY = (v) => 50 - (v / maxAbs) * 50; // net 0 sits on the mid axis
     }
 
     const x = (i: number) => (n === 1 ? 50 : (i / (n - 1)) * 100);
     const zeroY = toY(0);
+
+    // Y-axis value labels: the top and bottom of the domain plus the zero axis,
+    // deduped by position so a domain that ends exactly on zero (e.g. an all-
+    // positive balance) doesn't stack two labels on the same line.
+    const yTicks: { v: number; y: string }[] = [];
+    const seenY = new Set<string>();
+    for (const v of [domMax, 0, domMin]) {
+      const y = toY(v);
+      const key = y.toFixed(1);
+      if (seenY.has(key)) continue;
+      seenY.add(key);
+      yTicks.push({ v, y: y.toFixed(2) });
+    }
     const lines = series.map((s) => ({
       name: s.name,
       color: s.color,
@@ -434,7 +472,7 @@ export class ReportViewComponent implements OnInit {
       area = `M ${x(0).toFixed(2)},${zeroY.toFixed(2)} L ${pts.join(' L ')} L ${x(n - 1).toFixed(2)},${zeroY.toFixed(2)} Z`;
     }
 
-    return { lines, area, multi, zeroY: zeroY.toFixed(2) };
+    return { lines, area, multi, zeroY: zeroY.toFixed(2), yTicks };
   });
 
   // When stacking per-category segments a bucket can carry both inflow and outflow,
