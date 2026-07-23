@@ -6,6 +6,9 @@ import { IconComponent } from '../../shared/icon.component';
 import { fmtMoney } from '../../core/money-util';
 import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-import';
 
+// Preview filter on whether a row already carries subcategories.
+type SubFilter = 'any' | 'has' | 'none';
+
 @Component({
   selector: 'app-import-view',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -84,8 +87,16 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
           @if (store.importRows() === null) {
             <div class="empty-box">{{ store.t('import.nothingParsedBefore') }}<b>{{ store.t('import.parseRows') }}</b>{{ store.t('import.nothingParsedAfter') }}</div>
           } @else {
-            <input class="input filter" type="text" [placeholder]="store.t('import.filterTitle')"
-                   [value]="titleFilter()" (input)="titleFilter.set(value($event))" />
+            <div class="filters">
+              <input class="input filter" type="text" [placeholder]="store.t('import.filterTitle')"
+                     [value]="titleFilter()" (input)="titleFilter.set(value($event))" />
+              <div class="seg sub-seg">
+                @for (o of subFilterOptions; track o.value) {
+                  <button type="button" class="seg-opt" [class.active]="subFilter() === o.value"
+                          (click)="subFilter.set(o.value)">{{ store.t(o.label) }}</button>
+                }
+              </div>
+            </div>
             <div class="table">
               <div class="thead">
                 <input type="checkbox" class="sel-box" [title]="store.t('import.selectAll')"
@@ -124,8 +135,14 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
                   @if (r.note) { <div class="row-note">{{ r.note }}</div> }
                 </div>
               }
-              @if (titleFilter().trim() && filteredRows().length === 0) {
-                <div class="filter-empty">{{ store.t('import.filterNoMatch', { query: titleFilter().trim() }) }}</div>
+              @if (filterHidesEverything()) {
+                <div class="filter-empty">
+                  @if (titleFilter().trim()) {
+                    {{ store.t('import.filterNoMatch', { query: titleFilter().trim() }) }}
+                  } @else {
+                    {{ store.t('import.filterSubNoMatch') }}
+                  }
+                </div>
               }
             </div>
             <div class="foot">
@@ -164,7 +181,10 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
       border: 1px dashed var(--color-divider); padding: 40px 24px; text-align: center;
       color: var(--muted); font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
     }
-    .filter { margin-bottom: 12px; }
+    .filters { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    .filter { flex: 1 1 180px; min-width: 0; }
+    .sub-seg { flex: 0 0 auto; }
+    .sub-seg .seg-opt { font-size: 11px; padding: 7px 10px; }
     .filter-empty { padding: 24px; text-align: center; color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
     .table { border: 1px solid var(--color-divider); }
     .thead, .cells { display: grid; grid-template-columns: 20px 1fr 92px 96px; gap: 10px; align-items: center; }
@@ -200,6 +220,8 @@ import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-im
       /* Paste and preview panels stack vertically on narrow screens. */
       .cols { grid-template-columns: 1fr; gap: 20px; padding: 4px 16px 24px; }
       .acct-select, .acct-new { max-width: none; }
+      /* Let the subcategory filter drop below the title box rather than squeeze it. */
+      .filter { flex-basis: 100%; }
       .buttons { flex-wrap: wrap; }
       .foot { flex-wrap: wrap; gap: 10px; }
       .foot .btn { flex: 1 1 auto; justify-content: center; }
@@ -224,6 +246,13 @@ export class ImportViewComponent {
 
   readonly titleFilter = signal('');
 
+  readonly subFilterOptions = [
+    { value: 'any', label: 'import.filterSubAny' },
+    { value: 'has', label: 'import.filterSubHas' },
+    { value: 'none', label: 'import.filterSubNone' },
+  ] as const;
+  readonly subFilter = signal<SubFilter>('any');
+
   readonly sortedRows = computed<ImportRow[]>(() => {
     const rows = this.store.importRows() ?? [];
     const col = this.sortCol();
@@ -240,13 +269,19 @@ export class ImportViewComponent {
     });
   });
 
-  // Preview rows narrowed to those whose title contains the (case-insensitive) filter text.
+  // Preview rows narrowed by the title text and the has/no-subcategory filter.
   readonly filteredRows = computed<ImportRow[]>(() => {
     const q = this.titleFilter().trim().toLowerCase();
-    const rows = this.sortedRows();
-    if (!q) return rows;
-    return rows.filter((r) => r.title.toLowerCase().includes(q));
+    const sub = this.subFilter();
+    let rows = this.sortedRows();
+    if (q) rows = rows.filter((r) => r.title.toLowerCase().includes(q));
+    if (sub !== 'any') rows = rows.filter((r) => (r.catIds.length > 0) === (sub === 'has'));
+    return rows;
   });
+
+  // True when rows were parsed but every one of them is hidden by the active filters.
+  readonly filterHidesEverything = computed(() =>
+    this.sortedRows().length > 0 && this.filteredRows().length === 0);
 
   // Compares two values, keeping empty (null) values last regardless of sort direction.
   private nullCmp<T>(a: T | null, b: T | null, dir: number, cmp: (x: T, y: T) => number): number {
