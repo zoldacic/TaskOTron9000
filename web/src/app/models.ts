@@ -9,8 +9,10 @@ export interface Todo {
   due: string | null; // ISO yyyy-MM-dd
   amount: number | null; // null = no amount
   dateKind: DateKind;
-  catIds: string[];
+  mainId: string; // required single main category
+  catIds: string[]; // subcategories; may belong to other mains
   bankAccountId: string | null;
+  note: string | null; // free-text note; null = no note
 }
 
 export interface TodoWrite {
@@ -18,8 +20,10 @@ export interface TodoWrite {
   due: string | null;
   amount: number | null;
   dateKind: DateKind;
+  mainId: string; // required single main category
   catIds: string[];
   bankAccountId: string | null;
+  note: string | null;
 }
 
 export interface Main {
@@ -48,6 +52,7 @@ export interface BankAccount {
 export interface TitleDefault {
   normalizedTitle: string;
   catIds: string[];
+  mainId: string | null; // remembered required main category (null if not remembered)
 }
 
 export type QueryDateKind = 'any' | 'due' | 'transaction';
@@ -78,20 +83,25 @@ export interface ImportRow {
   date: string | null;
   amount: number | null;
   ok: boolean;
+  mainId: string | null; // required main category; null until defaulted client-side
   catIds: string[];
+  note: string; // per-row note, entered client-side; '' = none
 }
 
 export interface ImportCommitRow {
   title: string;
   date: string | null;
   amount: number | null;
+  mainId: string; // required single main category for imported tasks
   catIds: string[];
   bankAccountId: string | null;
+  note: string | null;
 }
 
 export interface ReportBucket {
   label: string;
   net: number;
+  parts: number[]; // per-category net, aligned to Report.categoryBreakdown order
 }
 
 export interface ReportCategory {
@@ -103,7 +113,8 @@ export interface Report {
   moneyIn: number;
   moneyOut: number;
   net: number;
-  granularity: 'day' | 'week' | 'month';
+  granularity: 'day' | 'week' | 'month'; // describes `buckets` (the bar chart series)
   buckets: ReportBucket[];
+  dailyBuckets: ReportBucket[]; // always daily; drives the line / balance chart
   categoryBreakdown: ReportCategory[];
 }

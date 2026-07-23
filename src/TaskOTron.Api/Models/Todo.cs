@@ -8,6 +8,9 @@ public class Todo
     public string Title { get; set; } = default!;
     public bool Done { get; set; }
 
+    // Free-text note attached to the task. null/blank = no note.
+    public string? Note { get; set; }
+
     // ISO yyyy-MM-dd, nullable. Stored as TEXT by SQLite; sorts lexically like the prototype's strings.
     public DateOnly? Due { get; set; }
 
@@ -20,6 +23,12 @@ public class Todo
     public string? BankAccountId { get; set; }
     public BankAccount? BankAccount { get; set; }
 
-    // Many-to-many with Sub (the prototype's catIds[]).
+    // The required single "main" category. Exactly one per task (business rule);
+    // independent of the sub-categories below, which may span other mains.
+    public string MainId { get; set; } = default!;
+    public Main Main { get; set; } = default!;
+
+    // Many-to-many with Sub (the prototype's catIds[]). Zero-to-many, and a sub
+    // may belong to a different main than MainId.
     public ICollection<Sub> Categories { get; set; } = new List<Sub>();
 }

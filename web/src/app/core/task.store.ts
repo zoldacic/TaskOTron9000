@@ -16,10 +16,16 @@ export interface TaskDraft {
   id: number | null;
   title: string;
   due: string | null;
+  mainId: string; // required single main category
   catIds: string[];
   amountStr: string;
   dateKind: DateKind;
   bankAccountId: string | null;
+  note: string;
+  /** When set (edit only), also apply this main + subs to every task whose title contains `match`. */
+  applyAll: boolean;
+  /** Substring "Apply to all" matches on (case-insensitive). Defaults to the full title. */
+  match: string;
 }
 export interface CatDraft {
   kind: 'main' | 'sub';
@@ -29,9 +35,21 @@ export interface CatDraft {
 export interface ImportCatDraft {
   key: number;
   title: string;
+  /** Substring "Apply to all" matches on (case-insensitive). Defaults to the full title. */
+  match: string;
+  mainId: string; // required single main category (radio behaviour)
   catIds: string[];
+  note: string;
   applyAll: boolean;
   remember: boolean;
+}
+export interface ImportSplitDraft {
+  key: number; // the original row being split
+  title: string; // original title (display only)
+  total: number; // original amount; part 2 is derived as total − part 1
+  aTitle: string;
+  aAmount: string; // kept as a string so the input edits freely (blank, '-', '.')
+  bTitle: string;
 }
 export interface Confirm {
   title: string;
@@ -42,6 +60,17 @@ export interface Confirm {
 
 const SMART: Filter[] = ['all', 'today', 'upcoming', 'done'];
 const isSmart = (f: Filter) => SMART.includes(f);
+
+const IMPORT_MAIN_KEY = 'tot.importMain';
+function readStoredImportMain(): string | null {
+  try { return localStorage.getItem(IMPORT_MAIN_KEY); } catch { return null; }
+}
+function writeStoredImportMain(mainId: string | null): void {
+  try {
+    if (mainId) localStorage.setItem(IMPORT_MAIN_KEY, mainId);
+    else localStorage.removeItem(IMPORT_MAIN_KEY);
+  } catch { /* storage may be unavailable */ }
+}
 
 const SAMPLE_IMPORT = [
   '2026-07-15\tACME CORP PAYROLL\t+4200.00',
@@ -84,10 +113,10 @@ export class TaskStore {
   readonly saveQueryName = signal<string | null>(null); // non-null => "name this query" dialog open
   readonly saveQueryError = signal<string | null>(null);
   readonly layout = signal<'list' | 'grouped'>('list');
-  readonly quickAdd = signal('');
   readonly selectedMain = signal<string | null>(null);
   readonly newMain = signal('');
   readonly newSub = signal('');
+  readonly catError = signal<string | null>(null); // e.g. main-in-use on delete
 
   // ---- selection (multi-select for bulk actions) ----
   readonly selecting = signal(false);
@@ -98,12 +127,17 @@ export class TaskStore {
   readonly expandedMains = signal<Set<string>>(new Set());
   readonly catDialog = signal<CatDraft | null>(null);
   readonly importCat = signal<ImportCatDraft | null>(null);
+  readonly importSplit = signal<ImportSplitDraft | null>(null);
   readonly confirm = signal<Confirm | null>(null);
 
   // ---- import ----
   readonly importText = signal('');
   readonly importAccountId = signal<string | null>(null);
+  // batch default main for imported tasks; last choice remembered across sessions (validated on load)
+  readonly importMainId = signal<string | null>(readStoredImportMain());
   readonly importRows = signal<ImportRow[] | null>(null);
+  // Keys of the preview rows the user has picked to import; the rest are left in place to keep working on.
+  readonly importSelected = signal<ReadonlySet<number>>(new Set());
 
   // ---- bank accounts ----
   readonly newBankAccount = signal('');
@@ -112,7 +146,13 @@ export class TaskStore {
   // ---- reports ----
   readonly repStart = signal('2026-07-01');
   readonly repEnd = signal('2026-07-31');
+  // Selection grain: 'main' → repSel holds main ids; 'sub' → repSel holds sub ids.
+  readonly repMode = signal<'main' | 'sub'>('main');
   readonly repSel = signal<string[] | null>(null); // null = all
+  // Time-series chart style; purely presentational, so switching needs no reload.
+  readonly repChart = signal<'bars' | 'line' | 'cumulative'>('bars');
+  // Category-breakdown chart style; also purely presentational.
+  readonly repCatChart = signal<'bars' | 'donut'>('bars');
   readonly report = signal<Report | null>(null);
 
   // ---- computed ----
@@ -151,12 +191,21 @@ export class TaskStore {
   subName(id: string): string {
     return this.subs().find((s) => s.id === id)?.name ?? '';
   }
+  mainName(id: string | null): string {
+    return id ? this.mains().find((m) => m.id === id)?.name ?? '' : '';
+  }
   accountName(id: string | null): string {
     return id ? this.bankAccounts().find((a) => a.id === id)?.name ?? '' : '';
   }
   subsOf(mainId: string): Sub[] {
     return this.subs().filter((s) => s.mainId === mainId);
   }
+  /** The main a sub belongs to, or null if unknown. */
+  mainOfSub(subId: string): string | null {
+    return this.subs().find((s) => s.id === subId)?.mainId ?? null;
+  }
+  /** First main id (default for the required single category). */
+  firstMainId(): string { return this.mains()[0]?.id ?? ''; }
 
   // ---- loading ----
   async loadAll(): Promise<void> {
@@ -173,6 +222,10 @@ export class TaskStore {
     const c: Categories = await firstValueFrom(this.api.getCategories());
     this.mains.set(c.mains);
     this.subs.set(c.subs);
+    // Keep the remembered import main if it still exists, else fall back to the first category.
+    if (!this.importMainId() || !c.mains.some((m) => m.id === this.importMainId())) {
+      this.setImportMain(c.mains[0]?.id ?? null);
+    }
   }
   async refreshTitleDefaults(): Promise<void> {
     this.titleDefaults.set(await firstValueFrom(this.api.getTitleDefaults()));
@@ -347,15 +400,10 @@ export class TaskStore {
     const f = this.filter();
     return isSmart(f) ? [] : [f];
   }
-
-  async addQuick(): Promise<void> {
-    const title = this.quickAdd().trim();
-    if (!title) return;
-    await firstValueFrom(this.api.createTodo({
-      title, due: null, amount: null, dateKind: 'due', catIds: this.inheritedCatIds(), bankAccountId: null,
-    }));
-    this.quickAdd.set('');
-    await this.refreshTodos();
+  /** Default main when creating a task: the filtered sub's main, else the first main. */
+  private inheritedMainId(): string {
+    const f = this.filter();
+    return (!isSmart(f) && this.mainOfSub(f)) || this.firstMainId();
   }
 
   openNew(): void {
@@ -363,8 +411,8 @@ export class TaskStore {
     const catIds = this.inheritedCatIds();
     this.expandedMains.set(this.mainsWithSelection(catIds));
     this.taskDialog.set({
-      id: null, title: '', due, catIds, amountStr: '', dateKind: 'due',
-      bankAccountId: null,
+      id: null, title: '', due, mainId: this.inheritedMainId(), catIds, amountStr: '', dateKind: 'due',
+      bankAccountId: null, note: '', applyAll: false, match: '',
     });
   }
   openEdit(id: number): void {
@@ -372,9 +420,9 @@ export class TaskStore {
     if (!t) return;
     this.expandedMains.set(this.mainsWithSelection(t.catIds));
     this.taskDialog.set({
-      id, title: t.title, due: t.due, catIds: [...t.catIds],
+      id, title: t.title, due: t.due, mainId: t.mainId || this.firstMainId(), catIds: [...t.catIds],
       amountStr: t.amount == null ? '' : String(t.amount), dateKind: t.dateKind ?? 'due',
-      bankAccountId: t.bankAccountId,
+      bankAccountId: t.bankAccountId, note: t.note ?? '', applyAll: false, match: t.title.trim(),
     });
   }
   isMainExpanded(id: string): boolean { return this.expandedMains().has(id); }
@@ -390,23 +438,57 @@ export class TaskStore {
     const d = this.taskDialog();
     if (d) this.taskDialog.set({ ...d, ...patch });
   }
+  /** Select the required single main category (radio behaviour). */
+  setDraftMain(mainId: string): void {
+    this.updateDialog({ mainId });
+  }
   toggleDraftCat(subId: string): void {
     const d = this.taskDialog();
     if (!d) return;
     const has = d.catIds.includes(subId);
     this.updateDialog({ catIds: has ? d.catIds.filter((x) => x !== subId) : [...d.catIds, subId] });
   }
+  /** Narrow the "apply to all" match to a selected part of the title (empty resets to the full title). */
+  setDraftMatch(text: string): void {
+    const d = this.taskDialog();
+    if (!d) return;
+    const m = text.trim();
+    this.updateDialog({ match: m || d.title.trim() });
+  }
+  /**
+   * Tasks the "apply to all" would recategorize: those in the current query/filter view
+   * (`visibleTodos`) whose title contains the draft's match substring. Scoping to the visible
+   * set means editing never reaches tasks the user has filtered out.
+   */
+  private draftMatchTargets(): Todo[] {
+    const d = this.taskDialog();
+    if (!d) return [];
+    const m = d.match.trim().toLowerCase();
+    if (!m) return [];
+    return this.visibleTodos().filter((t) => t.title.trim().toLowerCase().includes(m));
+  }
+  /** How many tasks in the current query the "apply to all" would recategorize. */
+  draftMatchCount(): number {
+    return this.draftMatchTargets().length;
+  }
   async saveTask(): Promise<void> {
     const d = this.taskDialog();
-    if (!d || !d.title.trim()) return;
+    if (!d || !d.title.trim() || !d.mainId) return;
     const parsed = d.amountStr.trim() !== '' ? parseFloat(d.amountStr) : NaN;
     const amount = Number.isNaN(parsed) ? null : parsed;
+    const note = d.note.trim() || null;
     const body = {
-      title: d.title.trim(), due: d.due, amount, dateKind: d.dateKind, catIds: d.catIds,
-      bankAccountId: d.bankAccountId,
+      title: d.title.trim(), due: d.due, amount, dateKind: d.dateKind,
+      mainId: d.mainId, catIds: d.catIds, bankAccountId: d.bankAccountId, note,
     };
+    // Capture the "apply to all" targets from the current query before the update refreshes state.
+    const targetIds = d.id != null && d.applyAll ? this.draftMatchTargets().map((t) => t.id) : [];
     if (d.id == null) await firstValueFrom(this.api.createTodo(body));
     else await firstValueFrom(this.api.updateTodo(d.id, body));
+    // Push this main + subs onto the current query's tasks whose title contains the match.
+    if (targetIds.length) {
+      await firstValueFrom(this.api.bulkCategorizeTodos(targetIds, d.mainId, d.catIds));
+    }
     this.taskDialog.set(null);
     await this.refreshTodos();
   }
@@ -436,7 +518,14 @@ export class TaskStore {
     await this.refreshCategories();
   }
   async removeMain(id: string): Promise<void> {
-    await firstValueFrom(this.api.deleteMain(id));
+    this.catError.set(null);
+    try {
+      await firstValueFrom(this.api.deleteMain(id));
+    } catch {
+      // Blocked (409) when the main is still a task's required category.
+      this.catError.set(this.t('cat.error.mainInUse'));
+      return;
+    }
     if (this.filter() === id) this.filter.set('all');
     await Promise.all([this.refreshCategories(), this.refreshTodos()]);
     if (this.selectedMain() === id) this.selectedMain.set(this.mains()[0]?.id ?? null);
@@ -486,8 +575,8 @@ export class TaskStore {
   }
 
   // ---- import ----
-  loadSampleImport(): void { this.importText.set(SAMPLE_IMPORT); this.importRows.set(null); }
-  clearImport(): void { this.importText.set(''); this.importRows.set(null); }
+  loadSampleImport(): void { this.importText.set(SAMPLE_IMPORT); this.importRows.set(null); this.importSelected.set(new Set()); }
+  clearImport(): void { this.importText.set(''); this.importRows.set(null); this.importSelected.set(new Set()); }
   /** Appends parsed rows (each already `date\ttitle\tamount`) to the import text box. */
   appendImportRows(rows: string[]): void {
     if (rows.length === 0) return;
@@ -496,21 +585,68 @@ export class TaskStore {
     this.importText.set(cur + sep + rows.join('\n'));
   }
   async parseImport(): Promise<void> {
-    this.importRows.set(await firstValueFrom(this.api.parseImport(this.importText())));
+    const rows = await firstValueFrom(this.api.parseImport(this.importText()));
+    // Each row needs a main: keep any remembered from a title default, else the batch default.
+    const def = this.importMainId() ?? this.firstMainId();
+    const mapped = rows.map((r) => ({ ...r, mainId: r.mainId ?? def, note: r.note ?? '' }));
+    this.importRows.set(mapped);
+    // Start with nothing selected so the user opts rows in deliberately.
+    this.importSelected.set(new Set());
   }
-  async commitImport(): Promise<void> {
-    const rows = (this.importRows() ?? []).filter((r) => r.ok);
-    if (!rows.length) return;
+  /** Toggle whether a single preview row is selected for import. */
+  toggleImportSelected(key: number): void {
+    const next = new Set(this.importSelected());
+    if (next.has(key)) next.delete(key); else next.add(key);
+    this.importSelected.set(next);
+  }
+  /** Add or remove the given preview-row keys from the current selection. */
+  setImportSelected(keys: Iterable<number>, on: boolean): void {
+    const next = new Set(this.importSelected());
+    for (const key of keys) {
+      if (on) next.add(key); else next.delete(key);
+    }
+    this.importSelected.set(next);
+  }
+  /** Set the batch default main, remember it across sessions, and apply it to every parsed row. */
+  setImportMain(mainId: string | null): void {
+    this.importMainId.set(mainId);
+    writeStoredImportMain(mainId);
+    const rows = this.importRows();
+    if (mainId && rows) this.importRows.set(rows.map((r) => ({ ...r, mainId })));
+  }
+  /**
+   * Import the selected, importable rows and leave the rest in the preview to keep working on.
+   * Returns true when nothing is left to import (the preview was fully cleared).
+   */
+  async commitImport(): Promise<boolean> {
+    const all = this.importRows() ?? [];
+    const sel = this.importSelected();
+    const rows = all.filter((r) => r.ok && sel.has(r.key));
+    if (!rows.length) return false;
     const bankAccountId = this.importAccountId();
+    const fallback = this.importMainId() ?? this.firstMainId();
     const body: ImportCommitRow[] = rows.map((r) => ({
-      title: r.title, date: r.date, amount: r.amount, catIds: r.catIds, bankAccountId,
+      title: r.title, date: r.date, amount: r.amount,
+      mainId: r.mainId ?? fallback, catIds: r.catIds, bankAccountId,
+      note: (r.note ?? '').trim() || null,
     }));
     await firstValueFrom(this.api.commitImport(body));
-    this.importText.set('');
-    this.importRows.set(null);
+    // Keep whatever wasn't just imported so the user can continue with it.
+    const imported = new Set(rows.map((r) => r.key));
+    const remaining = all.filter((r) => !imported.has(r.key));
+    if (remaining.length) {
+      this.importRows.set(remaining);
+      // The leftovers are the rows the user chose not to import — keep them unselected.
+      this.importSelected.set(new Set());
+    } else {
+      this.importText.set('');
+      this.importRows.set(null);
+      this.importSelected.set(new Set());
+    }
     this.filter.set('all');
     // Imported tasks now use this account, so refresh usage counts too.
     await Promise.all([this.refreshTodos(), this.refreshBankAccounts()]);
+    return remaining.length === 0;
   }
 
   // ---- bank accounts ----
@@ -542,11 +678,41 @@ export class TaskStore {
   openImportCat(key: number): void {
     const r = (this.importRows() ?? []).find((x) => x.key === key);
     if (!r) return;
-    const norm = r.title.trim().toLowerCase();
+    // Pre-select a remembered default whose merchant substring occurs in this title
+    // (longest wins), so re-opening a remembered row keeps its match, not the whole title.
+    const remembered = this.rememberedMatch(r.title);
     this.importCat.set({
-      key, title: r.title, catIds: [...(r.catIds ?? [])], applyAll: false,
-      remember: this.titleDefaults().some((d) => d.normalizedTitle === norm),
+      key, title: r.title, match: remembered ?? r.title,
+      mainId: r.mainId || this.importMainId() || this.firstMainId(),
+      catIds: [...(r.catIds ?? [])], note: r.note ?? '', applyAll: false,
+      remember: remembered !== null,
     });
+  }
+  /** The original-case slice of `title` for the longest remembered default matching it, or null. */
+  private rememberedMatch(title: string): string | null {
+    const norm = title.trim().toLowerCase();
+    const best = this.titleDefaults()
+      .filter((d) => d.normalizedTitle && norm.includes(d.normalizedTitle))
+      .sort((a, b) => b.normalizedTitle.length - a.normalizedTitle.length)[0];
+    if (!best) return null;
+    const i = title.toLowerCase().indexOf(best.normalizedTitle);
+    return i >= 0 ? title.substring(i, i + best.normalizedTitle.length) : best.normalizedTitle;
+  }
+  /** Narrow the "apply to all" match to a selected part of the title (empty resets to the full title). */
+  setImportCatMatch(text: string): void {
+    const c = this.importCat();
+    if (!c) return;
+    const m = text.trim();
+    this.importCat.set({ ...c, match: m || c.title });
+  }
+  /** Select the required single main category for the import row (radio behaviour). */
+  setImportCatMain(mainId: string): void {
+    const c = this.importCat();
+    if (c) this.importCat.set({ ...c, mainId });
+  }
+  setImportCatNote(note: string): void {
+    const c = this.importCat();
+    if (c) this.importCat.set({ ...c, note });
   }
   toggleImportCat(id: string): void {
     const c = this.importCat();
@@ -560,35 +726,93 @@ export class TaskStore {
   }
   async saveImportCat(): Promise<void> {
     const c = this.importCat();
-    if (!c) return;
-    const norm = c.title.trim().toLowerCase();
-    // Apply to this row (and same-title rows if requested).
+    if (!c || !c.mainId) return;
+    const match = c.match.trim().toLowerCase();
+    // Apply the main + subs + note to this row (and rows whose title contains the match, if requested).
     this.importRows.set((this.importRows() ?? []).map((r) =>
-      r.key === c.key || (c.applyAll && r.title.trim().toLowerCase() === norm)
-        ? { ...r, catIds: [...c.catIds] } : r));
-    // Persist / clear the remembered default.
-    if (c.remember) await firstValueFrom(this.api.putTitleDefault(norm, c.catIds));
-    else await firstValueFrom(this.api.deleteTitleDefault(norm));
+      r.key === c.key || (c.applyAll && match !== '' && r.title.trim().toLowerCase().includes(match))
+        ? { ...r, mainId: c.mainId, catIds: [...c.catIds], note: c.note } : r));
+    // Close now: the row change above is applied, so persistence below must not gate the dialog.
     this.importCat.set(null);
+    // Persist / clear the remembered default under the chosen merchant substring (main + subs).
+    if (match) {
+      if (c.remember) await firstValueFrom(this.api.putTitleDefault(match, c.catIds, c.mainId));
+      else await firstValueFrom(this.api.deleteTitleDefault(match));
+    }
     await this.refreshTitleDefaults();
+  }
+
+  /** Open the split dialog for a row, pre-filling part 1 with half its amount. */
+  openImportSplit(key: number): void {
+    const r = (this.importRows() ?? []).find((x) => x.key === key);
+    if (!r || r.amount == null) return; // only amount-bearing rows can be split
+    const half = Math.round((r.amount / 2) * 100) / 100;
+    this.importSplit.set({ key, title: r.title, total: r.amount, aTitle: r.title, aAmount: String(half), bTitle: r.title });
+  }
+  setImportSplitField(k: 'aTitle' | 'aAmount' | 'bTitle', v: string): void {
+    const s = this.importSplit();
+    if (s) this.importSplit.set({ ...s, [k]: v });
+  }
+  /**
+   * Replace the split row with its two parts. Part 1 keeps the row's key and takes the
+   * entered amount; part 2 gets a fresh key and the remainder (total − part 1), so the two
+   * always add back up to the original.
+   */
+  saveImportSplit(): void {
+    const s = this.importSplit();
+    if (!s) return;
+    const rows = this.importRows();
+    if (!rows) return;
+    if (!s.aAmount.trim() || Number.isNaN(Number(s.aAmount))) return;
+    const a = Math.round(Number(s.aAmount) * 100) / 100;
+    const b = Math.round((s.total - a) * 100) / 100;
+    const orig = rows.find((r) => r.key === s.key);
+    if (!orig) return;
+    const nextKey = Math.max(...rows.map((r) => r.key)) + 1;
+    const partA: ImportRow = { ...orig, title: s.aTitle.trim() || orig.title, amount: a, ok: true };
+    const partB: ImportRow = { ...orig, key: nextKey, title: s.bTitle.trim() || orig.title, amount: b, ok: true };
+    this.importRows.set(rows.flatMap((r) => (r.key === s.key ? [partA, partB] : [r])));
+    // The new part inherits the original row's selection (part 1 keeps its key, so it's unaffected).
+    if (this.importSelected().has(s.key)) {
+      this.importSelected.set(new Set(this.importSelected()).add(nextKey));
+    }
+    this.importSplit.set(null);
   }
 
   // ---- reports ----
   async loadReport(): Promise<void> {
     this.report.set(await firstValueFrom(
-      this.api.getReport(this.repStart(), this.repEnd(), this.repSel())));
+      this.api.getReport(this.repStart(), this.repEnd(), this.repSel(), this.repMode())));
   }
   allSubIds(): string[] { return this.subs().map((s) => s.id); }
-  repToggleSub(id: string): void {
-    const base = [...this.allSubIds(), '__none__'];
-    const cur = this.repSel() == null ? [...base] : [...this.repSel()!];
+  /** Every selectable id in the current grain, plus the "uncategorized" pseudo-id. */
+  private repUniverse(): string[] {
+    const ids = this.repMode() === 'main'
+      ? this.mains().map((m) => m.id)
+      : this.allSubIds();
+    return [...ids, '__none__'];
+  }
+  /** Toggle a single main/sub id in the current grain. */
+  repToggle(id: string): void {
+    const cur = this.repSel() == null ? [...this.repUniverse()] : [...this.repSel()!];
     const i = cur.indexOf(id);
     if (i >= 0) cur.splice(i, 1); else cur.push(id);
     this.repSel.set(cur);
     void this.loadReport();
   }
+  /** Switch selection grain; resets to "all" since ids live in different namespaces. */
+  setRepMode(mode: 'main' | 'sub'): void {
+    if (this.repMode() === mode) return;
+    this.repMode.set(mode);
+    this.repSel.set(null);
+    void this.loadReport();
+  }
   repAll(): void { this.repSel.set(null); void this.loadReport(); }
   repNone(): void { this.repSel.set([]); void this.loadReport(); }
+  /** Pick the time-series chart style. No server reload — same data, drawn differently. */
+  setRepChart(chart: 'bars' | 'line' | 'cumulative'): void { this.repChart.set(chart); }
+  /** Pick the category-breakdown chart style. No server reload. */
+  setRepCatChart(chart: 'bars' | 'donut'): void { this.repCatChart.set(chart); }
   setRange(from: string, to: string): void {
     this.repStart.set(from);
     this.repEnd.set(to);

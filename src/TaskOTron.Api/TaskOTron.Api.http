@@ -45,11 +45,14 @@ DELETE {{host}}/api/mains/home
 ### Title defaults
 GET {{host}}/api/title-defaults
 
-### Remember categories for a title
-PUT {{host}}/api/title-defaults/whole foods market
+### Remember categories for a merchant substring
+PUT {{host}}/api/title-defaults
 Content-Type: application/json
 
-{ "catIds": ["he"] }
+{ "match": "whole foods", "catIds": ["he"], "mainId": "home" }
+
+### Forget a remembered merchant substring
+DELETE {{host}}/api/title-defaults?match=whole foods
 
 ### Parse a pasted bank statement
 POST {{host}}/api/import/parse

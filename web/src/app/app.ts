@@ -6,6 +6,7 @@ import { SidebarComponent } from './shell/sidebar.component';
 import { TaskDialogComponent } from './dialogs/task-dialog.component';
 import { CategoryRenameDialogComponent } from './dialogs/category-rename-dialog.component';
 import { ImportCatDialogComponent } from './dialogs/import-cat-dialog.component';
+import { ImportSplitDialogComponent } from './dialogs/import-split-dialog.component';
 import { ConfirmDialogComponent } from './dialogs/confirm-dialog.component';
 import { SaveQueryDialogComponent } from './dialogs/save-query-dialog.component';
 
@@ -15,7 +16,7 @@ import { SaveQueryDialogComponent } from './dialogs/save-query-dialog.component'
   imports: [
     RouterOutlet, TitleBarComponent, SidebarComponent,
     TaskDialogComponent, CategoryRenameDialogComponent, ImportCatDialogComponent,
-    ConfirmDialogComponent, SaveQueryDialogComponent,
+    ImportSplitDialogComponent, ConfirmDialogComponent, SaveQueryDialogComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

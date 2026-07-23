@@ -18,7 +18,7 @@ public static class ImportEndpoints
             var defaults = await LoadTitleDefaults(db);
             var rows = ImportParser.Parse(req.Text, defaults);
             return Results.Ok(rows.Select(r =>
-                new ImportRowDto(r.Key, r.Title, r.Date, r.Amount, r.Ok, r.CatIds)));
+                new ImportRowDto(r.Key, r.Title, r.Date, r.Amount, r.Ok, r.CatIds, r.MainId)));
         });
 
         // Commit confirmed rows: each importable (amount != null) row becomes a Transaction task.
@@ -26,6 +26,17 @@ public static class ImportEndpoints
         {
             var rows = (req.Rows ?? []).Where(r => r.Amount is not null).ToList();
             if (rows.Count == 0) return Results.BadRequest("No importable rows (each needs a detected amount).");
+
+            // Every imported task needs a main category. Validate the ones referenced.
+            var wantedMains = rows.Select(r => r.MainId)
+                .Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+            if (rows.Any(r => string.IsNullOrEmpty(r.MainId)))
+                return Results.BadRequest("A main category is required for imported tasks.");
+            var knownMains = await db.Mains.Where(m => wantedMains.Contains(m.Id))
+                .Select(m => m.Id).ToListAsync();
+            var missingMain = wantedMains.Except(knownMains).ToList();
+            if (missingMain.Count > 0)
+                return Results.BadRequest($"Unknown main category '{missingMain[0]}'.");
 
             // Resolve all referenced sub ids up front.
             var wantedIds = rows.SelectMany(r => r.CatIds ?? []).Distinct().ToList();
@@ -53,7 +64,9 @@ public static class ImportEndpoints
                     Due = Mapping.ParseDate(r.Date),
                     Amount = r.Amount,
                     DateKind = DateKind.Transaction,
+                    MainId = r.MainId!,
                     BankAccountId = string.IsNullOrEmpty(r.BankAccountId) ? null : r.BankAccountId,
+                    Note = string.IsNullOrWhiteSpace(r.Note) ? null : r.Note.Trim(),
                     Categories = (r.CatIds ?? [])
                         .Where(subs.ContainsKey)
                         .Select(id => subs[id])
@@ -67,9 +80,11 @@ public static class ImportEndpoints
         });
     }
 
-    private static async Task<Dictionary<string, List<string>>> LoadTitleDefaults(AppDbContext db)
+    private static async Task<Dictionary<string, TitleDefaultEntry>> LoadTitleDefaults(AppDbContext db)
     {
         var defs = await db.TitleDefaults.Include(td => td.Categories).AsNoTracking().ToListAsync();
-        return defs.ToDictionary(td => td.NormalizedTitle, td => td.Categories.Select(c => c.Id).ToList());
+        return defs.ToDictionary(
+            td => td.NormalizedTitle,
+            td => new TitleDefaultEntry(td.MainId, td.Categories.Select(c => c.Id).ToList()));
     }
 }

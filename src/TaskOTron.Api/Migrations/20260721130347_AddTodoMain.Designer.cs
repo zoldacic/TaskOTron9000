@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TaskOTron.Api.Data;
 
@@ -10,9 +11,11 @@ using TaskOTron.Api.Data;
 namespace TaskOTron.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260721130347_AddTodoMain")]
+    partial class AddTodoMain
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
@@ -88,12 +91,7 @@ namespace TaskOTron.Api.Migrations
                     b.Property<string>("NormalizedTitle")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("MainId")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("NormalizedTitle");
-
-                    b.HasIndex("MainId");
 
                     b.ToTable("TitleDefaults");
                 });
@@ -122,9 +120,6 @@ namespace TaskOTron.Api.Migrations
 
                     b.Property<string>("MainId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Note")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
@@ -177,16 +172,6 @@ namespace TaskOTron.Api.Migrations
                         .HasForeignKey("MainId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Main");
-                });
-
-            modelBuilder.Entity("TaskOTron.Api.Models.TitleDefault", b =>
-                {
-                    b.HasOne("TaskOTron.Api.Models.Main", "Main")
-                        .WithMany()
-                        .HasForeignKey("MainId")
-                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Main");
                 });

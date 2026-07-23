@@ -67,7 +67,7 @@ Four sections separated by 2px rules:
 3. **Categories tree**: each main category as a bold label with its sub-categories listed beneath as filter buttons (name + task count). Clicking filters tasks by that sub-category.
 
 ### 1. Tasks view
-- **Header**: big uppercase title + a mono subtitle (both change per active filter — see copy list below). Right side: a segmented **List / Grouped** layout toggle and a primary **New task** button (+ icon). Below: a **quick-add** input ("Log a task before it logs you…") + Add button; Enter also submits.
+- **Header**: big uppercase title + a mono subtitle (both change per active filter — see copy list below). Right side: a segmented **List / Grouped** layout toggle and a primary **New task** button (+ icon) that opens the full task dialog (same fields as editing).
 - **List layout**: flat, sorted list of task rows. Each row:
   - Left: 22px square **checkbox** (accent fill + glow + check icon when done).
   - Title (15px; strikethrough + muted when done).
@@ -167,7 +167,6 @@ Everything lives in one component state object (`class Component`). Key fields:
 - `view` — `tasks | categories | import | reports`.
 - `layout` — `list | grouped`.
 - `filter` — `all | today | upcoming | done | {subId}`.
-- `quickAdd` — quick-add input text.
 - `dialog` — task editor draft `{ id|null, title, due, catIds[], amountStr, dateKind }` or `null`.
 - `catDialog` — rename draft `{ kind:'main'|'sub', id, value }` or `null`.
 - `selectedMain`, `newMain`, `newSub` — categories view.
@@ -199,7 +198,7 @@ Empty states:
 - Upcoming — "The future is empty" / "No upcoming tasks. Ominous, but relaxing."
 - Report no-data — "No money in this window" / "Widen the dates, select more categories, or import a bank file to see the damage."
 
-Inputs: quick-add "Log a task before it logs you…"; task title "What must be conquered?"; amount "e.g. -84.50".
+Inputs: task title "What must be conquered?"; amount "e.g. -84.50".
 
 ---
 

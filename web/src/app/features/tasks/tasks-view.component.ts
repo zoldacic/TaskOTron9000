@@ -51,12 +51,6 @@ import { QueryPanelComponent } from './query-panel.component';
         <app-query-panel />
       }
 
-      <div class="quick">
-        <input class="input" [placeholder]="store.t('tasks.quickAddPlaceholder')" [value]="store.quickAdd()"
-               (input)="store.quickAdd.set(value($event))" (keydown.enter)="store.addQuick()">
-        <button class="btn btn-secondary" [disabled]="!store.quickAdd().trim()" (click)="store.addQuick()">{{ store.t('tasks.add') }}</button>
-      </div>
-
       @if (store.selecting()) {
         <div class="selbar">
           <button class="btn btn-ghost" (click)="store.toggleSelectAllVisible()">
@@ -109,7 +103,6 @@ import { QueryPanelComponent } from './query-panel.component';
     .search-ic { color: var(--muted); flex: none; }
     .search .clear { flex: none; color: var(--muted); }
     .search .clear:hover { color: var(--color-accent); }
-    .quick { display: flex; gap: 10px; padding: 0 24px 16px; }
     .selbar {
       display: flex; align-items: center; gap: 12px; margin: 0 24px 16px; padding: 8px 12px;
       border: 1px solid var(--color-accent); background: var(--accent-fill);

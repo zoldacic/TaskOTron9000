@@ -1,14 +1,17 @@
 /* ===== TASK-O-TRON 9000 — Modernist dark theme (recreated design system) ===== */
 
 :root {
+  /* dark native controls (select popups, scrollbars) render legibly */
+  color-scheme: dark;
+
   /* colors (README design tokens) */
   --color-bg: #0a0c12;
   --color-surface: #141826;
   --color-text: #e8ebf5;
   --color-divider: color-mix(in srgb, #93a4cc 24%, transparent);
-  --color-accent: #ff3b1e;
-  --color-accent-400: #ff6a52;
-  --color-accent-500: #e63316;
+  --color-accent: #3b82f6;
+  --color-accent-400: #60a5fa;
+  --color-accent-500: #2563eb;
   /* danger: reserved for destructive/warning actions (e.g. Delete) */
   --color-danger: #ff3b1e;
   --color-danger-hover: #e63316;
@@ -121,7 +124,7 @@ button { font-family: inherit; }
   transition: background 0.12s, color 0.12s;
 }
 .btn-icon:hover { background: var(--tint-hover); color: var(--color-text); }
-.btn-icon.danger:hover { color: var(--color-accent); }
+.btn-icon.danger:hover { color: var(--color-danger); }
 
 /* ===== inputs ===== */
 .input {
@@ -136,6 +139,18 @@ button { font-family: inherit; }
 }
 .input::placeholder { color: color-mix(in srgb, var(--color-text) 38%, transparent); }
 .input:focus { outline: none; border-color: var(--color-accent); }
+/* native <select> popup: dark background so options stay readable */
+.input option { background: var(--color-surface); color: var(--color-text); }
+/* custom chevron so the arrow sits inset from the right edge, not flush against it */
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b95b5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  padding-right: 38px;
+}
 
 .field { display: block; }
 .field > .kicker { display: block; margin-bottom: 6px; }
@@ -166,6 +181,12 @@ button { font-family: inherit; }
   letter-spacing: 0.06em;
 }
 .tag-neutral { background: color-mix(in srgb, #93a4cc 14%, transparent); color: var(--color-text); }
+.tag-main {
+  font-weight: 700;
+  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  color: var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
 .tag-account {
   gap: 4px;
   background: color-mix(in srgb, var(--color-accent) 14%, transparent);

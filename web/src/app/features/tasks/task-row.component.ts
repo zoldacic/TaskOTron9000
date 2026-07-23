@@ -29,14 +29,18 @@ import { fmtMoney } from '../../core/money-util';
           @if (store.accountName(todo.bankAccountId); as acct) {
             <span class="tag tag-account"><app-icon name="upload" [size]="11" /> {{ acct }}</span>
           }
+          @if (store.mainName(todo.mainId); as main) {
+            <span class="tag tag-main">{{ main }}</span>
+          }
           @for (id of todo.catIds; track id) {
             @if (store.subName(id); as n) { <span class="tag tag-neutral">{{ n }}</span> }
           }
         </div>
+        @if (todo.note) { <div class="note">{{ todo.note }}</div> }
       </button>
 
       @if (todo.amount != null) {
-        <span class="amount" [style.color]="todo.amount >= 0 ? 'var(--color-income)' : 'var(--color-accent)'">
+        <span class="amount" [style.color]="todo.amount >= 0 ? 'var(--color-income)' : 'var(--color-danger)'">
           {{ fmt(todo.amount) }}
         </span>
       }
@@ -61,6 +65,7 @@ import { fmtMoney } from '../../core/money-util';
     .title { font-size: 15px; line-height: 1.3; }
     .title.done { text-decoration: line-through; color: color-mix(in srgb, var(--color-text) 42%, transparent); }
     .meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .note { margin-top: 6px; font-size: 13px; line-height: 1.4; color: var(--muted); white-space: pre-wrap; }
     .due {
       display: inline-flex; align-items: center; gap: 5px;
       font-family: var(--font-mono); font-size: 11px; font-weight: 700;
@@ -89,6 +94,6 @@ export class TaskRowComponent {
     const t = this.todo;
     if (!t.due || this.isTxn()) return 'var(--muted)';
     const tone = dueTone(t.due, t.done);
-    return tone === 'over' ? 'var(--color-accent)' : tone === 'today' ? 'var(--color-amber)' : 'var(--muted)';
+    return tone === 'over' ? 'var(--color-danger)' : tone === 'today' ? 'var(--color-amber)' : 'var(--muted)';
   }
 }

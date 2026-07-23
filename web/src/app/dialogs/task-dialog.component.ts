@@ -68,8 +68,20 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
             }
           }
 
+          <!-- required single main category -->
           <div class="field mt">
-            <span class="kicker">{{ store.t('dialog.task.categories') }}</span>
+            <span class="kicker">{{ store.t('dialog.task.category') }} <span class="req">*</span></span>
+            <div class="chips">
+              @for (m of store.mains(); track m.id) {
+                <button class="chip main" [class.on]="d.mainId === m.id"
+                        (click)="store.setDraftMain(m.id)">{{ m.name }}</button>
+              }
+            </div>
+          </div>
+
+          <!-- optional subcategories; may belong to any main -->
+          <div class="field mt">
+            <span class="kicker">{{ store.t('dialog.task.subcategories') }} <span class="hint">{{ store.t('dialog.task.optional') }}</span></span>
             <div class="chips">
               @for (m of store.mains(); track m.id) {
                 <button class="chip main" [class.on]="store.isMainExpanded(m.id)"
@@ -88,6 +100,27 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
             }
           </div>
 
+          <!-- optional free-text note -->
+          <label class="field mt">
+            <span class="kicker">{{ store.t('dialog.task.note') }} <span class="hint">{{ store.t('dialog.task.optional') }}</span></span>
+            <textarea class="input note" rows="3" [value]="d.note" [placeholder]="store.t('dialog.task.notePlaceholder')"
+                      (input)="patch({ note: value($event) })"></textarea>
+          </label>
+
+          <!-- apply this category to every task with a similar name (edit only) -->
+          @if (d.id != null) {
+            <label class="check mt">
+              <input type="checkbox" [checked]="d.applyAll" (change)="toggleApplyAll($event)">
+              <span>{{ store.t('dialog.task.applyAll', { count: store.draftMatchCount(), match: d.match }) }}</span>
+            </label>
+            @if (d.applyAll) {
+              <div class="match-picker">
+                <span class="match-hint">{{ store.t('dialog.task.applyAllHint') }}</span>
+                <span class="match-title" (mouseup)="captureSelection()" (dblclick)="captureSelection()">{{ d.title }}</span>
+              </div>
+            }
+          }
+
           <div class="dialog-actions">
             @if (d.id != null) {
               <button class="btn btn-ghost del" (click)="store.askDeleteFromDialog()">{{ store.t('dialog.task.deleteTask') }}</button>
@@ -101,6 +134,15 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
     }
   `,
   styles: [`
+    .dialog { max-height: 90vh; overflow-y: auto; }
+    .dialog-actions {
+      position: sticky;
+      bottom: calc(-1 * var(--space-6));
+      margin: var(--space-6) calc(-1 * var(--space-6)) calc(-1 * var(--space-6));
+      padding: var(--space-4) var(--space-6);
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-divider);
+    }
     .mt { margin-top: var(--space-4); }
     .hint { text-transform: none; letter-spacing: 0; color: var(--muted-strong); }
     .presets { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -110,8 +152,10 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
     .date-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
     .date { max-width: 200px; font-family: var(--font-mono); }
     .acct { max-width: 240px; }
+    .note { resize: vertical; min-height: 60px; font-family: inherit; line-height: 1.5; }
     .human { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
     .cat-main { font-weight: 700; font-size: 12px; margin: 10px 0 6px; }
+    .req { color: var(--color-accent); }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip.main.on { border-color: var(--color-accent); color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 16%, transparent); }
     .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -121,7 +165,17 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
     .switch.on .knob { transform: translateX(18px); background: var(--color-accent); }
     .spacer { flex: 1; }
     .del { color: var(--muted); }
-    .del:hover { color: var(--color-accent); }
+    .del:hover { color: var(--color-danger); }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+    .check input { accent-color: var(--color-accent); width: 16px; height: 16px; }
+    .match-picker { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 0 24px; }
+    .match-hint { font-size: 12px; color: var(--muted-strong); }
+    .match-title {
+      align-self: flex-start; font-family: var(--font-mono); font-size: 13px;
+      padding: 4px 8px; background: var(--tint-surface); border: 1px solid var(--color-divider);
+      user-select: text; cursor: text; white-space: pre-wrap; word-break: break-all;
+    }
+    .match-title::selection { background: var(--color-accent); color: #fff; }
   `],
 })
 export class TaskDialogComponent {
@@ -139,6 +193,14 @@ export class TaskDialogComponent {
   humanDate(): string {
     const due = this.store.taskDialog()?.due;
     return due ? dueLabel(due, this.store.lang()) : this.store.t('dialog.task.noDate');
+  }
+
+  toggleApplyAll(e: Event): void { this.patch({ applyAll: (e.target as HTMLInputElement).checked }); }
+
+  /** Use the user's text selection within the title as the match; a bare click leaves it unchanged. */
+  captureSelection(): void {
+    const text = window.getSelection()?.toString() ?? '';
+    if (text.trim()) this.store.setDraftMatch(text);
   }
 
   value(e: Event): string { return (e.target as HTMLInputElement).value; }

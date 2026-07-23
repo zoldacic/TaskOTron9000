@@ -10,18 +10,26 @@ public record TodoDto(
     string? Due,           // ISO yyyy-MM-dd
     decimal? Amount,
     DateKind DateKind,
+    string MainId,         // required single main category
     List<string> CatIds,
-    string? BankAccountId);
+    string? BankAccountId,
+    string? Note);
 
 public record TodoWriteDto(
     string Title,
     string? Due,
     decimal? Amount,
     DateKind DateKind = DateKind.Due,
+    string? MainId = null, // required; validated in the endpoint
     List<string>? CatIds = null,
-    string? BankAccountId = null);
+    string? BankAccountId = null,
+    string? Note = null);
 
 public record BulkDeleteDto(List<int> Ids);
+
+// Apply one main category (+ optional subs) to the given tasks by id. The caller scopes the
+// set (e.g. tasks in the current query whose title matches), so the endpoint just applies it.
+public record BulkCategorizeDto(List<int> Ids, string? MainId = null, List<string>? CatIds = null);
 
 // ---- Categories ----
 public record MainDto(string Id, string Name);
@@ -55,17 +63,17 @@ public record SavedQueryDto(string Id, string Name, TaskQueryDto Query);
 public record SavedQueryWriteDto(string Name, TaskQueryDto Query);
 
 // ---- Title defaults ----
-public record TitleDefaultDto(string NormalizedTitle, List<string> CatIds);
-public record TitleDefaultWriteDto(List<string> CatIds);
+public record TitleDefaultDto(string NormalizedTitle, List<string> CatIds, string? MainId);
+public record TitleDefaultWriteDto(string Match, List<string> CatIds, string? MainId = null);
 
 // ---- Import ----
 public record ImportParseRequest(string Text);
-public record ImportRowDto(int Key, string Title, string? Date, decimal? Amount, bool Ok, List<string> CatIds);
-public record ImportCommitRow(string Title, string? Date, decimal? Amount, List<string>? CatIds, string? BankAccountId = null);
+public record ImportRowDto(int Key, string Title, string? Date, decimal? Amount, bool Ok, List<string> CatIds, string? MainId);
+public record ImportCommitRow(string Title, string? Date, decimal? Amount, List<string>? CatIds, string? MainId = null, string? BankAccountId = null, string? Note = null);
 public record ImportCommitRequest(List<ImportCommitRow> Rows);
 
 // ---- Reports ----
-public record BucketDto(string Label, decimal Net);
+public record BucketDto(string Label, decimal Net, List<decimal> Parts);
 public record CategoryNetDto(string Name, decimal Net);
 public record ReportDto(
     decimal MoneyIn,
@@ -73,4 +81,5 @@ public record ReportDto(
     decimal Net,
     string Granularity,
     List<BucketDto> Buckets,
+    List<BucketDto> DailyBuckets,
     List<CategoryNetDto> CategoryBreakdown);

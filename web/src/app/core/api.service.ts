@@ -31,6 +31,10 @@ export class ApiService {
   bulkDeleteTodos(ids: number[]): Observable<{ deleted: number }> {
     return this.http.post<{ deleted: number }>(`${this.base}/api/todos/bulk-delete`, { ids });
   }
+  // Apply a main category (+ optional subs) to the given tasks by id.
+  bulkCategorizeTodos(ids: number[], mainId: string, catIds: string[]): Observable<{ updated: number }> {
+    return this.http.post<{ updated: number }>(`${this.base}/api/todos/bulk-categorize`, { ids, mainId, catIds });
+  }
 
   // ---- categories ----
   getCategories(): Observable<Categories> {
@@ -84,13 +88,12 @@ export class ApiService {
   getTitleDefaults(): Observable<TitleDefault[]> {
     return this.http.get<TitleDefault[]>(`${this.base}/api/title-defaults`);
   }
-  putTitleDefault(normalizedTitle: string, catIds: string[]): Observable<TitleDefault> {
-    return this.http.put<TitleDefault>(
-      `${this.base}/api/title-defaults/${encodeURIComponent(normalizedTitle)}`, { catIds });
+  putTitleDefault(match: string, catIds: string[], mainId: string | null): Observable<TitleDefault> {
+    // Match travels in the body (not the URL path) so titles with '/' aren't mangled.
+    return this.http.put<TitleDefault>(`${this.base}/api/title-defaults`, { match, catIds, mainId });
   }
-  deleteTitleDefault(normalizedTitle: string): Observable<void> {
-    return this.http.delete<void>(
-      `${this.base}/api/title-defaults/${encodeURIComponent(normalizedTitle)}`);
+  deleteTitleDefault(match: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/api/title-defaults`, { params: { match } });
   }
 
   // ---- import ----
@@ -103,8 +106,8 @@ export class ApiService {
 
   // ---- reports ----
   // `categories` null => all; empty array => none selected.
-  getReport(from: string, to: string, categories: string[] | null): Observable<Report> {
-    let params = new HttpParams().set('from', from).set('to', to);
+  getReport(from: string, to: string, categories: string[] | null, groupBy: 'main' | 'sub'): Observable<Report> {
+    let params = new HttpParams().set('from', from).set('to', to).set('groupBy', groupBy);
     if (categories !== null) params = params.set('categories', categories.join(','));
     return this.http.get<Report>(`${this.base}/api/report`, { params });
   }

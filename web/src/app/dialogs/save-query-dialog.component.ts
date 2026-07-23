@@ -29,7 +29,7 @@ import { TaskStore } from '../core/task.store';
   styles: [`
     .narrow { width: 380px; }
     .msg { margin: 4px 0 12px; color: var(--muted-strong); line-height: 1.45; }
-    .err { margin: 8px 0 0; font-family: var(--font-mono); font-size: 12px; color: var(--color-accent); }
+    .err { margin: 8px 0 0; font-family: var(--font-mono); font-size: 12px; color: var(--color-danger); }
   `],
 })
 export class SaveQueryDialogComponent {
