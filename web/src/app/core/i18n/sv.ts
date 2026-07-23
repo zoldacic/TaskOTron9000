@@ -287,6 +287,8 @@ export const sv: Record<TranslationKey, string> = {
   'report.chart.cumulative': 'Saldo',
   'report.chart.donut': 'Ring',
   'report.chart.share': 'andel',
+  'report.total': 'Totalt',
+  'report.otherCats': 'Övriga kategorier',
   'report.netByCategory': 'Netto per kategori',
   'report.netBySubcategory': 'Netto per underkategori',
   'report.gran.daily': 'dagligen',

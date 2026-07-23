@@ -287,6 +287,8 @@ export const en = {
   'report.chart.cumulative': 'Balance',
   'report.chart.donut': 'Donut',
   'report.chart.share': 'share',
+  'report.total': 'Total',
+  'report.otherCats': 'Other categories',
   'report.netByCategory': 'Net by category',
   'report.netBySubcategory': 'Net by sub-category',
   'report.gran.daily': 'daily',

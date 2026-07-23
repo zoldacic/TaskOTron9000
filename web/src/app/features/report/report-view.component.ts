@@ -91,7 +91,7 @@ import { ReportBucket } from '../../models';
           <section class="block">
             <div class="chart-head">
               <div class="kicker chart-kicker">
-                {{ store.t(store.repChart() === 'cumulative' ? 'report.runningBalance' : 'report.netOverTime') }} · {{ granLabel(r.granularity) }}
+                {{ store.t(store.repChart() === 'cumulative' ? 'report.runningBalance' : 'report.netOverTime') }} · {{ granLabel(store.repChart() === 'bars' ? r.granularity : 'day') }}
               </div>
               <div class="seg">
                 <button class="seg-opt" [class.active]="store.repChart() === 'bars'"
@@ -129,19 +129,36 @@ import { ReportBucket } from '../../models';
                 }
               </div>
             } @else {
-              @if (trace(); as tr) {
+              @if (traces(); as tg) {
                 <div class="line-wrap">
                   <svg class="linechart" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                    <line class="zero-line" x1="0" [attr.y1]="tr.zeroY" x2="100" [attr.y2]="tr.zeroY"></line>
-                    <path class="area" [attr.d]="tr.area" [class.balance]="store.repChart() === 'cumulative'"></path>
-                    <polyline class="line" [attr.points]="tr.points"
-                              [class.balance]="store.repChart() === 'cumulative'"></polyline>
+                    <line class="zero-line" x1="0" [attr.y1]="tg.zeroY" x2="100" [attr.y2]="tg.zeroY"></line>
+                    @if (tg.area) {
+                      <path class="area" [attr.d]="tg.area" [class.balance]="store.repChart() === 'cumulative'"></path>
+                    }
+                    @for (ln of tg.lines; track ln.name) {
+                      <polyline class="line"
+                                [class.balance]="!tg.multi && store.repChart() === 'cumulative'"
+                                [class.total]="ln.total && tg.multi"
+                                [style.stroke]="ln.color"
+                                [attr.points]="ln.points"></polyline>
+                    }
                   </svg>
                   <div class="line-labels">
-                    @for (b of r.buckets; track $index) {
-                      <span class="b-label" [class.hide]="!showAxisLabel($index)">{{ b.label }}</span>
+                    @for (b of r.dailyBuckets; track $index) {
+                      <span class="b-label" [class.hide]="!showDailyAxisLabel($index)">{{ b.label }}</span>
                     }
                   </div>
+                  @if (tg.multi) {
+                    <ul class="line-legend">
+                      @for (ln of tg.lines; track ln.name) {
+                        <li>
+                          <span class="swatch" [style.background]="ln.color ?? 'var(--color-text)'"></span>
+                          <span class="l-name">{{ ln.name }}</span>
+                        </li>
+                      }
+                    </ul>
+                  }
                 </div>
               }
             }
@@ -247,10 +264,16 @@ import { ReportBucket } from '../../models';
     .line { fill: none; stroke: var(--color-accent); stroke-width: 2px;
             stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
     .line.balance { stroke: var(--color-income); }
+    /* The combined total line (only shown alongside per-category lines): a bolder,
+       neutral stroke so it reads as the aggregate rather than another category. */
+    .line.total { stroke: var(--color-text); stroke-width: 3px; }
     .area { fill: color-mix(in srgb, var(--color-accent) 16%, transparent); stroke: none; }
     .area.balance { fill: color-mix(in srgb, var(--color-income) 16%, transparent); }
     .line-labels { display: flex; margin-top: 6px; }
     .line-labels .b-label { flex: 1; min-width: 0; margin-top: 0; }
+    .line-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
+    .line-legend li { display: flex; align-items: center; gap: 7px; }
+    .line-legend .l-name { width: auto; flex: none; font-size: 12px; }
     /* donut / share chart */
     .donut-wrap { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; padding-top: 6px; }
     .donut { width: 200px; height: 200px; flex: none; }
@@ -308,35 +331,97 @@ export class ReportViewComponent implements OnInit {
   });
   showAxisLabel(i: number): boolean { return i % this.axisStep() === 0; }
 
+  // The line/balance chart plots the daily series, which can carry a point per day
+  // (hundreds over a year), so thin its axis labels to ~a dozen independently.
+  private dailyAxisStep = computed(() => {
+    const n = this.store.report()?.dailyBuckets.length ?? 0;
+    return Math.max(1, Math.ceil(n / 12));
+  });
+  showDailyAxisLabel(i: number): boolean { return i % this.dailyAxisStep() === 0; }
+
   // SVG geometry for the line / balance charts, in a 0..100 viewBox (stretched to
   // fit via preserveAspectRatio="none"). 'line' plots each bucket's net around a
   // centred zero axis; 'cumulative' plots the running balance across the window.
-  readonly trace = computed(() => {
-    const buckets = this.store.report()?.buckets ?? [];
+  // With several categories charted we draw one line per category (b.parts[ci],
+  // aligned to categoryBreakdown) plus a combined total line, all sharing one Y
+  // axis; with a single category it stays the one filled line as before.
+  readonly traces = computed(() => {
+    const r = this.store.report();
+    const buckets = r?.dailyBuckets ?? [];
     const n = buckets.length;
     if (n === 0) return null;
 
+    const cats = r!.categoryBreakdown;
+    const multi = cats.length > 1;
     const cumulative = this.store.repChart() === 'cumulative';
-    const vals: number[] = [];
-    let run = 0;
-    for (const b of buckets) { run += b.net; vals.push(cumulative ? run : b.net); }
 
+    // Per-bucket values for one series: raw net, or the running balance if cumulative.
+    const runSeries = (pick: (b: ReportBucket) => number): number[] => {
+      const vals: number[] = [];
+      let run = 0;
+      for (const b of buckets) { const v = pick(b); run += v; vals.push(cumulative ? run : v); }
+      return vals;
+    };
+
+    // Cap how many category lines we draw: past MAX_CAT_LINES the chart turns into
+    // spaghetti, so keep the biggest movers (by |net|) and fold the rest into a
+    // single muted "Other" line. Kept categories stay in breakdown order (and keep
+    // their palette index) so their colours still match the bars/donut below.
+    const MAX_CAT_LINES = 6;
+    const fold = cats.length > MAX_CAT_LINES;
+    const rankedByNet = cats.map((_, ci) => ci).sort((a, b) => Math.abs(cats[b].net) - Math.abs(cats[a].net));
+    const keep = new Set(fold ? rankedByNet.slice(0, MAX_CAT_LINES - 1) : rankedByNet);
+
+    // One value-series per kept category (only when several are charted), then the
+    // folded "Other" line if we capped, then the always-present combined total.
+    const series: { name: string; color: string | null; total: boolean; vals: number[] }[] = [];
+    if (multi) {
+      cats.forEach((c, ci) => {
+        if (!keep.has(ci)) return;
+        series.push({ name: c.name, color: this.catColor(ci), total: false, vals: runSeries((b) => b.parts[ci] ?? 0) });
+      });
+      if (fold) {
+        series.push({
+          name: this.store.t('report.otherCats'),
+          color: 'var(--muted)',
+          total: false,
+          vals: runSeries((b) => b.parts.reduce((s, v, ci) => (keep.has(ci) ? s : s + (v ?? 0)), 0)),
+        });
+      }
+    }
+    series.push({ name: this.store.t('report.total'), color: null, total: true, vals: runSeries((b) => b.net) });
+
+    // Shared Y mapping across every series so the lines are directly comparable.
+    const all = series.flatMap((s) => s.vals);
     let toY: (v: number) => number;
     if (cumulative) {
-      const domMin = Math.min(0, ...vals);
-      const domMax = Math.max(0, ...vals);
+      const domMin = Math.min(0, ...all);
+      const domMax = Math.max(0, ...all);
       const span = Math.max(1e-9, domMax - domMin);
       toY = (v) => 100 - ((v - domMin) / span) * 100;
     } else {
-      const maxAbs = Math.max(1, ...vals.map((v) => Math.abs(v)));
+      const maxAbs = Math.max(1, ...all.map((v) => Math.abs(v)));
       toY = (v) => 50 - (v / maxAbs) * 50; // net 0 sits on the mid axis
     }
 
     const x = (i: number) => (n === 1 ? 50 : (i / (n - 1)) * 100);
     const zeroY = toY(0);
-    const pts = vals.map((v, i) => `${x(i).toFixed(2)},${toY(v).toFixed(2)}`);
-    const area = `M ${x(0).toFixed(2)},${zeroY.toFixed(2)} L ${pts.join(' L ')} L ${x(n - 1).toFixed(2)},${zeroY.toFixed(2)} Z`;
-    return { points: pts.join(' '), area, zeroY: zeroY.toFixed(2) };
+    const lines = series.map((s) => ({
+      name: s.name,
+      color: s.color,
+      total: s.total,
+      points: s.vals.map((v, i) => `${x(i).toFixed(2)},${toY(v).toFixed(2)}`).join(' '),
+    }));
+
+    // The soft area fill only reads well for a single line; with several overlapping
+    // category lines it would just muddy the chart, so drop it in the multi case.
+    let area: string | null = null;
+    if (!multi) {
+      const pts = series[0].vals.map((v, i) => `${x(i).toFixed(2)},${toY(v).toFixed(2)}`);
+      area = `M ${x(0).toFixed(2)},${zeroY.toFixed(2)} L ${pts.join(' L ')} L ${x(n - 1).toFixed(2)},${zeroY.toFixed(2)} Z`;
+    }
+
+    return { lines, area, multi, zeroY: zeroY.toFixed(2) };
   });
 
   // When stacking per-category segments a bucket can carry both inflow and outflow,

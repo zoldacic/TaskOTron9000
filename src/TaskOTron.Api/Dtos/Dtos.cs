@@ -81,4 +81,5 @@ public record ReportDto(
     decimal Net,
     string Granularity,
     List<BucketDto> Buckets,
+    List<BucketDto> DailyBuckets,
     List<CategoryNetDto> CategoryBreakdown);

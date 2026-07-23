@@ -17,8 +17,9 @@ public record ReportResult(
     decimal MoneyIn,
     decimal MoneyOut,
     decimal Net,
-    string Granularity,               // "day" | "week" | "month"
-    IReadOnlyList<ReportBucket> Buckets,
+    string Granularity,               // "day" | "week" | "month" — describes Buckets
+    IReadOnlyList<ReportBucket> Buckets,      // auto-granularity series for the bar chart
+    IReadOnlyList<ReportBucket> DailyBuckets, // always daily; drives the line/balance chart
     IReadOnlyList<ReportCategory> CategoryBreakdown);
 
 /// <summary>
@@ -114,69 +115,75 @@ public static class ReportBuilder
         var catIndex = new Dictionary<string, int>();
         for (var i = 0; i < catKeys.Count; i++) catIndex[catKeys[i]] = i;
 
-        // ---- time buckets with auto-granularity ----
-        // Favour finer buckets so the time chart has many points (a smoother line and
-        // more bars): weeks cover up to ~18 months — a year-long range gives ~53 weekly
-        // points rather than 12 monthly ones — and months kick in only beyond that.
+        // ---- time buckets ----
+        // The bar chart reads Buckets at an auto-selected granularity (coarser buckets
+        // stay readable over long ranges); the line/balance chart reads DailyBuckets so
+        // it accumulates one point per day rather than interpolating across a week/month.
+        // Favour finer auto buckets: weeks cover up to ~18 months, months only beyond that.
         var spanDays = (repEnd.DayNumber - repStart.DayNumber) + 1;
         var gran = spanDays <= 16 ? "day" : spanDays <= 550 ? "week" : "month";
 
-        var buckets = new List<(string Id, string Label, decimal Net)>();
-        if (gran == "day")
+        // Build the time series at a given granularity: each slot carries its net and the
+        // per-category parts (aligned to catAgg order) so the chart can color per category.
+        List<ReportBucket> BuildBuckets(string g)
         {
-            for (var i = 0; i < Math.Max(spanDays, 1); i++)
+            var slots = new List<(string Id, string Label, decimal Net)>();
+            if (g == "day")
             {
-                var dd = repStart.AddDays(i);
-                buckets.Add((Iso(dd), dd.Day.ToString(), 0m));
+                for (var i = 0; i < Math.Max(spanDays, 1); i++)
+                {
+                    var dd = repStart.AddDays(i);
+                    slots.Add((Iso(dd), $"{Months[dd.Month - 1]} {dd.Day}", 0m));
+                }
             }
-        }
-        else if (gran == "week")
-        {
-            var n = Math.Max(1, (int)Math.Ceiling(spanDays / 7.0));
-            for (var i = 0; i < n; i++)
+            else if (g == "week")
             {
-                var dd = repStart.AddDays(i * 7);
-                buckets.Add(("w" + i, $"{Months[dd.Month - 1]} {dd.Day}", 0m));
+                var n = Math.Max(1, (int)Math.Ceiling(spanDays / 7.0));
+                for (var i = 0; i < n; i++)
+                {
+                    var dd = repStart.AddDays(i * 7);
+                    slots.Add(("w" + i, $"{Months[dd.Month - 1]} {dd.Day}", 0m));
+                }
             }
-        }
-        else
-        {
-            int y = repStart.Year, mo = repStart.Month - 1; // mo is 0-based like the prototype
-            while (y < repEnd.Year || (y == repEnd.Year && mo <= repEnd.Month - 1))
+            else
             {
-                buckets.Add(($"{y}-{mo}", Months[mo], 0m));
-                mo++;
-                if (mo > 11) { mo = 0; y++; }
+                int y = repStart.Year, mo = repStart.Month - 1; // mo is 0-based like the prototype
+                while (y < repEnd.Year || (y == repEnd.Year && mo <= repEnd.Month - 1))
+                {
+                    slots.Add(($"{y}-{mo}", Months[mo], 0m));
+                    mo++;
+                    if (mo > 11) { mo = 0; y++; }
+                }
             }
-        }
 
-        var index = new Dictionary<string, int>();
-        for (var i = 0; i < buckets.Count; i++) index[buckets[i].Id] = i;
+            var idx = new Dictionary<string, int>();
+            for (var i = 0; i < slots.Count; i++) idx[slots[i].Id] = i;
 
-        string BKey(DateOnly dd) => gran switch
-        {
-            "day" => Iso(dd),
-            "week" => "w" + ((dd.DayNumber - repStart.DayNumber) / 7),
-            _ => $"{dd.Year}-{dd.Month - 1}",
-        };
-
-        // parts[bucket][category] — per-category net within each time bucket, so the
-        // time chart can stack a colored segment per category aligned to catAgg order.
-        var parts = new decimal[buckets.Count][];
-        for (var i = 0; i < buckets.Count; i++) parts[i] = new decimal[catAgg.Count];
-
-        foreach (var t in repTasks)
-        {
-            var k = BKey(t.Due);
-            if (index.TryGetValue(k, out var idx))
+            string BKey(DateOnly dd) => g switch
             {
-                buckets[idx] = buckets[idx] with { Net = buckets[idx].Net + t.Amount };
-                parts[idx][catIndex[CatKey(t.MainId, t.CatIds)]] += t.Amount;
+                "day" => Iso(dd),
+                "week" => "w" + ((dd.DayNumber - repStart.DayNumber) / 7),
+                _ => $"{dd.Year}-{dd.Month - 1}",
+            };
+
+            var parts = new decimal[slots.Count][];
+            for (var i = 0; i < slots.Count; i++) parts[i] = new decimal[catAgg.Count];
+
+            foreach (var t in repTasks)
+            {
+                if (idx.TryGetValue(BKey(t.Due), out var bi))
+                {
+                    slots[bi] = slots[bi] with { Net = slots[bi].Net + t.Amount };
+                    parts[bi][catIndex[CatKey(t.MainId, t.CatIds)]] += t.Amount;
+                }
             }
+
+            return slots.Select((b, i) => new ReportBucket(b.Label, b.Net, parts[i])).ToList();
         }
 
-        var bucketOut = buckets.Select((b, i) => new ReportBucket(b.Label, b.Net, parts[i])).ToList();
-        return new ReportResult(moneyIn, moneyOut, net, gran, bucketOut, catAgg);
+        var bucketOut = BuildBuckets(gran);
+        var dailyOut = gran == "day" ? bucketOut : BuildBuckets("day");
+        return new ReportResult(moneyIn, moneyOut, net, gran, bucketOut, dailyOut, catAgg);
     }
 
     private static string Iso(DateOnly d) => d.ToString("yyyy-MM-dd");

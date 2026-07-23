@@ -113,7 +113,8 @@ export interface Report {
   moneyIn: number;
   moneyOut: number;
   net: number;
-  granularity: 'day' | 'week' | 'month';
+  granularity: 'day' | 'week' | 'month'; // describes `buckets` (the bar chart series)
   buckets: ReportBucket[];
+  dailyBuckets: ReportBucket[]; // always daily; drives the line / balance chart
   categoryBreakdown: ReportCategory[];
 }
