@@ -83,6 +83,36 @@ public static class CategoryEndpoints
             return Results.Ok(new SubDto(s.Id, s.MainId, s.Name, await db.Todos.CountAsync(t => t.Categories.Any(c => c.Id == id))));
         });
 
+        // Move a sub to a different main. When ReassignTasks is set, tasks (and remembered import
+        // defaults) that were filed under the sub's OLD main are realigned to the new main; tasks
+        // that merely borrow the sub across a different main are left untouched.
+        subG.MapPut("/{id}/main", async (string id, SubMoveDto dto, AppDbContext db) =>
+        {
+            var s = await db.Subs.FindAsync(id);
+            if (s is null) return Results.NotFound();
+            if (string.IsNullOrEmpty(dto.MainId)) return Results.BadRequest("A target main category is required.");
+            if (!await db.Mains.AnyAsync(m => m.Id == dto.MainId))
+                return Results.BadRequest($"Unknown main category '{dto.MainId}'.");
+
+            var oldMainId = s.MainId;
+            if (dto.MainId != oldMainId)
+            {
+                s.MainId = dto.MainId;
+                if (dto.ReassignTasks)
+                {
+                    var tasks = await db.Todos
+                        .Where(t => t.MainId == oldMainId && t.Categories.Any(c => c.Id == id)).ToListAsync();
+                    foreach (var t in tasks) t.MainId = dto.MainId;
+
+                    var defs = await db.TitleDefaults
+                        .Where(td => td.MainId == oldMainId && td.Categories.Any(c => c.Id == id)).ToListAsync();
+                    foreach (var td in defs) td.MainId = dto.MainId;
+                }
+                await db.SaveChangesAsync();
+            }
+            return Results.Ok(new SubDto(s.Id, s.MainId, s.Name, await db.Todos.CountAsync(t => t.Categories.Any(c => c.Id == id))));
+        });
+
         // Deleting a sub strips it from tasks and title defaults (join rows cascade).
         subG.MapDelete("/{id}", async (string id, AppDbContext db) =>
         {

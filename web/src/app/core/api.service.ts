@@ -55,6 +55,10 @@ export class ApiService {
   renameSub(id: string, name: string): Observable<Sub> {
     return this.http.put<Sub>(`${this.base}/api/subs/${id}`, { name });
   }
+  // Move a sub to another main; reassignTasks also realigns tasks + import defaults under the old main.
+  moveSub(id: string, mainId: string, reassignTasks: boolean): Observable<Sub> {
+    return this.http.put<Sub>(`${this.base}/api/subs/${id}/main`, { mainId, reassignTasks });
+  }
   deleteSub(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/api/subs/${id}`);
   }

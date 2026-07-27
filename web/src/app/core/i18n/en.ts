@@ -145,6 +145,14 @@ export const en = {
   'dialog.rename.titleSub': 'Rename sub category',
   'dialog.rename.name': 'Name',
 
+  // ---- move sub category dialog ----
+  'dialog.moveSub.title': 'Move sub category',
+  'dialog.moveSub.intro': 'Move “{sub}” out of {main} into another main category.',
+  'dialog.moveSub.moveTo': 'Move to',
+  'dialog.moveSub.reassignOne': 'Also change the main category to {main} on the {count} task currently using it',
+  'dialog.moveSub.reassignMany': 'Also change the main category to {main} on the {count} tasks currently using it',
+  'dialog.moveSub.move': 'Move',
+
   // ---- import-cat dialog ----
   'dialog.importCat.title': 'Assign categories',
   'dialog.importCat.category': 'Category',
@@ -219,6 +227,7 @@ export const en = {
   'cat.mainCategories': 'Main categories',
   'cat.subsCount': '{count} subs',
   'cat.rename': 'Rename',
+  'cat.move': 'Move to another main category',
   'cat.delete': 'Delete',
   'cat.newMainPlaceholder': 'New main category…',
   'cat.add': 'Add',
