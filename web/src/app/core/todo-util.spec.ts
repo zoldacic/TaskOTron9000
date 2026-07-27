@@ -1,4 +1,4 @@
-import { matches, sortTodos } from './todo-util';
+import { amountTotals, matches, sortTodos } from './todo-util';
 import { addDays, startOfToday, toISO } from './date-util';
 import { Todo } from '../models';
 
@@ -33,6 +33,31 @@ describe('matches', () => {
     expect(matches(todo({ done: true }), 'done')).toBe(true);
     expect(matches(todo({ catIds: ['pf'] }), 'pf')).toBe(true);
     expect(matches(todo({ catIds: ['he'] }), 'pf')).toBe(false);
+  });
+});
+
+describe('amountTotals', () => {
+  it('splits income from spend and nets them', () => {
+    const t = amountTotals([
+      todo({ id: 1, amount: 1200 }),
+      todo({ id: 2, amount: -450.5 }),
+      todo({ id: 3, amount: -49.5 }),
+    ]);
+    expect(t).toEqual({ income: 1200, spend: -500, net: 700 });
+  });
+
+  it('ignores tasks without an amount', () => {
+    expect(amountTotals([todo({ id: 1, amount: 100 }), todo({ id: 2, amount: null })]))
+      .toEqual({ income: 100, spend: 0, net: 100 });
+  });
+
+  it('returns null when nothing carries an amount', () => {
+    expect(amountTotals([todo({ id: 1 }), todo({ id: 2 })])).toBeNull();
+    expect(amountTotals([])).toBeNull();
+  });
+
+  it('counts a zero amount as income, not as absent', () => {
+    expect(amountTotals([todo({ id: 1, amount: 0 })])).toEqual({ income: 0, spend: 0, net: 0 });
   });
 });
 

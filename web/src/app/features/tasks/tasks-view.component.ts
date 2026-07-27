@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { TaskStore } from '../../core/task.store';
 import { Todo } from '../../models';
+import { fmtMoney } from '../../core/money-util';
+import { amountTotals } from '../../core/todo-util';
 import { IconComponent } from '../../shared/icon.component';
 import { TaskRowComponent } from './task-row.component';
 import { QueryPanelComponent } from './query-panel.component';
@@ -15,6 +17,20 @@ import { QueryPanelComponent } from './query-panel.component';
         <div class="titles">
           <h1 class="view-title">{{ titleInfo().title }}</h1>
           <div class="view-sub">{{ titleInfo().subtitle }}</div>
+          @if (queryTotals(); as m) {
+            <div class="totals">
+              @if (m.income > 0) {
+                <span class="tot"><span class="tot-k">{{ store.t('tasks.queryTotal.in') }}</span>
+                  <b class="in">{{ fmt(m.income) }}</b></span>
+              }
+              @if (m.spend < 0) {
+                <span class="tot"><span class="tot-k">{{ store.t('tasks.queryTotal.out') }}</span>
+                  <b class="out">{{ fmt(m.spend) }}</b></span>
+              }
+              <span class="tot"><span class="tot-k">{{ store.t('tasks.queryTotal.net') }}</span>
+                <b [class.in]="m.net >= 0" [class.out]="m.net < 0">{{ fmt(m.net) }}</b></span>
+            </div>
+          }
         </div>
         <div class="actions">
           <div class="seg">
@@ -98,6 +114,12 @@ import { QueryPanelComponent } from './query-panel.component';
       font-family: var(--font-mono); font-size: 11px; min-width: 18px; text-align: center;
       padding: 1px 5px; background: var(--color-accent); color: #fff;
     }
+    .totals { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; }
+    .tot { display: inline-flex; align-items: baseline; gap: 6px; font-family: var(--font-mono); font-size: 12px; }
+    .tot-k { color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .tot b { font-size: 13px; font-weight: 700; }
+    .tot .in { color: var(--color-income); }
+    .tot .out { color: var(--color-danger); }
     .search { display: flex; align-items: center; gap: 10px; padding: 0 24px 16px; }
     .search .input { flex: 1; }
     .search-ic { color: var(--muted); flex: none; }
@@ -143,7 +165,14 @@ import { QueryPanelComponent } from './query-panel.component';
 export class TasksViewComponent {
   store = inject(TaskStore);
 
+  fmt = fmtMoney;
+
   value(e: Event): string { return (e.target as HTMLInputElement).value; }
+
+  // Money summary for query results — null when no query is active or nothing matched has an
+  // amount, so the strip stays hidden for purely non-monetary result sets.
+  queryTotals = computed(() =>
+    this.store.queryActive() ? amountTotals(this.store.visibleTodos()) : null);
 
   // Count of active query criteria — drives the Filters badge.
   activeCount = computed(() => {
