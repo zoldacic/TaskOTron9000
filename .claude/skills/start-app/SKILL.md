@@ -22,6 +22,12 @@ dotnet run --project src/TaskOTron.Api
 
 Leave it running. `global.json` pins the SDK to 10.0.302 (`rollForward: latestPatch`) so the build doesn't pick up a preview SDK.
 
+**Wait for it before starting the frontend** — the first `dotnet run` restores + builds, so poll the root endpoint until it answers (it returns `{"status":"online"}`). Don't move on until this prints `BACKEND UP`:
+
+```powershell
+$ok=$false; for($i=0;$i -lt 30;$i++){ try { $r=Invoke-WebRequest -Uri http://localhost:5249/ -UseBasicParsing -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {} ; Start-Sleep -Seconds 2 }; if($ok){ Write-Output "BACKEND UP: $($r.Content)" } else { Write-Output "BACKEND NOT UP YET" }
+```
+
 ## 2. Frontend
 
 Node was installed after the shells were launched, so **the tool shells don't have Node on PATH automatically** — prefix PATH in the same command. In PowerShell:
@@ -34,6 +40,12 @@ Notes:
 - Run each process in its **own background shell** (or two terminals) — both are long-running.
 - `ng` is a `.cmd` shim, so `Start-Process ng` fails. Invoke `ng` directly inside a PowerShell command instead.
 - Toolchain versions: Node 24, npm 12, Angular CLI 22.
+
+**Wait for the dev server to finish its first build** before declaring the app ready — the initial bundle takes ~10–15s. Poll `:4200` until it serves. The check can outlast a single command timeout on a cold build; if so, confirm from the `ng serve` background log (look for `Application bundle generation complete` / `Local: http://localhost:4200/`) and then a single request:
+
+```powershell
+$ok=$false; for($i=0;$i -lt 40;$i++){ try { $r=Invoke-WebRequest -Uri http://localhost:4200/ -UseBasicParsing -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {} ; Start-Sleep -Seconds 2 }; if($ok){ Write-Output "FRONTEND UP" } else { Write-Output "FRONTEND NOT UP YET" }
+```
 
 ## 3. Open / verify
 

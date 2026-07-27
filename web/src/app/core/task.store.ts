@@ -722,13 +722,43 @@ export class TaskStore {
     const c = this.importCat();
     if (!c) return;
     const has = c.catIds.includes(id);
-    this.importCat.set({ ...c, catIds: has ? c.catIds.filter((x) => x !== id) : [...c.catIds, id] });
+    const catIds = has ? c.catIds.filter((x) => x !== id) : [...c.catIds, id];
+    this.importCat.set({ ...c, catIds });
+    // Selecting a lone sub that belongs to another main: offer to switch the chosen category to match.
+    if (!has && catIds.length === 1) {
+      const owner = this.mainOfSub(id);
+      if (owner && owner !== c.mainId) {
+        this.ask({
+          title: this.t('confirm.importCatSwitchMain.title'),
+          message: this.t('confirm.importCatSwitchMain.message', { sub: this.subName(id), main: this.mainName(owner) }),
+          confirmLabel: this.t('confirm.importCatSwitchMain.confirm', { main: this.mainName(owner) }),
+          run: () => { const cur = this.importCat(); if (cur) this.importCat.set({ ...cur, mainId: owner }); },
+        });
+      }
+    }
   }
   setImportCatFlag(k: 'applyAll' | 'remember', v: boolean): void {
     const c = this.importCat();
     if (c) this.importCat.set({ ...c, [k]: v });
   }
   async saveImportCat(): Promise<void> {
+    const c = this.importCat();
+    if (!c || !c.mainId) return;
+    // Warn when the chosen category offers sub categories but none of them is selected.
+    const mainHasSubs = this.subsOf(c.mainId).length > 0;
+    const noneForMain = !c.catIds.some((id) => this.mainOfSub(id) === c.mainId);
+    if (mainHasSubs && noneForMain) {
+      this.ask({
+        title: this.t('confirm.importCatNoSub.title'),
+        message: this.t('confirm.importCatNoSub.message', { main: this.mainName(c.mainId) }),
+        confirmLabel: this.t('confirm.importCatNoSub.confirm'),
+        run: () => this.applyImportCat(),
+      });
+      return;
+    }
+    await this.applyImportCat();
+  }
+  private async applyImportCat(): Promise<void> {
     const c = this.importCat();
     if (!c || !c.mainId) return;
     const match = c.match.trim().toLowerCase();
