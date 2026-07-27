@@ -201,6 +201,12 @@ export const en = {
   'confirm.deleteSub.noteOne': ' It’s used by {count} task, which will be uncategorised.',
   'confirm.deleteSub.noteMany': ' It’s used by {count} tasks, which will be uncategorised.',
   'confirm.thisSubCategory': 'this sub category',
+  'confirm.importCatNoSub.title': 'No sub category selected',
+  'confirm.importCatNoSub.message': 'You haven’t picked a sub category under {main}. Apply with the main category only?',
+  'confirm.importCatNoSub.confirm': 'Apply anyway',
+  'confirm.importCatSwitchMain.title': 'Change category?',
+  'confirm.importCatSwitchMain.message': '“{sub}” belongs to {main}, not the chosen category. Change the category to {main}?',
+  'confirm.importCatSwitchMain.confirm': 'Change to {main}',
 
   // ---- store error messages ----
   'bank.error.add': 'Couldn’t add “{name}” — it may already exist.',

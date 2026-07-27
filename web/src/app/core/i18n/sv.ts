@@ -201,6 +201,12 @@ export const sv: Record<TranslationKey, string> = {
   'confirm.deleteSub.noteOne': ' Den används av {count} uppgift, som blir okategoriserad.',
   'confirm.deleteSub.noteMany': ' Den används av {count} uppgifter, som blir okategoriserade.',
   'confirm.thisSubCategory': 'den här underkategorin',
+  'confirm.importCatNoSub.title': 'Ingen underkategori vald',
+  'confirm.importCatNoSub.message': 'Du har inte valt någon underkategori under {main}. Vill du tillämpa med enbart huvudkategorin?',
+  'confirm.importCatNoSub.confirm': 'Tillämpa ändå',
+  'confirm.importCatSwitchMain.title': 'Byt kategori?',
+  'confirm.importCatSwitchMain.message': '”{sub}” tillhör {main}, inte den valda kategorin. Vill du byta kategori till {main}?',
+  'confirm.importCatSwitchMain.confirm': 'Byt till {main}',
 
   // ---- store error messages ----
   'bank.error.add': 'Kunde inte lägga till ”{name}” — det kanske redan finns.',
