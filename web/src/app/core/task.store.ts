@@ -32,6 +32,16 @@ export interface CatDraft {
   id: string;
   value: string;
 }
+export interface MoveSubDraft {
+  id: string; // the sub being moved
+  name: string; // sub name (display)
+  fromMainId: string; // its current main
+  toMainId: string; // chosen target main
+  /** Tasks filed under `fromMainId` that use this sub — the set the reassign would realign. */
+  affected: number;
+  /** When set (and affected > 0), also change those tasks' + import defaults' main to the target. */
+  reassign: boolean;
+}
 export interface ImportCatDraft {
   key: number;
   title: string;
@@ -130,6 +140,7 @@ export class TaskStore {
   readonly taskDialog = signal<TaskDraft | null>(null);
   readonly expandedMains = signal<Set<string>>(new Set());
   readonly catDialog = signal<CatDraft | null>(null);
+  readonly moveSubDialog = signal<MoveSubDraft | null>(null);
   readonly importCat = signal<ImportCatDraft | null>(null);
   readonly importSplit = signal<ImportSplitDraft | null>(null);
   readonly confirm = signal<Confirm | null>(null);
@@ -576,6 +587,37 @@ export class TaskStore {
     else await firstValueFrom(this.api.renameSub(c.id, v));
     this.catDialog.set(null);
     await this.refreshCategories();
+  }
+
+  /** Open the "move sub category" dialog, defaulting to the first other main. No-op if none exist. */
+  openMoveSub(id: string): void {
+    const s = this.subs().find((x) => x.id === id);
+    if (!s) return;
+    const target = this.mains().find((m) => m.id !== s.mainId);
+    if (!target) return; // nowhere to move it
+    const affected = this.todos().filter((t) => t.mainId === s.mainId && t.catIds.includes(id)).length;
+    this.moveSubDialog.set({
+      id, name: s.name, fromMainId: s.mainId, toMainId: target.id, affected, reassign: affected > 0,
+    });
+  }
+  updateMoveSub(patch: Partial<MoveSubDraft>): void {
+    const d = this.moveSubDialog();
+    if (d) this.moveSubDialog.set({ ...d, ...patch });
+  }
+  /** Main categories the sub can be moved to (everything but its current one). */
+  moveSubTargets(): Main[] {
+    const d = this.moveSubDialog();
+    return d ? this.mains().filter((m) => m.id !== d.fromMainId) : [];
+  }
+  async saveMoveSub(): Promise<void> {
+    const d = this.moveSubDialog();
+    if (!d || !d.toMainId || d.toMainId === d.fromMainId) return;
+    const reassign = d.affected > 0 && d.reassign;
+    await firstValueFrom(this.api.moveSub(d.id, d.toMainId, reassign));
+    this.moveSubDialog.set(null);
+    // Categories change either way; tasks + import defaults only when we reassigned, but refreshing
+    // all three is cheap and keeps the counts and preselections consistent.
+    await Promise.all([this.refreshCategories(), this.refreshTodos(), this.refreshTitleDefaults()]);
   }
 
   // ---- import ----

@@ -5,6 +5,7 @@ import { TitleBarComponent } from './shell/title-bar.component';
 import { SidebarComponent } from './shell/sidebar.component';
 import { TaskDialogComponent } from './dialogs/task-dialog.component';
 import { CategoryRenameDialogComponent } from './dialogs/category-rename-dialog.component';
+import { MoveSubDialogComponent } from './dialogs/move-sub-dialog.component';
 import { ImportCatDialogComponent } from './dialogs/import-cat-dialog.component';
 import { ImportSplitDialogComponent } from './dialogs/import-split-dialog.component';
 import { ConfirmDialogComponent } from './dialogs/confirm-dialog.component';
@@ -15,8 +16,9 @@ import { SaveQueryDialogComponent } from './dialogs/save-query-dialog.component'
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterOutlet, TitleBarComponent, SidebarComponent,
-    TaskDialogComponent, CategoryRenameDialogComponent, ImportCatDialogComponent,
-    ImportSplitDialogComponent, ConfirmDialogComponent, SaveQueryDialogComponent,
+    TaskDialogComponent, CategoryRenameDialogComponent, MoveSubDialogComponent,
+    ImportCatDialogComponent, ImportSplitDialogComponent, ConfirmDialogComponent,
+    SaveQueryDialogComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

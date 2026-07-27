@@ -145,6 +145,14 @@ export const sv: Record<TranslationKey, string> = {
   'dialog.rename.titleSub': 'Byt namn på underkategori',
   'dialog.rename.name': 'Namn',
 
+  // ---- move sub category dialog ----
+  'dialog.moveSub.title': 'Flytta underkategori',
+  'dialog.moveSub.intro': 'Flytta ”{sub}” från {main} till en annan huvudkategori.',
+  'dialog.moveSub.moveTo': 'Flytta till',
+  'dialog.moveSub.reassignOne': 'Ändra även huvudkategorin till {main} på den {count} uppgift som använder den',
+  'dialog.moveSub.reassignMany': 'Ändra även huvudkategorin till {main} på de {count} uppgifter som använder den',
+  'dialog.moveSub.move': 'Flytta',
+
   // ---- import-cat dialog ----
   'dialog.importCat.title': 'Tilldela kategorier',
   'dialog.importCat.category': 'Kategori',
@@ -219,6 +227,7 @@ export const sv: Record<TranslationKey, string> = {
   'cat.mainCategories': 'Huvudkategorier',
   'cat.subsCount': '{count} under',
   'cat.rename': 'Byt namn',
+  'cat.move': 'Flytta till en annan huvudkategori',
   'cat.delete': 'Ta bort',
   'cat.newMainPlaceholder': 'Ny huvudkategori…',
   'cat.add': 'Lägg till',

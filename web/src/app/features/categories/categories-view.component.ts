@@ -45,6 +45,9 @@ import { IconComponent } from '../../shared/icon.component';
                   <span class="dot"></span>
                   <span class="name">{{ s.name }}</span>
                   <span class="task-count">{{ store.t('cat.tasksCount', { count: s.taskCount }) }}</span>
+                  @if (store.mains().length > 1) {
+                    <button class="btn-icon" (click)="store.openMoveSub(s.id)" [attr.aria-label]="store.t('cat.move')"><app-icon name="move" /></button>
+                  }
                   <button class="btn-icon" (click)="rename('sub', s.id, s.name)" [attr.aria-label]="store.t('cat.rename')"><app-icon name="pencil" /></button>
                   <button class="btn-icon danger" (click)="store.askRemoveSub(s.id)" [attr.aria-label]="store.t('cat.delete')"><app-icon name="trash" /></button>
                 </div>

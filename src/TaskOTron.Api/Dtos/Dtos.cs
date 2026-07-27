@@ -39,6 +39,9 @@ public record CategoriesDto(List<MainDto> Mains, List<SubDto> Subs);
 public record MainWriteDto(string Name);
 public record SubWriteDto(string MainId, string Name);
 public record CategoryRenameDto(string Name);
+// Move a sub to a different main. ReassignTasks = also realign the main category on tasks
+// (and remembered import defaults) that were filed under the sub's old main.
+public record SubMoveDto(string MainId, bool ReassignTasks = false);
 
 // ---- Bank accounts ----
 public record BankAccountDto(string Id, string Name, int TaskCount);
