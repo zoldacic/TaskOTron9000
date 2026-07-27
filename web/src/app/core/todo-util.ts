@@ -15,6 +15,20 @@ export function matches(t: Todo, filter: Filter): boolean {
   return t.catIds.includes(filter); // sub-category id
 }
 
+export interface AmountTotals { income: number; spend: number; net: number }
+
+// Aggregates the money on a set of tasks. Returns null when none of them carry an amount, so
+// callers can hide the summary entirely for non-monetary result sets.
+export function amountTotals(list: Todo[]): AmountTotals | null {
+  let income = 0, spend = 0, any = false;
+  for (const t of list) {
+    if (t.amount == null) continue;
+    any = true;
+    if (t.amount >= 0) income += t.amount; else spend += t.amount;
+  }
+  return any ? { income, spend, net: income + spend } : null;
+}
+
 export function sortTodos(list: Todo[]): Todo[] {
   const key = (t: Todo): [number, number, number] => {
     const act = !!t.due && t.dateKind !== 'transaction';

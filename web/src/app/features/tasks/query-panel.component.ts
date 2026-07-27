@@ -10,7 +10,7 @@ import { IconComponent } from '../../shared/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconComponent],
   template: `
-    <div class="panel rule-2">
+    <div class="panel rule-2 om-scroll">
       <!-- categories -->
       <div class="field">
         <span class="kicker">{{ store.t('query.categories') }} <span class="hint">{{ store.t('query.matchAny') }}</span></span>
@@ -96,7 +96,13 @@ import { IconComponent } from '../../shared/icon.component';
     </div>
   `,
   styles: [`
-    .panel { padding: 16px 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+    /* The panel sits above the task list in a flex column; left unbounded it grows past the
+       viewport and starves the list of height. Cap it and scroll it on its own instead. */
+    :host { flex: none; min-height: 0; }
+    .panel {
+      padding: 16px 24px 20px; display: flex; flex-direction: column; gap: 16px;
+      max-height: 45vh; overflow-y: auto;
+    }
     .field { display: flex; flex-direction: column; }
     .hint { text-transform: none; letter-spacing: 0; color: var(--muted-strong); }
     .cat-main { font-weight: 700; font-size: 12px; margin: 8px 0 6px; }
