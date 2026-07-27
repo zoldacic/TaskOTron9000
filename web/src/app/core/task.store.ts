@@ -55,6 +55,9 @@ export interface Confirm {
   title: string;
   message: string;
   confirmLabel: string;
+  /** Confirm-button style. 'danger' (default) is red, reserved for destructive/warning actions;
+   *  'primary' is the neutral light button for non-destructive choices. */
+  confirmKind?: 'danger' | 'primary';
   run: () => void | Promise<void>;
 }
 
@@ -732,6 +735,7 @@ export class TaskStore {
           title: this.t('confirm.importCatSwitchMain.title'),
           message: this.t('confirm.importCatSwitchMain.message', { sub: this.subName(id), main: this.mainName(owner) }),
           confirmLabel: this.t('confirm.importCatSwitchMain.confirm', { main: this.mainName(owner) }),
+          confirmKind: 'primary',
           run: () => { const cur = this.importCat(); if (cur) this.importCat.set({ ...cur, mainId: owner }); },
         });
       }
