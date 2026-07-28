@@ -7,6 +7,7 @@ import {
 } from '../models';
 import { matches, sortTodos, Filter } from './todo-util';
 import { emptyQuery, isEmptyQuery, matchesQuery } from './task-query';
+import { duplicateRowKeys } from './import-dup';
 import { toISO, addDays, startOfToday, diffDays } from './date-util';
 import { I18nService } from './i18n/i18n.service';
 import { TranslationKey } from './i18n/en';
@@ -156,6 +157,8 @@ export class TaskStore {
   readonly importRows = signal<ImportRow[] | null>(null);
   // Keys of the preview rows the user has picked to import; the rest are left in place to keep working on.
   readonly importSelected = signal<ReadonlySet<number>>(new Set());
+  // Keys of the preview rows a saved task already covers (same title, amount and date).
+  readonly importDuplicates = computed(() => duplicateRowKeys(this.importRows() ?? [], this.todos()));
 
   // ---- bank accounts ----
   readonly newBankAccount = signal('');
@@ -655,6 +658,22 @@ export class TaskStore {
       if (on) next.add(key); else next.delete(key);
     }
     this.importSelected.set(next);
+  }
+  /**
+   * Drop preview rows the user does not want to import at all. Nothing is saved yet, so this only
+   * discards the parsed rows — re-parsing the pasted text brings them back. Once the last row is
+   * gone the preview returns to its empty state.
+   */
+  removeImportRows(keys: Iterable<number>): void {
+    const rows = this.importRows();
+    if (!rows) return;
+    const drop = new Set(keys);
+    const kept = rows.filter((r) => !drop.has(r.key));
+    if (kept.length === rows.length) return;
+    this.importRows.set(kept.length ? kept : null);
+    const sel = new Set(this.importSelected());
+    for (const key of drop) sel.delete(key);
+    this.importSelected.set(sel);
   }
   /** Set the batch default main, remember it across sessions, and apply it to every parsed row. */
   setImportMain(mainId: string | null): void {

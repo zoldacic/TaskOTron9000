@@ -7,6 +7,8 @@ description: Verify a UI or visual change in the running TASK-O-TRON 9000 app (A
 
 The point of this skill is to *see the change working in the real app*, not just trust that the code looks right. Angular's dev server hot-reloads on save, so verifying a frontend edit is usually fast.
 
+> Scope: this is the quick look — open the page, confirm it renders the way you meant. When the change has *behavior* that has to be proven (interactions, filtering, state, anything touching data) or the suites need running too, use the **test-and-verify** skill instead; it covers the same Chrome tooling plus the zoneless-render, device-emulation and real-database pitfalls in more depth.
+
 ## The golden rules (read these first)
 
 1. **Drive Chrome through the `mcp__chrome-devtools__*` tools.** They're configured in the repo's `.mcp.json`. If those tools aren't in your session, the MCP server hasn't been approved/started yet — say so and ask the user to restart Claude Code rather than silently skipping verification. **Never claim a change is verified when you couldn't actually open the page.**
