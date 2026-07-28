@@ -4,10 +4,12 @@ import { TaskStore } from '../../core/task.store';
 import { BankAccount, ImportRow } from '../../models';
 import { IconComponent } from '../../shared/icon.component';
 import { fmtMoney } from '../../core/money-util';
-import { BANK_FILE_TYPES, BankFileType, parseBankFile } from '../../core/bank-import';
+import { decodeBankFile, detectBankFileType, parseBankFile } from '../../core/bank-import';
 
 // Preview filter on whether a row already carries subcategories.
 type SubFilter = 'any' | 'has' | 'none';
+// Preview filter on whether a saved task already covers the row.
+type DupFilter = 'any' | 'only' | 'none';
 
 @Component({
   selector: 'app-import-view',
@@ -62,11 +64,7 @@ type SubFilter = 'any' | 'has' | 'none';
             @if (store.bankAccountError(); as e) { <span class="file-error">{{ e }}</span> }
           </div>
           <div class="file-import">
-            <label class="file-label">{{ store.t('import.importFile') }}
-              <select class="input file-type" [value]="fileType()" (change)="fileType.set(selectValue($event))">
-                @for (t of fileTypes; track t) { <option [value]="t">{{ t }}</option> }
-              </select>
-            </label>
+            <span class="file-label">{{ store.t('import.importFile') }}</span>
             <input #fileInput type="file" accept=".csv,text/csv" hidden (change)="onFile($event)" />
             <button class="btn btn-secondary" (click)="fileInput.click()">{{ store.t('import.chooseFile') }}</button>
             @if (fileError()) { <span class="file-error">{{ fileError() }}</span> }
@@ -90,12 +88,24 @@ type SubFilter = 'any' | 'has' | 'none';
             <div class="filters">
               <input class="input filter" type="text" [placeholder]="store.t('import.filterTitle')"
                      [value]="titleFilter()" (input)="titleFilter.set(value($event))" />
-              <div class="seg sub-seg">
+              <div class="seg filter-seg">
                 @for (o of subFilterOptions; track o.value) {
                   <button type="button" class="seg-opt" [class.active]="subFilter() === o.value"
                           (click)="subFilter.set(o.value)">{{ store.t(o.label) }}</button>
                 }
               </div>
+              <div class="seg filter-seg">
+                @for (o of dupFilterOptions; track o.value) {
+                  <button type="button" class="seg-opt" [class.active]="dupFilter() === o.value"
+                          (click)="dupFilter.set(o.value)">{{ store.t(o.label) }}</button>
+                }
+              </div>
+              @if (dupCount() > 0) {
+                <span class="tag tag-warn" [title]="store.t('import.duplicateHint')">
+                  <app-icon name="alert-triangle" [size]="11" />
+                  {{ store.t('import.duplicateCount', { count: dupCount() }) }}
+                </span>
+              }
             </div>
             <div class="table">
               <div class="thead">
@@ -111,20 +121,31 @@ type SubFilter = 'any' | 'has' | 'none';
                 <button type="button" class="sort-h sort-h-end" [class.active]="sortCol() === 'amount'" (click)="toggleSort('amount')">
                   {{ store.t('import.colAmount') }}<span class="sort-caret">{{ sortCaret('amount') }}</span>
                 </button>
+                <span></span>
               </div>
               @for (r of filteredRows(); track r.key) {
-                <div class="trow rule-1" [style.opacity]="r.ok ? (isSelected(r) ? 1 : 0.5) : 0.45">
+                <div class="trow rule-1" [class.dup]="isDuplicate(r)"
+                     [style.opacity]="r.ok ? (isSelected(r) ? 1 : 0.5) : 0.45">
                   <div class="cells">
                     <input type="checkbox" class="sel-box" [checked]="isSelected(r)" [disabled]="!r.ok"
                            [title]="store.t('import.selectRow')" (change)="store.toggleImportSelected(r.key)" />
                     <span class="t-title" [title]="r.title">{{ r.title }}</span>
                     <span class="t-date">{{ r.date ?? '—' }}</span>
                     <span class="t-amount" [style.color]="amountColor(r)">{{ amountLabel(r) }}</span>
+                    <button type="button" class="btn-icon danger row-del" [title]="store.t('import.removeRow')"
+                            (click)="store.removeImportRows([r.key])">
+                      <app-icon name="trash" [size]="13" />
+                    </button>
                   </div>
                   <div class="row-cats">
                     <button class="cat-edit" (click)="store.openImportCat(r.key)">{{ store.t('import.editCategories') }}</button>
                     @if (r.amount != null) {
                       <button class="cat-edit" (click)="store.openImportSplit(r.key)">{{ store.t('import.split') }}</button>
+                    }
+                    @if (isDuplicate(r)) {
+                      <span class="tag tag-warn" [title]="store.t('import.duplicateHint')">
+                        <app-icon name="alert-triangle" [size]="11" /> {{ store.t('import.duplicate') }}
+                      </span>
                     }
                     @if (store.mainName(r.mainId); as mn) { <span class="tag tag-main">{{ mn }}</span> }
                     @for (id of r.catIds; track id) {
@@ -140,7 +161,7 @@ type SubFilter = 'any' | 'has' | 'none';
                   @if (titleFilter().trim()) {
                     {{ store.t('import.filterNoMatch', { query: titleFilter().trim() }) }}
                   } @else {
-                    {{ store.t('import.filterSubNoMatch') }}
+                    {{ store.t('import.filterNoMatchFilters') }}
                   }
                 </div>
               }
@@ -174,7 +195,6 @@ type SubFilter = 'any' | 'has' | 'none';
     .acct-new { max-width: 210px; }
     .file-import { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
     .file-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
-    .file-type { width: auto; padding: 6px 10px; }
     .file-error { color: var(--color-danger); font-size: 12px; }
     .help { color: var(--muted); font-size: 12px; margin-top: 12px; }
     .empty-box {
@@ -183,11 +203,11 @@ type SubFilter = 'any' | 'has' | 'none';
     }
     .filters { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
     .filter { flex: 1 1 180px; min-width: 0; }
-    .sub-seg { flex: 0 0 auto; }
-    .sub-seg .seg-opt { font-size: 11px; padding: 7px 10px; }
+    .filter-seg { flex: 0 0 auto; }
+    .filter-seg .seg-opt { font-size: 11px; padding: 7px 10px; }
     .filter-empty { padding: 24px; text-align: center; color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
     .table { border: 1px solid var(--color-divider); }
-    .thead, .cells { display: grid; grid-template-columns: 20px 1fr 92px 96px; gap: 10px; align-items: center; }
+    .thead, .cells { display: grid; grid-template-columns: 20px 1fr 92px 96px 22px; gap: 10px; align-items: center; }
     .sel-box { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--color-accent); }
     .sel-box:disabled { cursor: not-allowed; }
     .thead { padding: 10px; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); border-bottom: 2px solid var(--color-divider); }
@@ -201,7 +221,10 @@ type SubFilter = 'any' | 'has' | 'none';
     .sort-h-end { justify-self: end; text-align: right; }
     .sort-caret { font-size: 9px; opacity: 0.7; }
     .trow { padding: 10px; }
+    /* Rows a saved task already covers get an amber edge so they read as flagged at a glance. */
+    .trow.dup { border-left: 2px solid var(--color-amber); padding-left: 8px; }
     .t-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row-del { width: 20px; height: 20px; }
     .t-date { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
     .t-amount { font-family: var(--font-mono); font-size: 13px; font-weight: 700; text-align: right; }
     .row-cats { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
@@ -228,7 +251,7 @@ type SubFilter = 'any' | 'has' | 'none';
     }
     @media (max-width: 420px) {
       /* Tighten fixed columns so the title keeps usable width on the smallest screens. */
-      .thead, .cells { grid-template-columns: 16px 1fr 66px 74px; gap: 6px; }
+      .thead, .cells { grid-template-columns: 16px 1fr 66px 74px 20px; gap: 6px; }
       .t-date, .t-amount { font-size: 11px; }
     }
   `],
@@ -237,8 +260,6 @@ export class ImportViewComponent {
   store = inject(TaskStore);
   private router = inject(Router);
 
-  readonly fileTypes = BANK_FILE_TYPES;
-  readonly fileType = signal<BankFileType>(BANK_FILE_TYPES[0]);
   readonly fileError = signal<string | null>(null);
 
   readonly sortCol = signal<'title' | 'date' | 'amount' | null>(null);
@@ -252,6 +273,13 @@ export class ImportViewComponent {
     { value: 'none', label: 'import.filterSubNone' },
   ] as const;
   readonly subFilter = signal<SubFilter>('any');
+
+  readonly dupFilterOptions = [
+    { value: 'any', label: 'import.filterDupAny' },
+    { value: 'only', label: 'import.filterDupOnly' },
+    { value: 'none', label: 'import.filterDupNone' },
+  ] as const;
+  readonly dupFilter = signal<DupFilter>('any');
 
   readonly sortedRows = computed<ImportRow[]>(() => {
     const rows = this.store.importRows() ?? [];
@@ -269,13 +297,18 @@ export class ImportViewComponent {
     });
   });
 
-  // Preview rows narrowed by the title text and the has/no-subcategory filter.
+  // Preview rows narrowed by the title text, the has/no-subcategory filter and the duplicate filter.
   readonly filteredRows = computed<ImportRow[]>(() => {
     const q = this.titleFilter().trim().toLowerCase();
     const sub = this.subFilter();
+    const dup = this.dupFilter();
     let rows = this.sortedRows();
     if (q) rows = rows.filter((r) => r.title.toLowerCase().includes(q));
     if (sub !== 'any') rows = rows.filter((r) => (r.catIds.length > 0) === (sub === 'has'));
+    if (dup !== 'any') {
+      const dups = this.store.importDuplicates();
+      rows = rows.filter((r) => dups.has(r.key) === (dup === 'only'));
+    }
     return rows;
   });
 
@@ -321,7 +354,14 @@ export class ImportViewComponent {
     this.fileError.set(null);
     if (!file) return;
     try {
-      const rows = parseBankFile(this.fileType(), await file.text());
+      // The bank is read off the file's header row — each one needs its own decoding.
+      const bytes = await file.arrayBuffer();
+      const type = detectBankFileType(bytes);
+      if (type === null) {
+        this.fileError.set(this.store.t('import.fileUnknownFormat', { name: file.name }));
+        return;
+      }
+      const rows = parseBankFile(type, decodeBankFile(type, bytes));
       if (rows.length === 0) {
         this.fileError.set(this.store.t('import.fileNoRows', { name: file.name }));
       } else {
@@ -334,11 +374,12 @@ export class ImportViewComponent {
     }
   }
 
-  selectValue(e: Event): BankFileType { return (e.target as HTMLSelectElement).value as BankFileType; }
   selectValueStr(e: Event): string { return (e.target as HTMLSelectElement).value; }
   checked(e: Event): boolean { return (e.target as HTMLInputElement).checked; }
   value(e: Event): string { return (e.target as HTMLTextAreaElement).value; }
   isSelected(r: ImportRow): boolean { return this.store.importSelected().has(r.key); }
+  isDuplicate(r: ImportRow): boolean { return this.store.importDuplicates().has(r.key); }
+  dupCount = computed(() => this.store.importDuplicates().size);
   amountLabel(r: ImportRow): string { return r.amount != null ? fmtMoney(r.amount) : this.store.t('import.amountNone'); }
   amountColor(r: ImportRow): string {
     return r.amount == null ? 'var(--muted-strong)' : r.amount >= 0 ? 'var(--color-income)' : 'var(--color-danger)';

@@ -192,6 +192,13 @@ select.input {
   background: color-mix(in srgb, var(--color-accent) 14%, transparent);
   color: var(--color-accent);
 }
+/* amber: something to look at before acting (e.g. a duplicate import row) */
+.tag-warn {
+  gap: 4px;
+  background: color-mix(in srgb, var(--color-amber) 16%, transparent);
+  color: var(--color-amber);
+  border: 1px solid color-mix(in srgb, var(--color-amber) 40%, transparent);
+}
 
 .chip {
   font-size: 11px;
