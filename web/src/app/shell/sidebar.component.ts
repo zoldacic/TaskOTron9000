@@ -27,6 +27,9 @@ import { IconComponent } from '../shared/icon.component';
         <a class="nav" routerLink="/reports" routerLinkActive="active" (click)="store.closeSidebar()">
           <app-icon name="bar-chart" /><span>{{ store.t('nav.reports') }}</span>
         </a>
+        <a class="nav" routerLink="/ask" routerLinkActive="active" (click)="store.closeSidebar()">
+          <app-icon name="sparkles" /><span>{{ store.t('nav.ask') }}</span>
+        </a>
       </nav>
 
       <!-- smart lists -->

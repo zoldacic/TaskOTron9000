@@ -18,5 +18,9 @@ export const routes: Routes = [
     path: 'reports',
     loadComponent: () => import('./features/report/report-view.component').then((m) => m.ReportViewComponent),
   },
+  {
+    path: 'ask',
+    loadComponent: () => import('./features/ask/ask-view.component').then((m) => m.AskViewComponent),
+  },
   { path: '**', redirectTo: 'tasks' },
 ];

@@ -3,8 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE } from './api-base';
 import {
-  BankAccount, Categories, ImportCommitRow, ImportRow, Main, Report, SavedQuery, Sub, TaskQuery,
-  TitleDefault, Todo, TodoWrite,
+  AskEvent, AskMessage, AskStatus, BankAccount, Categories, ImportCommitRow, ImportRow, Main,
+  Report, SavedQuery, Sub, TaskQuery, TitleDefault, Todo, TodoWrite,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -114,5 +114,61 @@ export class ApiService {
     let params = new HttpParams().set('from', from).set('to', to).set('groupBy', groupBy);
     if (categories !== null) params = params.set('categories', categories.join(','));
     return this.http.get<Report>(`${this.base}/api/report`, { params });
+  }
+
+  // ---- ask claude ----
+  getAskStatus(): Observable<AskStatus> {
+    return this.http.get<AskStatus>(`${this.base}/api/ask/status`);
+  }
+  /**
+   * Streams an answer, calling `onEvent` for each event as it arrives — text
+   * chunks, the lookups Claude runs, and any failure.
+   *
+   * Uses fetch rather than HttpClient because we need the body as it downloads,
+   * not the whole response at the end. The server sends newline-delimited JSON;
+   * a network chunk can split a line, so partial lines are held back until the
+   * newline arrives. Abort via `signal` to stop generating.
+   */
+  async streamAsk(
+    messages: AskMessage[],
+    onEvent: (e: AskEvent) => void,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const res = await fetch(`${this.base}/api/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: messages.map((m) => ({ role: m.role, content: m.content })) }),
+      signal,
+    });
+    if (!res.ok || !res.body) {
+      const detail = await res.text().catch(() => '');
+      throw new Error(detail || `Request failed (${res.status})`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    const drain = (flush = false) => {
+      const lines = buffer.split('\n');
+      // The trailing piece is incomplete until the stream ends.
+      buffer = flush ? '' : (lines.pop() ?? '');
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          onEvent(JSON.parse(line) as AskEvent);
+        } catch {
+          // A malformed line is not worth killing the answer over.
+        }
+      }
+    };
+
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      // stream: true keeps multi-byte characters intact across chunk boundaries.
+      buffer += decoder.decode(value, { stream: true });
+      drain();
+    }
+    drain(true);
   }
 }

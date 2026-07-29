@@ -168,7 +168,17 @@ type DupFilter = 'any' | 'only' | 'none';
             </div>
             <div class="foot">
               <span class="ready">{{ store.t('import.rowsSelected', { selected: selectedCount(), ok: okCount() }) }}</span>
-              <button class="btn btn-primary" [disabled]="selectedCount() === 0" (click)="commit()">{{ store.t('import.importSelected', { count: selectedCount() }) }}</button>
+              <div class="foot-actions">
+                <button class="btn btn-ghost foot-del" [disabled]="selectedCount() === 0"
+                        [title]="store.t('import.deleteSelectedHint')" (click)="deleteSelected()">
+                  <app-icon name="trash" [size]="14" /> {{ store.t('import.deleteSelected') }}
+                </button>
+                <button class="btn btn-ghost" [disabled]="rowCount() === 0"
+                        [title]="store.t('import.clearPreviewHint')" (click)="store.clearImportPreview()">
+                  <app-icon name="x" [size]="14" /> {{ store.t('import.clearPreview') }}
+                </button>
+                <button class="btn btn-primary" [disabled]="selectedCount() === 0" (click)="commit()">{{ store.t('import.importSelected', { count: selectedCount() }) }}</button>
+              </div>
             </div>
           }
         </section>
@@ -235,8 +245,11 @@ type DupFilter = 'any' | 'only' | 'none';
     }
     .cat-edit:hover { color: var(--color-text); }
     .saved { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--color-accent); }
-    .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
-    .ready { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+    /* The action group wraps to its own line rather than squeezing the count onto two. */
+    .foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .foot-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .foot-del:not(:disabled):hover { color: var(--color-danger); }
+    .ready { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
 
     @media (max-width: 760px) {
       .head { padding: 16px 16px 12px; }
@@ -247,6 +260,7 @@ type DupFilter = 'any' | 'only' | 'none';
       .filter { flex-basis: 100%; }
       .buttons { flex-wrap: wrap; }
       .foot { flex-wrap: wrap; gap: 10px; }
+      .foot-actions { flex: 1 1 100%; flex-wrap: wrap; }
       .foot .btn { flex: 1 1 auto; justify-content: center; }
     }
     @media (max-width: 420px) {
@@ -388,9 +402,16 @@ export class ImportViewComponent {
     const norm = r.title.trim().toLowerCase();
     return this.store.titleDefaults().some((d) => d.normalizedTitle && norm.includes(d.normalizedTitle));
   }
+  rowCount = computed(() => (this.store.importRows() ?? []).length);
   okCount = computed(() => (this.store.importRows() ?? []).filter((r) => r.ok).length);
   selectedCount = computed(() =>
     (this.store.importRows() ?? []).filter((r) => r.ok && this.store.importSelected().has(r.key)).length);
+
+  // Drops the whole selection — including rows the filters currently hide — the same set
+  // "Import selected" would act on. Nothing is saved yet, so no confirmation is needed.
+  deleteSelected(): void {
+    this.store.removeImportRows(this.store.importSelected());
+  }
 
   // Importable rows currently shown under the title filter — what select-all acts on.
   private visibleOkRows = computed<ImportRow[]>(() => this.filteredRows().filter((r) => r.ok));

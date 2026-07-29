@@ -2,8 +2,8 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 import {
-  BankAccount, Categories, DateKind, ImportCommitRow, ImportRow, Main, Report, SavedQuery, Sub,
-  TaskQuery, TitleDefault, Todo,
+  AskEvent, AskMessage, BankAccount, Categories, DateKind, ImportCommitRow, ImportRow, Main,
+  Report, SavedQuery, Sub, TaskQuery, TitleDefault, Todo,
 } from '../models';
 import { matches, sortTodos, Filter } from './todo-util';
 import { emptyQuery, isEmptyQuery, matchesQuery } from './task-query';
@@ -163,6 +163,16 @@ export class TaskStore {
   // ---- bank accounts ----
   readonly newBankAccount = signal('');
   readonly bankAccountError = signal<string | null>(null);
+
+  // ---- ask claude ----
+  // The conversation lives here, not on the server — every question re-sends it.
+  readonly askMessages = signal<AskMessage[]>([]);
+  readonly askInput = signal('');
+  readonly askBusy = signal(false);
+  readonly askError = signal<string | null>(null);
+  // null until the status check answers; false means no API key on the server.
+  readonly askConfigured = signal<boolean | null>(null);
+  private askAbort: AbortController | null = null;
 
   // ---- reports ----
   readonly repStart = signal('2026-07-01');
@@ -629,6 +639,8 @@ export class TaskStore {
   // ---- import ----
   loadSampleImport(): void { this.importText.set(SAMPLE_IMPORT); this.importRows.set(null); this.importSelected.set(new Set()); }
   clearImport(): void { this.importText.set(''); this.importRows.set(null); this.importSelected.set(new Set()); }
+  /** Drop the whole parsed preview but keep the pasted text, so it can simply be parsed again. */
+  clearImportPreview(): void { this.importRows.set(null); this.importSelected.set(new Set()); }
   /** Appends parsed rows (each already `date\ttitle\tamount`) to the import text box. */
   appendImportRows(rows: string[]): void {
     if (rows.length === 0) return;
@@ -743,6 +755,81 @@ export class TaskStore {
       this.bankAccountError.set(this.t('bank.error.delete'));
     }
   }
+
+  // ---- ask claude ----
+  /** Checks once whether the server can reach the API, so the view can say so before you type. */
+  async refreshAskStatus(): Promise<void> {
+    try {
+      this.askConfigured.set((await firstValueFrom(this.api.getAskStatus())).configured);
+    } catch {
+      this.askConfigured.set(false);
+    }
+  }
+  /**
+   * Sends the box's contents as the next question and streams the answer in.
+   * The assistant turn is appended empty and filled as chunks arrive, so the
+   * answer appears as it is written.
+   */
+  async sendAsk(): Promise<void> {
+    const question = this.askInput().trim();
+    if (!question || this.askBusy()) return;
+
+    this.askError.set(null);
+    this.askInput.set('');
+    this.askMessages.update((m) => [
+      ...m,
+      { role: 'user', content: question },
+      { role: 'assistant', content: '', tools: [] },
+    ]);
+    this.askBusy.set(true);
+
+    // Everything except the empty assistant turn we just parked at the end.
+    const history = this.askMessages().slice(0, -1);
+    this.askAbort = new AbortController();
+    try {
+      await this.api.streamAsk(history, (e) => this.applyAskEvent(e), this.askAbort.signal);
+    } catch (e) {
+      // An abort is the user pressing Stop — keep whatever arrived, say nothing.
+      if (!(e instanceof DOMException && e.name === 'AbortError')) {
+        this.askError.set(this.t('ask.error'));
+      }
+    } finally {
+      this.askBusy.set(false);
+      this.askAbort = null;
+      // Drop the assistant turn if nothing at all came back, so the transcript has
+      // no blank bubble. A turn that only ran lookups is worth keeping — it shows
+      // what happened before the answer was cut off.
+      this.askMessages.update((m) => {
+        const last = m[m.length - 1];
+        return last?.role === 'assistant' && !last.content && !last.tools?.length ? m.slice(0, -1) : m;
+      });
+    }
+  }
+  /** Stops generating; the partial answer stays in the conversation. */
+  stopAsk(): void {
+    this.askAbort?.abort();
+  }
+  clearAsk(): void {
+    this.stopAsk();
+    this.askMessages.set([]);
+    this.askError.set(null);
+  }
+  /** Folds one stream event into the assistant turn currently being written. */
+  private applyAskEvent(e: AskEvent): void {
+    if (e.t === 'error') {
+      this.askError.set(e.v);
+      return;
+    }
+    this.askMessages.update((m) => {
+      const last = m[m.length - 1];
+      if (!last || last.role !== 'assistant') return m;
+      const next: AskMessage = e.t === 'tool'
+        ? { ...last, tools: [...(last.tools ?? []), e.v] }
+        : { ...last, content: last.content + e.v };
+      return [...m.slice(0, -1), next];
+    });
+  }
+
   openImportCat(key: number): void {
     const r = (this.importRows() ?? []).find((x) => x.key === key);
     if (!r) return;

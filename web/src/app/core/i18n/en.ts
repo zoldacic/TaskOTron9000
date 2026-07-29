@@ -8,6 +8,7 @@ export const en = {
   'nav.categories': 'Manage categories',
   'nav.import': 'Import bank file',
   'nav.reports': 'Spending report',
+  'nav.ask': 'Ask TASK-O-TRON',
 
   // ---- sidebar: sections ----
   'sidebar.lists': 'Lists',
@@ -286,6 +287,10 @@ export const en = {
   'import.selectRow': 'Select this row',
   'import.removeRow': 'Remove this row from the preview',
   'import.rowsSelected': '{selected} of {ok} rows selected',
+  'import.deleteSelected': 'Delete selected',
+  'import.deleteSelectedHint': 'Remove the selected rows from the preview',
+  'import.clearPreview': 'Clear preview',
+  'import.clearPreviewHint': 'Discard every preview row — the pasted text is kept, so you can parse again',
   'import.importSelected': 'Import {count} selected',
   'import.amountNone': 'no amount',
   'import.fileNoRows': 'No rows found in “{name}”.',
@@ -326,6 +331,26 @@ export const en = {
   'report.gran.daily': 'daily',
   'report.gran.weekly': 'weekly',
   'report.gran.monthly': 'monthly',
+
+  // ---- ask claude ----
+  'ask.title': 'Ask TASK-O-TRON',
+  'ask.sub': 'Ask questions about your tasks and spending in plain language.',
+  'ask.placeholder': 'What did I spend on food in June?',
+  'ask.send': 'Ask',
+  'ask.stop': 'Stop',
+  'ask.clear': 'Clear',
+  'ask.you': 'You',
+  'ask.claude': 'TASK-O-TRON',
+  'ask.thinking': 'Thinking…',
+  'ask.lookedUp': 'Looked up',
+  'ask.empty': 'Ask anything about your tasks — totals, categories, dates, a merchant you keep seeing. Your tasks are searched and totalled with the same code as the spending report, and you’re shown exactly what was looked up.',
+  'ask.examples': 'For example:',
+  'ask.example1': 'Which category did I spend the most on last month?',
+  'ask.example2': 'How often do I fill up at OKQ8, and what does it cost me?',
+  'ask.example3': 'Are there any uncategorised tasks I should sort?',
+  'ask.error': 'Couldn’t get an answer. Check the backend log and try again.',
+  'ask.notConfigured': 'No Anthropic API key on the server. Set ANTHROPIC_API_KEY (or the Anthropic:ApiKey user secret) and restart the backend.',
+  'ask.hint': 'The whole conversation is sent with each question. Your tasks are queried on demand rather than sent wholesale, so cost doesn’t grow with the size of your database. Nothing is stored server-side.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

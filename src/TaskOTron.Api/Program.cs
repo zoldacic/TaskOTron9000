@@ -43,6 +43,7 @@ app.MapSavedQueryEndpoints();
 app.MapTitleDefaultEndpoints();
 app.MapImportEndpoints();
 app.MapReportEndpoints();
+app.MapAskEndpoints();
 
 app.MapGet("/", () => Results.Ok(new { app = "TASK-O-TRON 9000 API", status = "online" }));
 
