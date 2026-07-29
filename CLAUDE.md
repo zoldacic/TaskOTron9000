@@ -32,8 +32,14 @@ Frontend (run from `web/`):
 ng serve            # https://localhost:4200, proxies /api -> :5249 (proxy.conf.json), no CORS
 ng test             # Vitest via @angular/build:unit-test; *.spec.ts colocated with source
 ng build            # production build to web/dist/
-npx vitest run src/app/core/bank-import.spec.ts   # single spec
+ng test --include=src/app/core/bank-import.spec.ts   # single spec
 ```
+
+Always run the frontend tests through `ng`. Invoking `npx vitest` directly fails with
+`ReferenceError: describe is not defined` — the test globals come from the `@angular/build:unit-test`
+builder (`web/angular.json`), not from a standalone vitest config. The whole suite runs in well under
+10s, so narrowing rarely pays; `ng test --reporters=verbose` prints individual test names when you
+need to confirm a specific spec actually ran.
 
 The dev server serves **HTTPS** using the ASP.NET dev certificate, exported to `web/.certs/`
 (gitignored, per-machine). The backend stays on plain HTTP — the browser never talks to it directly,
