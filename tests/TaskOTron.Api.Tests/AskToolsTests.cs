@@ -97,6 +97,86 @@ public class AskToolsTests : IDisposable
         Assert.Equal(dates.OrderByDescending(d => d).ToList(), dates);
     }
 
+    // ---- query_tasks sorting ----
+
+    [Fact]
+    public async Task Query_sorts_biggest_spend_first()
+    {
+        var r = await Run("query_tasks", """{"sort_by":"largest_spend","limit":2}""");
+
+        var titles = r.GetProperty("tasks").EnumerateArray()
+            .Select(t => t.GetProperty("title").GetString()).ToList();
+        Assert.Equal(["OKQ8 Skellefteå", "Stora Coop"], titles); // -1000 then -500
+    }
+
+    [Fact]
+    public async Task Query_sorts_biggest_income_first()
+    {
+        var r = await Run("query_tasks", """{"sort_by":"largest_income","limit":1}""");
+
+        Assert.Equal("Lön", r.GetProperty("tasks")[0].GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task Query_sorts_by_absolute_amount_across_both_directions()
+    {
+        var r = await Run("query_tasks", """{"sort_by":"largest_absolute","limit":2}""");
+
+        var titles = r.GetProperty("tasks").EnumerateArray()
+            .Select(t => t.GetProperty("title").GetString()).ToList();
+        Assert.Equal(["Lön", "OKQ8 Skellefteå"], titles); // 25000 then -1000
+    }
+
+    [Fact]
+    public async Task Query_sorts_oldest_first_on_date_asc()
+    {
+        var r = await Run("query_tasks", """{"sort_by":"date_asc"}""");
+
+        var dates = r.GetProperty("tasks").EnumerateArray()
+            .Select(t => t.GetProperty("date").GetString()).ToList();
+        Assert.Equal(dates.OrderBy(d => d).ToList(), dates);
+    }
+
+    [Fact]
+    public async Task Query_puts_amountless_tasks_last_when_sorting_by_amount()
+    {
+        _db.Add(new Todo
+        {
+            Title = "No amount", Due = DateOnly.Parse("2026-06-15"), Amount = null,
+            DateKind = DateKind.Due, MainId = "m1",
+        });
+        _db.SaveChanges();
+
+        var r = await Run("query_tasks", """{"sort_by":"largest_spend"}""");
+
+        var titles = r.GetProperty("tasks").EnumerateArray()
+            .Select(t => t.GetProperty("title").GetString()).ToList();
+        Assert.Equal("No amount", titles[^1]);
+    }
+
+    [Fact]
+    public async Task Query_falls_back_to_the_default_order_on_an_unknown_sort()
+    {
+        var bogus = await Run("query_tasks", """{"sort_by":"by_vibes"}""");
+        var defaulted = await Run("query_tasks", "{}");
+
+        var a = bogus.GetProperty("tasks").EnumerateArray().Select(t => t.GetProperty("title").GetString());
+        var b = defaulted.GetProperty("tasks").EnumerateArray().Select(t => t.GetProperty("title").GetString());
+        Assert.Equal(b.ToList(), a.ToList());
+    }
+
+    [Fact]
+    public async Task Query_totals_still_cover_every_match_when_sorted_and_capped()
+    {
+        var r = await Run("query_tasks", """{"sort_by":"largest_spend","limit":1}""");
+
+        Assert.Equal(7, r.GetProperty("count").GetInt32());
+        Assert.Equal(1, r.GetProperty("returned").GetInt32());
+        // 500+300+150+1000+250+42 out, 25000 in — regardless of the single row returned.
+        Assert.Equal(2242m, r.GetProperty("totals").GetProperty("money_out").GetDecimal());
+        Assert.Equal(25000m, r.GetProperty("totals").GetProperty("money_in").GetDecimal());
+    }
+
     [Fact]
     public async Task Query_matches_title_text_case_insensitively()
     {

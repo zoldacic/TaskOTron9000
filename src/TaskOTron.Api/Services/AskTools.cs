@@ -22,6 +22,8 @@ public static class AskTools
     /// <summary>Rows returned by a single query_tasks call unless it asks for fewer.</summary>
     private const int DefaultLimit = 50;
     private const int MaxLimit = 200;
+    /// <summary>Newest first — the order that made sense before sorting was an option.</summary>
+    private const string DefaultSort = "date_desc";
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -34,11 +36,13 @@ public static class AskTools
         {
             Name = "query_tasks",
             Description = string.Join(" ", [
-                "Find tasks matching filters, newest first. Every filter is optional; with none, this",
-                "returns the most recent tasks. Returns the matching row count and totals computed over",
-                "ALL matches, plus up to `limit` rows — so the totals stay exact even when the rows are",
-                "cut off. Use this to look at individual transactions; use spending_report when you only",
-                "need totals per category.",
+                "Find tasks matching filters. Every filter is optional; with none, this returns the most",
+                "recent tasks. Returns the matching row count and totals computed over ALL matches, plus",
+                "up to `limit` rows — so the totals stay exact even when the rows are cut off. Use this to",
+                "look at individual transactions; use spending_report when you only need totals per",
+                "category. For \"biggest\" or \"smallest\" questions set `sort_by` and a small `limit` rather",
+                "than fetching everything and ranking it yourself — only the rows this returns are",
+                "guaranteed to be the top ones.",
             ]),
             InputSchema = Schema(
                 new Dictionary<string, object>
@@ -53,6 +57,12 @@ public static class AskTools
                     ["has_subcategories"] = Prop("boolean", "false finds tasks with no subcategory — the ones needing sorting."),
                     ["min_amount"] = Prop("number", "Only tasks with an amount at least this. Remember money out is negative."),
                     ["max_amount"] = Prop("number", "Only tasks with an amount at most this."),
+                    ["sort_by"] = Enum_(
+                        "Order of the returned rows. \"largest_spend\" puts the biggest money out first, "
+                        + "\"largest_income\" the biggest money in, \"largest_absolute\" the biggest amount in "
+                        + "either direction. Tasks with no amount come last on those three. "
+                        + $"Defaults to \"{DefaultSort}\" (newest first).",
+                        ["date_desc", "date_asc", "largest_spend", "largest_income", "largest_absolute"]),
                     ["limit"] = Prop("integer", $"Rows to return, 1-{MaxLimit}. Defaults to {DefaultLimit}."),
                 },
                 required: []),
@@ -134,7 +144,8 @@ public static class AskTools
         if (Num(input, "max_amount") is { } max)
             q = q.Where(t => t.Amount is { } a && a <= max);
 
-        var matches = q.OrderByDescending(t => t.Due ?? DateOnly.MinValue).ThenByDescending(t => t.Id).ToList();
+        var sort = Str(input, "sort_by") ?? DefaultSort;
+        var matches = Sorted(q, sort).ToList();
         var limit = Math.Clamp(Int(input, "limit") ?? DefaultLimit, 1, MaxLimit);
 
         // Totals cover every match, not just the rows we hand back.
@@ -155,6 +166,23 @@ public static class AskTools
 
         return (JsonSerializer.Serialize(result, Json), Describe("query_tasks", input, $"{matches.Count} matched"));
     }
+
+    /// <summary>
+    /// Applies the requested order. Sorts are named by intent rather than by sign,
+    /// because "biggest purchase" means the *most negative* amount and asking the
+    /// caller to reason about that is a reliable way to get it backwards. Tasks with
+    /// no amount sort last on every amount-based order — they can't be ranked by one.
+    /// </summary>
+    private static IEnumerable<Todo> Sorted(IEnumerable<Todo> q, string sort) => sort switch
+    {
+        "date_asc" => q.OrderBy(t => t.Due ?? DateOnly.MaxValue).ThenBy(t => t.Id),
+        "largest_spend" => q.OrderBy(t => t.Amount is null).ThenBy(t => t.Amount ?? 0),
+        "largest_income" => q.OrderBy(t => t.Amount is null).ThenByDescending(t => t.Amount ?? 0),
+        "largest_absolute" => q.OrderBy(t => t.Amount is null).ThenByDescending(t => Math.Abs(t.Amount ?? 0)),
+        // Anything unrecognised falls back to the default rather than erroring —
+        // a bad sort name shouldn't cost a whole tool round trip.
+        _ => q.OrderByDescending(t => t.Due ?? DateOnly.MinValue).ThenByDescending(t => t.Id),
+    };
 
     private static object Row(Todo t) => new
     {
@@ -251,6 +279,8 @@ public static class AskTools
         var from = Str(input, "from");
         var to = Str(input, "to");
         if (from is not null || to is not null) bits.Add($"{from ?? "…"} → {to ?? "…"}");
+        // Worth surfacing: it changes which rows the answer is based on.
+        if (Str(input, "sort_by") is { } s && s != DefaultSort) bits.Add(s);
         if (outcome is not null) bits.Add(outcome);
         return string.Join(" · ", bits);
     }
