@@ -8,6 +8,7 @@ export const sv: Record<TranslationKey, string> = {
   'nav.categories': 'Hantera kategorier',
   'nav.import': 'Importera bankfil',
   'nav.reports': 'Utgiftsrapport',
+  'nav.ask': 'Fråga TASK-O-TRON',
 
   // ---- sidebar: sections ----
   'sidebar.lists': 'Listor',
@@ -286,6 +287,10 @@ export const sv: Record<TranslationKey, string> = {
   'import.selectRow': 'Markera den här raden',
   'import.removeRow': 'Ta bort den här raden från förhandsvisningen',
   'import.rowsSelected': '{selected} av {ok} rader markerade',
+  'import.deleteSelected': 'Ta bort markerade',
+  'import.deleteSelectedHint': 'Ta bort de markerade raderna från förhandsvisningen',
+  'import.clearPreview': 'Rensa förhandsvisning',
+  'import.clearPreviewHint': 'Kasta alla rader i förhandsvisningen — den inklistrade texten behålls, så du kan tolka igen',
   'import.importSelected': 'Importera {count} markerade',
   'import.amountNone': 'inget belopp',
   'import.fileNoRows': 'Inga rader hittades i ”{name}”.',
@@ -326,4 +331,24 @@ export const sv: Record<TranslationKey, string> = {
   'report.gran.daily': 'dagligen',
   'report.gran.weekly': 'veckovis',
   'report.gran.monthly': 'månadsvis',
+
+  // ---- ask claude ----
+  'ask.title': 'Fråga TASK-O-TRON',
+  'ask.sub': 'Ställ frågor om dina uppgifter och utgifter på vanligt språk.',
+  'ask.placeholder': 'Vad handlade jag mat för i juni?',
+  'ask.send': 'Fråga',
+  'ask.stop': 'Stoppa',
+  'ask.clear': 'Rensa',
+  'ask.you': 'Du',
+  'ask.claude': 'TASK-O-TRON',
+  'ask.thinking': 'Tänker…',
+  'ask.lookedUp': 'Slog upp',
+  'ask.empty': 'Fråga vad som helst om dina uppgifter — summor, kategorier, datum, en butik som återkommer. Dina uppgifter söks igenom och summeras med samma kod som utgiftsrapporten, och du ser exakt vad som slogs upp.',
+  'ask.examples': 'Till exempel:',
+  'ask.example1': 'Vilken kategori lade jag mest pengar på förra månaden?',
+  'ask.example2': 'Hur ofta tankar jag på OKQ8, och vad kostar det mig?',
+  'ask.example3': 'Finns det okategoriserade uppgifter jag borde sortera?',
+  'ask.error': 'Kunde inte få något svar. Kolla loggen för servern och försök igen.',
+  'ask.notConfigured': 'Ingen Anthropic-API-nyckel på servern. Sätt ANTHROPIC_API_KEY (eller user secret-värdet Anthropic:ApiKey) och starta om servern.',
+  'ask.hint': 'Hela konversationen skickas med varje fråga. Dina uppgifter hämtas vid behov i stället för att skickas i sin helhet, så kostnaden växer inte med databasens storlek. Ingenting sparas på servern.',
 };

@@ -98,6 +98,26 @@ export interface ImportCommitRow {
   note: string | null;
 }
 
+/** One turn of the Ask TASK-O-TRON conversation. Held client-side; the server is stateless. */
+export interface AskMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  /** Lookups Claude ran for this answer, e.g. "query_tasks · Mat · 12 matched". */
+  tools?: string[];
+}
+
+/** One event from the answer stream: a chunk of text, a lookup, or a failure. */
+export interface AskEvent {
+  t: 'text' | 'tool' | 'error';
+  v: string;
+}
+
+/** Whether the server has an API key, so the view can explain itself before you type. */
+export interface AskStatus {
+  configured: boolean;
+  model: string;
+}
+
 export interface ReportBucket {
   label: string;
   net: number;

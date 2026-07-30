@@ -75,6 +75,13 @@ public record ImportRowDto(int Key, string Title, string? Date, decimal? Amount,
 public record ImportCommitRow(string Title, string? Date, decimal? Amount, List<string>? CatIds, string? MainId = null, string? BankAccountId = null, string? Note = null);
 public record ImportCommitRequest(List<ImportCommitRow> Rows);
 
+// ---- Ask Claude ----
+/// <summary>One turn of the conversation. Role is "user" or "assistant".</summary>
+public record AskMessageDto(string Role, string Content);
+public record AskRequest(List<AskMessageDto> Messages);
+/// <summary>Whether the server has an Anthropic API key, so the UI can say so up front.</summary>
+public record AskStatusDto(bool Configured, string Model);
+
 // ---- Reports ----
 public record BucketDto(string Label, decimal Net, List<decimal> Parts);
 public record CategoryNetDto(string Name, decimal Net);

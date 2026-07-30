@@ -70,6 +70,10 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
         @case ('star') {
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01Z" />
         }
+        @case ('sparkles') {
+          <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z" />
+          <path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8Z" />
+        }
         @case ('list') {
           <path d="M8 6h13" /><path d="M8 12h13" /><path d="M8 18h13" />
           <path d="M3 6h.01" /><path d="M3 12h.01" /><path d="M3 18h.01" />
