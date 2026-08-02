@@ -4,7 +4,7 @@ import { ImportRow, Todo } from '../models';
 function todo(p: Partial<Todo>): Todo {
   return {
     id: 1, title: 'ACME CORP', done: false, due: '2026-07-15', amount: -120.5, dateKind: 'transaction',
-    mainId: 'money', catIds: [], bankAccountId: null, note: null, ...p,
+    mainId: 'money', catIds: [], bankAccountId: null, note: null, doneAt: null, ...p,
   };
 }
 function row(p: Partial<ImportRow>): ImportRow {

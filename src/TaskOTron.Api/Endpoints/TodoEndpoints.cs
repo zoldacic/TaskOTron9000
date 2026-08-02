@@ -87,6 +87,8 @@ public static class TodoEndpoints
             var t = await db.Todos.Include(x => x.Categories).FirstOrDefaultAsync(x => x.Id == id);
             if (t is null) return Results.NotFound();
             t.Done = !t.Done;
+            // Stamp the completion day (server-local, like the client's "today"); clear it on reopen.
+            t.DoneAt = t.Done ? DateOnly.FromDateTime(DateTime.Now) : null;
             await db.SaveChangesAsync();
             return Results.Ok(t.ToDto());
         });

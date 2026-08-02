@@ -33,7 +33,7 @@ export const sv: Record<TranslationKey, string> = {
   'sidebar.close': 'Stäng meny',
 
   // ---- start view ----
-  'start.title': 'Kräver åtgärd',
+  'start.title': 'Idag i korthet',
   'start.sub': '{overdue} försenade · {today} förfaller idag · {done} klara idag',
   'start.openTasks': 'Öppna uppgiftslistan',
   'start.total': 'Totalt',
@@ -42,7 +42,9 @@ export const sv: Record<TranslationKey, string> = {
   'start.today.title': 'Förfaller idag',
   'start.today.hint': 'Få de här gjorda före midnatt',
   'start.done.title': 'Klara idag',
-  'start.done.hint': 'Avklarade, och daterade idag',
+  'start.done.hint': 'Avbockade idag, oavsett förfallodatum',
+  'start.yesterday.title': 'Klara igår',
+  'start.yesterday.hint': 'Gårdagens skörd, för protokollet',
   'start.empty.title': 'Allt klart',
   'start.empty.body': 'Inget försenat, inget som förfaller idag. Maskinerna godkänner.',
 

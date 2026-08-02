@@ -8,6 +8,10 @@ public class Todo
     public string Title { get; set; } = default!;
     public bool Done { get; set; }
 
+    // The day the task was ticked off, stamped by the server when Done flips to true and cleared
+    // when it flips back. Not editable from the UI — it exists so "done today" can ignore Due.
+    public DateOnly? DoneAt { get; set; }
+
     // Free-text note attached to the task. null/blank = no note.
     public string? Note { get; set; }
 

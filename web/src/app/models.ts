@@ -13,6 +13,7 @@ export interface Todo {
   catIds: string[]; // subcategories; may belong to other mains
   bankAccountId: string | null;
   note: string | null; // free-text note; null = no note
+  doneAt: string | null; // ISO yyyy-MM-dd the task was ticked off; null while open. Server-set.
 }
 
 export interface TodoWrite {
