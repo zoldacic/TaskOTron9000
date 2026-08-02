@@ -32,27 +32,42 @@ feature branch for this work, skip the checkout.
 
 ### 2. Stage and commit
 
-Stage only the files you changed (not `git add -A` blindly). Use a single-quoted
-here-string so `$`/backticks stay literal; the closing `'@` must be at column 0:
+Stage only the files you changed (not `git add -A` blindly). Write the message to
+a file in the scratchpad and pass it with `-F`:
 
 ```powershell
 git add web/src/app/...    # the actual files
-git commit -m @'
+git commit -F "<scratchpad>\commit-msg.txt"
+```
+
+```text
 <imperative subject line, ~50 chars>
 
 <body: what was wrong and what the change does, wrapped ~72 cols>
 
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
-'@
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 ```
 
-**Every commit must end with the `Co-Authored-By: Claude Opus 4.8` trailer.**
+**Every commit must end with the `Co-Authored-By: Claude Opus 5` trailer.**
+
+Don't pass a multi-line message inline. A single-quoted here-string (`git commit
+-m @'…'@`) looks like it should work — `$` and backticks do stay literal — but a
+**double quote anywhere in the body** breaks the parse: PowerShell stops treating
+the here-string as one argument and git reports `error: pathspec '<your words>'
+did not match any file(s)`. Since commit bodies quote identifiers and messages
+constantly, use `-F` every time rather than deciding case by case.
 
 ### 3. Push and open the PR
 
+Same rule as the commit message — write the body to a scratchpad file and pass it
+with `--body-file`, not `--body @'…'@`:
+
 ```powershell
 git push -u origin <branch>
-& "C:\Program Files\GitHub CLI\gh.exe" pr create --title "<title>" --body @'
+& "C:\Program Files\GitHub CLI\gh.exe" pr create --title "<title>" --body-file "<scratchpad>\pr-body.md"
+```
+
+```markdown
 ## What
 <what was broken / the goal>
 
@@ -63,7 +78,6 @@ git push -u origin <branch>
 <what you observed in the live app — see the verify-ui skill>
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
-'@
 ```
 
 **Every PR body must end with the `🤖 Generated with [Claude Code]` line.**
