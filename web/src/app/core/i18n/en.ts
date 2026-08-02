@@ -34,13 +34,15 @@ export const en = {
 
   // ---- start view ----
   'start.title': 'Needs attention',
-  'start.sub': '{overdue} overdue · {today} due today',
+  'start.sub': '{overdue} overdue · {today} due today · {done} done today',
   'start.openTasks': 'Open task list',
   'start.total': 'Total',
   'start.overdue.title': 'Overdue',
   'start.overdue.hint': 'Past their due date and still open',
   'start.today.title': 'Due today',
   'start.today.hint': 'Land these before midnight',
+  'start.done.title': 'Done today',
+  'start.done.hint': 'Completed, and dated today',
   'start.empty.title': 'All clear',
   'start.empty.body': 'Nothing overdue, nothing due today. The machines approve.',
 

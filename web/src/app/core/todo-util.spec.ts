@@ -1,4 +1,4 @@
-import { amountTotals, isDueToday, isOverdue, matches, sortTodos } from './todo-util';
+import { amountTotals, isDoneToday, isDueToday, isOverdue, matches, sortTodos } from './todo-util';
 import { addDays, startOfToday, toISO } from './date-util';
 import { Todo } from '../models';
 
@@ -36,7 +36,7 @@ describe('matches', () => {
   });
 });
 
-describe('isOverdue / isDueToday (start page)', () => {
+describe('isOverdue / isDueToday / isDoneToday (start page)', () => {
   it('isOverdue: open, due-dated, strictly before today', () => {
     expect(isOverdue(todo({ due: iso(-1) }))).toBe(true);
     expect(isOverdue(todo({ due: iso(-30) }))).toBe(true);
@@ -60,6 +60,25 @@ describe('isOverdue / isDueToday (start page)', () => {
     expect(isDueToday(todo({ due: iso(0), dateKind: 'transaction' }))).toBe(false);
     expect(isOverdue(todo({ due: null }))).toBe(false);
     expect(isDueToday(todo({ due: null }))).toBe(false);
+  });
+
+  it('isDoneToday: completed, due-dated, exactly today', () => {
+    expect(isDoneToday(todo({ due: iso(0), done: true }))).toBe(true);
+    expect(isDoneToday(todo({ due: iso(0) }))).toBe(false);
+    expect(isDoneToday(todo({ due: iso(-1), done: true }))).toBe(false);
+    expect(isDoneToday(todo({ due: iso(1), done: true }))).toBe(false);
+  });
+
+  it('isDoneToday ignores transaction-dated and undated tasks', () => {
+    expect(isDoneToday(todo({ due: iso(0), done: true, dateKind: 'transaction' }))).toBe(false);
+    expect(isDoneToday(todo({ due: null, done: true }))).toBe(false);
+  });
+
+  it('isDoneToday and isDueToday split today into done and open, never overlapping', () => {
+    const open = todo({ id: 1, due: iso(0) });
+    const closed = todo({ id: 2, due: iso(0), done: true });
+    expect([open, closed].filter(isDueToday).map((t) => t.id)).toEqual([1]);
+    expect([open, closed].filter(isDoneToday).map((t) => t.id)).toEqual([2]);
   });
 
   it('together they partition the "today" smart list', () => {

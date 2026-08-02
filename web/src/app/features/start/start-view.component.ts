@@ -8,7 +8,7 @@ import { IconComponent } from '../../shared/icon.component';
 import { TaskRowComponent } from '../tasks/task-row.component';
 
 interface Section {
-  kind: 'over' | 'today';
+  kind: 'over' | 'today' | 'done';
   icon: string;
   title: string;
   hint: string;
@@ -26,7 +26,11 @@ interface Section {
         <div class="titles">
           <h1 class="view-title">{{ store.t('start.title') }}</h1>
           <div class="view-sub">
-            {{ store.t('start.sub', { overdue: store.overdueTodos().length, today: store.dueTodayTodos().length }) }}
+            {{ store.t('start.sub', {
+              overdue: store.overdueTodos().length,
+              today: store.dueTodayTodos().length,
+              done: store.doneTodayTodos().length,
+            }) }}
           </div>
         </div>
         <a class="btn btn-secondary" routerLink="/tasks">
@@ -43,7 +47,8 @@ interface Section {
           </div>
         } @else {
           @for (s of sections(); track s.kind) {
-            <section class="sec" [class.over]="s.kind === 'over'" [class.today]="s.kind === 'today'">
+            <section class="sec" [class.over]="s.kind === 'over'" [class.today]="s.kind === 'today'"
+                     [class.done]="s.kind === 'done'">
               <div class="sec-head">
                 <app-icon [name]="s.icon" [size]="16" class="sec-ic" />
                 <h2 class="sec-title">{{ s.title }}</h2>
@@ -80,6 +85,7 @@ interface Section {
     .sec { --sec: var(--muted); margin-bottom: 24px; border-left: 3px solid var(--sec); background: var(--sec-fill); }
     .sec.over { --sec: var(--color-danger); --sec-fill: color-mix(in srgb, var(--color-danger) 7%, transparent); }
     .sec.today { --sec: var(--color-amber); --sec-fill: color-mix(in srgb, var(--color-amber) 7%, transparent); }
+    .sec.done { --sec: var(--color-income); --sec-fill: color-mix(in srgb, var(--color-income) 7%, transparent); }
     .sec-head {
       display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px;
       padding: 12px 14px; border-bottom: 2px solid color-mix(in srgb, var(--sec) 45%, transparent);
@@ -120,8 +126,7 @@ export class StartViewComponent {
 
   fmt = fmtMoney;
 
-  allClear = computed(() =>
-    this.store.overdueTodos().length === 0 && this.store.dueTodayTodos().length === 0);
+  allClear = computed(() => this.sections().length === 0);
 
   // An empty section is noise next to a non-empty one; both empty is the all-clear state above.
   sections = computed<Section[]>(() => {
@@ -134,6 +139,8 @@ export class StartViewComponent {
         this.store.overdueTodos()),
       build('today', 'clock', t('start.today.title'), t('start.today.hint'),
         this.store.dueTodayTodos()),
+      build('done', 'check', t('start.done.title'), t('start.done.hint'),
+        this.store.doneTodayTodos()),
     ].filter((s) => s.items.length > 0);
   });
 }
