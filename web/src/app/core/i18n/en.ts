@@ -33,7 +33,7 @@ export const en = {
   'sidebar.close': 'Close menu',
 
   // ---- start view ----
-  'start.title': 'Needs attention',
+  'start.title': 'Today at a glance',
   'start.sub': '{overdue} overdue · {today} due today · {done} done today',
   'start.openTasks': 'Open task list',
   'start.total': 'Total',
@@ -42,7 +42,9 @@ export const en = {
   'start.today.title': 'Due today',
   'start.today.hint': 'Land these before midnight',
   'start.done.title': 'Done today',
-  'start.done.hint': 'Completed, and dated today',
+  'start.done.hint': 'Ticked off today, whatever their due date',
+  'start.yesterday.title': 'Done yesterday',
+  'start.yesterday.hint': 'Yesterday’s haul, for the record',
   'start.empty.title': 'All clear',
   'start.empty.body': 'Nothing overdue, nothing due today. The machines approve.',
 

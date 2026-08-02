@@ -13,7 +13,8 @@ public record TodoDto(
     string MainId,         // required single main category
     List<string> CatIds,
     string? BankAccountId,
-    string? Note);
+    string? Note,
+    string? DoneAt);      // ISO yyyy-MM-dd; server-stamped when completed, null while open
 
 public record TodoWriteDto(
     string Title,

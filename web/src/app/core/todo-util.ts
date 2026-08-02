@@ -35,9 +35,18 @@ export function isDueToday(t: Todo): boolean {
   return actionable(t) && diffDays(t.due!) === 0;
 }
 
-/** Completed, and due-dated for today — today's wins, the counterpart of isDueToday. */
+/**
+ * Completed today — today's wins, the counterpart of isDueToday. Keyed on the server-stamped
+ * completion day, so the due date (or the lack of one) doesn't matter. Tasks completed before
+ * the stamp existed have no doneAt and stay out of the list.
+ */
 export function isDoneToday(t: Todo): boolean {
-  return t.done && dated(t) && diffDays(t.due!) === 0;
+  return t.done && !!t.doneAt && diffDays(t.doneAt) === 0;
+}
+
+/** Completed yesterday — the previous day's wins, on the same stamp as isDoneToday. */
+export function isDoneYesterday(t: Todo): boolean {
+  return t.done && !!t.doneAt && diffDays(t.doneAt) === -1;
 }
 
 export interface AmountTotals { income: number; spend: number; net: number }

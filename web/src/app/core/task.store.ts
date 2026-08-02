@@ -5,7 +5,7 @@ import {
   AskEvent, AskMessage, BankAccount, Categories, DateKind, ImportCommitRow, ImportRow, Main,
   Report, SavedQuery, Sub, TaskQuery, TitleDefault, Todo,
 } from '../models';
-import { matches, sortTodos, isDoneToday, isDueToday, isOverdue, Filter } from './todo-util';
+import { matches, sortTodos, isDoneToday, isDoneYesterday, isDueToday, isOverdue, Filter } from './todo-util';
 import { emptyQuery, isEmptyQuery, matchesQuery } from './task-query';
 import { duplicateRowKeys } from './import-dup';
 import { toISO, addDays, startOfToday, diffDays } from './date-util';
@@ -241,6 +241,7 @@ export class TaskStore {
   readonly overdueTodos = computed(() => sortTodos(this.todos().filter(isOverdue)));
   readonly dueTodayTodos = computed(() => sortTodos(this.todos().filter(isDueToday)));
   readonly doneTodayTodos = computed(() => sortTodos(this.todos().filter(isDoneToday)));
+  readonly doneYesterdayTodos = computed(() => sortTodos(this.todos().filter(isDoneYesterday)));
 
   readonly pendingCount = computed(() => this.todos().filter((t) => !t.done).length);
 
