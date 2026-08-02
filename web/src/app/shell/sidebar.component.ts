@@ -142,6 +142,9 @@ import { IconComponent } from '../shared/icon.component';
     @media (max-width: 860px) {
       .sidebar {
         position: fixed; top: 40px; left: 0; bottom: 0; z-index: 40;
+        /* the top/bottom insets set the height here — the base height:100% would overshoot
+           the viewport by the title bar and push the language footer off screen */
+        height: auto;
         width: min(84vw, 300px);
         transform: translateX(-100%);
         transition: transform 0.22s ease;
