@@ -12,6 +12,9 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
       <div class="dialog-backdrop" (click)="close()">
         <div class="dialog" (click)="$event.stopPropagation()">
           <h2 class="dialog-title">{{ d.id == null ? store.t('dialog.task.new') : store.t('dialog.task.edit') }}</h2>
+          @if (store.voiceHeard(); as heard) {
+            <p class="dialog-sub">{{ store.t('dialog.task.heard', { text: heard }) }}</p>
+          }
 
           <label class="field">
             <span class="kicker">{{ store.t('dialog.task.taskLabel') }}</span>

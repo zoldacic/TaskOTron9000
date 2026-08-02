@@ -10,6 +10,7 @@ import { ImportCatDialogComponent } from './dialogs/import-cat-dialog.component'
 import { ImportSplitDialogComponent } from './dialogs/import-split-dialog.component';
 import { ConfirmDialogComponent } from './dialogs/confirm-dialog.component';
 import { SaveQueryDialogComponent } from './dialogs/save-query-dialog.component';
+import { VoiceDialogComponent } from './dialogs/voice-dialog.component';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +19,7 @@ import { SaveQueryDialogComponent } from './dialogs/save-query-dialog.component'
     RouterOutlet, TitleBarComponent, SidebarComponent,
     TaskDialogComponent, CategoryRenameDialogComponent, MoveSubDialogComponent,
     ImportCatDialogComponent, ImportSplitDialogComponent, ConfirmDialogComponent,
-    SaveQueryDialogComponent,
+    SaveQueryDialogComponent, VoiceDialogComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

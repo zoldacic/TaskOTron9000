@@ -9,9 +9,11 @@ import { matches, sortTodos, Filter } from './todo-util';
 import { emptyQuery, isEmptyQuery, matchesQuery } from './task-query';
 import { duplicateRowKeys } from './import-dup';
 import { toISO, addDays, startOfToday, diffDays } from './date-util';
+import { parseVoiceCommand } from './voice-command';
+import { SpeechService } from './speech.service';
 import { I18nService } from './i18n/i18n.service';
 import { TranslationKey } from './i18n/en';
-import { TParams } from './i18n/types';
+import { Lang, TParams } from './i18n/types';
 
 export interface TaskDraft {
   id: number | null;
@@ -75,6 +77,30 @@ export interface Confirm {
 const SMART: Filter[] = ['all', 'today', 'upcoming', 'done'];
 const isSmart = (f: Filter) => SMART.includes(f);
 
+/** SpeechRecognition error codes we have something useful to say about. */
+const VOICE_ERROR_KEYS: Record<string, TranslationKey> = {
+  'not-allowed': 'voice.error.notAllowed',
+  'service-not-allowed': 'voice.error.notAllowed',
+  'no-speech': 'voice.error.noSpeech',
+  'audio-capture': 'voice.error.audioCapture',
+  'network': 'voice.error.network',
+  'language-not-supported': 'voice.error.language',
+  'bad-grammar': 'voice.error.language',
+};
+
+// Which language is *spoken* — deliberately separate from the UI language, because the
+// tasks are Swedish whichever language the app itself is read in.
+const VOICE_LANG_KEY = 'tot.voiceLang';
+function readStoredVoiceLang(): Lang | null {
+  try {
+    const v = localStorage.getItem(VOICE_LANG_KEY);
+    return v === 'en' || v === 'sv' ? v : null;
+  } catch { return null; }
+}
+function writeStoredVoiceLang(lang: Lang): void {
+  try { localStorage.setItem(VOICE_LANG_KEY, lang); } catch { /* storage may be unavailable */ }
+}
+
 const IMPORT_MAIN_KEY = 'tot.importMain';
 function readStoredImportMain(): string | null {
   try { return localStorage.getItem(IMPORT_MAIN_KEY); } catch { return null; }
@@ -101,6 +127,7 @@ const SAMPLE_IMPORT = [
 export class TaskStore {
   private api = inject(ApiService);
   private i18n = inject(I18nService);
+  private speech = inject(SpeechService);
 
   // ---- i18n facade (every component already injects `store`, so templates use store.t(...)) ----
   readonly lang = this.i18n.lang;
@@ -173,6 +200,17 @@ export class TaskStore {
   // null until the status check answers; false means no API key on the server.
   readonly askConfigured = signal<boolean | null>(null);
   private askAbort: AbortController | null = null;
+
+  // ---- voice capture ----
+  // Speaking never writes anything: it fills in the normal task dialog and the user saves.
+  readonly voiceOpen = signal(false);
+  readonly voiceListening = signal(false);
+  readonly voiceTranscript = signal(''); // live, interim results included
+  readonly voiceError = signal<string | null>(null); // already translated, like askError
+  /** The language being spoken. Starts from the UI language, then remembers your choice. */
+  readonly voiceLang = signal<Lang>(readStoredVoiceLang() ?? this.i18n.lang());
+  /** The transcript behind the open draft, shown as "Heard: …" in the task dialog. */
+  readonly voiceHeard = signal<string | null>(null);
 
   // ---- reports ----
   readonly repStart = signal('2026-07-01');
@@ -438,6 +476,7 @@ export class TaskStore {
   }
 
   openNew(): void {
+    this.voiceHeard.set(null);
     const due = this.filter() === 'today' ? toISO(startOfToday()) : null;
     const catIds = this.inheritedCatIds();
     this.expandedMains.set(this.mainsWithSelection(catIds));
@@ -447,6 +486,7 @@ export class TaskStore {
     });
   }
   openEdit(id: number): void {
+    this.voiceHeard.set(null);
     const t = this.todos().find((x) => x.id === id);
     if (!t) return;
     this.expandedMains.set(this.mainsWithSelection(t.catIds));
@@ -527,6 +567,96 @@ export class TaskStore {
     const d = this.taskDialog();
     if (d?.id != null) await this.remove(d.id);
     this.taskDialog.set(null);
+  }
+
+  // ---- voice capture ----
+
+  /** Whether this browser can listen. A method, not a signal, so it always reads live. */
+  voiceSupported(): boolean {
+    return this.speech.supported;
+  }
+
+  /** Open the mic dialog and start listening (or show the unsupported state). */
+  openVoice(): void {
+    this.voiceOpen.set(true);
+    this.startVoice();
+  }
+
+  /** Switch the spoken language, restarting the recogniser if it is already listening. */
+  setVoiceLang(lang: Lang): void {
+    if (lang === this.voiceLang()) return;
+    this.voiceLang.set(lang);
+    writeStoredVoiceLang(lang);
+    if (this.voiceListening()) {
+      // The recogniser's language is fixed once it starts, so take it from the top.
+      this.speech.abort();
+      this.startVoice();
+    }
+  }
+
+  /** (Re)start listening. Comes back false — not listening — when the browser can't. */
+  startVoice(): void {
+    this.voiceTranscript.set('');
+    this.voiceError.set(null);
+    const started = this.speech.start(this.voiceLang(), {
+      onTranscript: (text) => this.voiceTranscript.set(text),
+      onError: (code) => {
+        this.voiceError.set(this.t(VOICE_ERROR_KEYS[code] ?? 'voice.error.generic'));
+        this.voiceListening.set(false);
+      },
+      onEnd: () => {
+        this.voiceListening.set(false);
+        const heard = this.voiceTranscript().trim();
+        if (this.voiceError()) return;
+        // A clean end with words in it means the user finished talking.
+        if (heard) this.applyVoice(heard);
+        else this.voiceError.set(this.t('voice.error.noSpeech'));
+      },
+    });
+    this.voiceListening.set(started);
+  }
+
+  /** Stop listening and use whatever was heard. */
+  stopVoice(): void {
+    this.speech.stop();
+  }
+
+  /** Close the mic dialog, throwing the utterance away. */
+  cancelVoice(): void {
+    this.speech.abort();
+    this.voiceListening.set(false);
+    this.voiceOpen.set(false);
+    this.voiceTranscript.set('');
+    this.voiceError.set(null);
+  }
+
+  /**
+   * Turns a transcript into a draft. The normal "new task" dialog is opened first so the
+   * filter-inherited category and date still apply, then what was heard is patched over it.
+   * Nothing is written — the user still presses Save.
+   */
+  private applyVoice(text: string): void {
+    const r = parseVoiceCommand(text, this.voiceLang(), this.mains(), this.subs());
+    this.voiceOpen.set(false);
+    this.voiceTranscript.set('');
+    this.openNew();
+    const d = this.taskDialog();
+    if (!d) return;
+    const catIds = r.subId && !d.catIds.includes(r.subId) ? [...d.catIds, r.subId] : d.catIds;
+    this.updateDialog({
+      title: r.title || d.title,
+      due: r.due ?? d.due,
+      mainId: r.mainId ?? d.mainId,
+      catIds,
+      amountStr: r.amount == null ? d.amountStr : String(r.amount),
+      // The amount field only shows on a transaction, so hearing money implies the kind.
+      dateKind: r.amount == null ? d.dateKind : 'transaction',
+    });
+    if (r.subId) {
+      const owner = this.mainOfSub(r.subId);
+      if (owner) this.expandedMains.set(new Set(this.expandedMains()).add(owner));
+    }
+    this.voiceHeard.set(text); // after openNew(), which clears it
   }
 
   // ---- categories ----

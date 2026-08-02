@@ -50,6 +50,9 @@ import { QueryPanelComponent } from './query-panel.component';
           } @else {
             <button class="btn btn-secondary" (click)="store.startSelecting()"><app-icon name="check" [size]="14" /> {{ store.t('tasks.select') }}</button>
           }
+          <button class="btn btn-secondary" [title]="store.t('tasks.voiceHint')" (click)="store.openVoice()">
+            <app-icon name="mic" [size]="16" /> {{ store.t('tasks.voice') }}
+          </button>
           <button class="btn btn-primary" (click)="store.openNew()"><app-icon name="plus" [size]="16" /> {{ store.t('tasks.new') }}</button>
         </div>
       </header>
