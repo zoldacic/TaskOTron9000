@@ -39,10 +39,8 @@ export const sv: Record<TranslationKey, string> = {
   'start.total': 'Totalt',
   'start.overdue.title': 'Försenade',
   'start.overdue.hint': 'Har passerat sitt förfallodatum och är fortfarande öppna',
-  'start.overdue.none': 'Inget försenat. Imponerande.',
   'start.today.title': 'Förfaller idag',
   'start.today.hint': 'Få de här gjorda före midnatt',
-  'start.today.none': 'Inget förfaller idag.',
   'start.empty.title': 'Allt klart',
   'start.empty.body': 'Inget försenat, inget som förfaller idag. Maskinerna godkänner.',
 
