@@ -1,6 +1,6 @@
 ---
 name: commit-and-pr
-description: Commit the current change on a fresh branch and open a GitHub pull request for TASK-O-TRON 9000. Use when the user says to commit, push, open/make a PR, or "ship it" after a change is done. Covers this repo's branch/footer conventions and the Windows `gh` invocation quirk.
+description: Commit the current change on a fresh branch, open a GitHub pull request, and optionally merge it into main for TASK-O-TRON 9000. Use when the user says to commit, push, open/make a PR, merge it, or "ship it" after a change is done. Covers this repo's branch/footer conventions and the Windows `gh` invocation quirk.
 ---
 
 # Commit & open a PR for TASK-O-TRON 9000
@@ -85,13 +85,34 @@ git push -u origin <branch>
 `gh pr create` prints the new PR URL on success — report it to the user as a
 markdown link.
 
+### 4. Merge (only when the user asked for it)
+
+"Ship it" / "merge it" / an already-approved PR is the go-ahead. If the user only
+asked to commit or open a PR, stop at step 3 and report the PR link — never merge
+speculatively.
+
+```powershell
+& "C:\Program Files\GitHub CLI\gh.exe" pr merge <n> --merge --delete-branch
+git checkout main; if ($?) { git pull }
+```
+
+- `--merge` (merge commit) is what this repo uses; `--squash` only on request.
+- `--delete-branch` drops the remote branch, and `gh` fast-forwards the local
+  `main` too — so the `git pull` usually reports "Already up to date".
+- `git checkout main && git pull` is a **bash-ism**; `&&` is a parser error in
+  PowerShell 5.1. Chain with `; if ($?) { … }`.
+- The local feature branch survives the merge. Remove it with
+  `git branch -d <branch>` if the user wants it gone.
+- Report the fast-forward range (e.g. `4c06ada..6bd8f65`) along with the merge.
+
+The standalone **merge-to-main** skill covers this same flow for when a PR
+already exists from an earlier session.
+
 ## Notes / gotchas
 
 - `git push` writes an informational "remote: …" banner to **stderr**. In
   PowerShell that surfaces as a red `NativeCommandError` even though the push
   succeeded — check for the `[new branch]` / `pull/<n>` lines, don't treat the
   banner as a failure. (Avoid `2>&1` on native commands here for the same reason.)
-- After merge, `gh pr merge <n> --merge --delete-branch` fast-forwards `main`
-  and removes the branch. Then `git checkout main && git pull` locally.
 - Verify the change in the running app **before** committing (see the
   **verify-ui** skill) so the PR's Verification section reflects reality.

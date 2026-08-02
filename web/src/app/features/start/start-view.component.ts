@@ -12,7 +12,6 @@ interface Section {
   icon: string;
   title: string;
   hint: string;
-  none: string;
   items: Todo[];
   totals: AmountTotals | null;
 }
@@ -57,12 +56,8 @@ interface Section {
                   </span>
                 }
               </div>
-              @if (s.items.length === 0) {
-                <p class="none">{{ s.none }}</p>
-              } @else {
-                @for (t of s.items; track t.id) {
-                  <app-task-row [todo]="t" />
-                }
+              @for (t of s.items; track t.id) {
+                <app-task-row [todo]="t" />
               }
             </section>
           }
@@ -105,7 +100,6 @@ interface Section {
     .tot .in { color: var(--color-income); }
     .tot .out { color: var(--color-danger); }
     .sec app-task-row { display: block; padding: 0 6px; }
-    .none { margin: 0; padding: 18px 14px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
     .empty { text-align: center; padding: 80px 24px; color: var(--muted); }
     .empty h2 { font-family: var(--font-heading); font-weight: 800; text-transform: uppercase; color: var(--color-income); margin: 16px 0 8px; }
     .empty p { font-family: var(--font-mono); font-size: 13px; }
@@ -129,16 +123,17 @@ export class StartViewComponent {
   allClear = computed(() =>
     this.store.overdueTodos().length === 0 && this.store.dueTodayTodos().length === 0);
 
+  // An empty section is noise next to a non-empty one; both empty is the all-clear state above.
   sections = computed<Section[]>(() => {
     const t = this.store.t;
     const build = (
-      kind: Section['kind'], icon: string, title: string, hint: string, none: string, items: Todo[],
-    ): Section => ({ kind, icon, title, hint, none, items, totals: amountTotals(items) });
+      kind: Section['kind'], icon: string, title: string, hint: string, items: Todo[],
+    ): Section => ({ kind, icon, title, hint, items, totals: amountTotals(items) });
     return [
       build('over', 'alert-triangle', t('start.overdue.title'), t('start.overdue.hint'),
-        t('start.overdue.none'), this.store.overdueTodos()),
+        this.store.overdueTodos()),
       build('today', 'clock', t('start.today.title'), t('start.today.hint'),
-        t('start.today.none'), this.store.dueTodayTodos()),
-    ];
+        this.store.dueTodayTodos()),
+    ].filter((s) => s.items.length > 0);
   });
 }

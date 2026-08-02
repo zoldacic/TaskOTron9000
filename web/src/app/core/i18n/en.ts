@@ -39,10 +39,8 @@ export const en = {
   'start.total': 'Total',
   'start.overdue.title': 'Overdue',
   'start.overdue.hint': 'Past their due date and still open',
-  'start.overdue.none': 'Nothing overdue. Impressive.',
   'start.today.title': 'Due today',
   'start.today.hint': 'Land these before midnight',
-  'start.today.none': 'Nothing due today.',
   'start.empty.title': 'All clear',
   'start.empty.body': 'Nothing overdue, nothing due today. The machines approve.',
 
