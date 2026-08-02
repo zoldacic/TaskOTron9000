@@ -120,9 +120,11 @@ import { IconComponent } from '../shared/icon.component';
     .filter.sub { padding-left: 14px; }
     .row { display: flex; align-items: center; }
     .row .filter { flex: 1; min-width: 0; }
-    .row .del { flex: none; color: var(--muted); opacity: 0; }
-    .row:hover .del { opacity: 1; }
-    .row .del:hover { color: var(--color-danger); }
+    /* Kept quiet at rest rather than hidden: an opacity:0 hover-reveal is unreachable on touch
+       (no hover at all) and an invisible tab stop for keyboard users. */
+    .row .del { flex: none; color: var(--muted); opacity: 0.55; }
+    .row:hover .del, .row:focus-within .del { opacity: 1; }
+    .row .del:hover, .row .del:focus-visible { color: var(--color-danger); opacity: 1; }
     .sq { width: 9px; height: 9px; flex: none; }
     .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .count {
