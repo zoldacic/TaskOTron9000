@@ -115,6 +115,13 @@ import { IconComponent } from '../../shared/icon.component';
     .dash { color: var(--muted); }
     .actions { display: flex; align-items: center; gap: 10px; }
     .spacer { flex: 1; }
+
+    /* On a small screen the task list hides while the panel is open (see tasks-view), so the
+       panel claims the freed height instead of staying capped at 45vh. */
+    @media (max-width: 860px) {
+      :host { flex: 1; }
+      .panel { max-height: none; height: 100%; padding: 12px 16px 16px; }
+    }
   `],
 })
 export class QueryPanelComponent {

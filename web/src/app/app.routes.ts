@@ -1,7 +1,11 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'tasks' },
+  { path: '', pathMatch: 'full', redirectTo: 'start' },
+  {
+    path: 'start',
+    loadComponent: () => import('./features/start/start-view.component').then((m) => m.StartViewComponent),
+  },
   {
     path: 'tasks',
     loadComponent: () => import('./features/tasks/tasks-view.component').then((m) => m.TasksViewComponent),
@@ -22,5 +26,5 @@ export const routes: Routes = [
     path: 'ask',
     loadComponent: () => import('./features/ask/ask-view.component').then((m) => m.AskViewComponent),
   },
-  { path: '**', redirectTo: 'tasks' },
+  { path: '**', redirectTo: 'start' },
 ];

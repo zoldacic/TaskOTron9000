@@ -84,7 +84,7 @@ import { QueryPanelComponent } from './query-panel.component';
         </div>
       }
 
-      <div class="scroll om-scroll">
+      <div class="scroll om-scroll" [class.panel-takeover]="store.queryPanelOpen()">
         @if (store.visibleTodos().length === 0) {
           <div class="empty">
             <app-icon name="tasks" [size]="40" />
@@ -158,6 +158,9 @@ import { QueryPanelComponent } from './query-panel.component';
       .search { padding: 0 16px 12px; }
       .selbar { margin: 0 16px 12px; flex-wrap: wrap; }
       .scroll { padding: 0 16px 16px; }
+      /* Panel + list compete for a short viewport and both end up unusable. While the filter
+         panel is open the list steps aside entirely and the panel gets the whole area. */
+      .scroll.panel-takeover { display: none; }
     }
     @media (max-width: 480px) {
       /* Let each control grow to share the row evenly instead of overflowing. */

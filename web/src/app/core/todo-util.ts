@@ -15,6 +15,21 @@ export function matches(t: Todo, filter: Filter): boolean {
   return t.catIds.includes(filter); // sub-category id
 }
 
+/** A task the start page can act on: open, and dated with a real due date (not a transaction date). */
+function actionable(t: Todo): boolean {
+  return !t.done && !!t.due && t.dateKind !== 'transaction';
+}
+
+/** Open, due-dated and past its due date. */
+export function isOverdue(t: Todo): boolean {
+  return actionable(t) && diffDays(t.due!) < 0;
+}
+
+/** Open, due-dated and due exactly today. */
+export function isDueToday(t: Todo): boolean {
+  return actionable(t) && diffDays(t.due!) === 0;
+}
+
 export interface AmountTotals { income: number; spend: number; net: number }
 
 // Aggregates the money on a set of tasks. Returns null when none of them carry an amount, so

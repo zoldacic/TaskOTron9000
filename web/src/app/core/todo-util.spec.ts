@@ -1,4 +1,4 @@
-import { amountTotals, matches, sortTodos } from './todo-util';
+import { amountTotals, isDueToday, isOverdue, matches, sortTodos } from './todo-util';
 import { addDays, startOfToday, toISO } from './date-util';
 import { Todo } from '../models';
 
@@ -33,6 +33,44 @@ describe('matches', () => {
     expect(matches(todo({ done: true }), 'done')).toBe(true);
     expect(matches(todo({ catIds: ['pf'] }), 'pf')).toBe(true);
     expect(matches(todo({ catIds: ['he'] }), 'pf')).toBe(false);
+  });
+});
+
+describe('isOverdue / isDueToday (start page)', () => {
+  it('isOverdue: open, due-dated, strictly before today', () => {
+    expect(isOverdue(todo({ due: iso(-1) }))).toBe(true);
+    expect(isOverdue(todo({ due: iso(-30) }))).toBe(true);
+    expect(isOverdue(todo({ due: iso(0) }))).toBe(false);
+    expect(isOverdue(todo({ due: iso(1) }))).toBe(false);
+  });
+
+  it('isDueToday: open, due-dated, exactly today', () => {
+    expect(isDueToday(todo({ due: iso(0) }))).toBe(true);
+    expect(isDueToday(todo({ due: iso(-1) }))).toBe(false);
+    expect(isDueToday(todo({ due: iso(1) }))).toBe(false);
+  });
+
+  it('both ignore completed tasks', () => {
+    expect(isOverdue(todo({ due: iso(-1), done: true }))).toBe(false);
+    expect(isDueToday(todo({ due: iso(0), done: true }))).toBe(false);
+  });
+
+  it('both ignore transaction-dated and undated tasks', () => {
+    expect(isOverdue(todo({ due: iso(-1), dateKind: 'transaction' }))).toBe(false);
+    expect(isDueToday(todo({ due: iso(0), dateKind: 'transaction' }))).toBe(false);
+    expect(isOverdue(todo({ due: null }))).toBe(false);
+    expect(isDueToday(todo({ due: null }))).toBe(false);
+  });
+
+  it('together they partition the "today" smart list', () => {
+    const list = [
+      todo({ id: 1, due: iso(-2) }), todo({ id: 2, due: iso(0) }), todo({ id: 3, due: iso(4) }),
+      todo({ id: 4, due: iso(-1), done: true }), todo({ id: 5, due: iso(-1), dateKind: 'transaction' }),
+    ];
+    const smartToday = list.filter((t) => matches(t, 'today')).map((t) => t.id);
+    const split = [...list.filter(isOverdue), ...list.filter(isDueToday)].map((t) => t.id);
+    expect(smartToday.slice().sort()).toEqual(split.slice().sort());
+    expect(split).toEqual([1, 2]);
   });
 });
 

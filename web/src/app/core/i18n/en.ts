@@ -4,6 +4,7 @@
 
 export const en = {
   // ---- sidebar: nav ----
+  'nav.start': 'Start',
   'nav.tasks': 'Tasks',
   'nav.categories': 'Manage categories',
   'nav.import': 'Import bank file',
@@ -30,6 +31,20 @@ export const en = {
   'titlebar.close': 'Close',
   'titlebar.menu': 'Menu',
   'sidebar.close': 'Close menu',
+
+  // ---- start view ----
+  'start.title': 'Needs attention',
+  'start.sub': '{overdue} overdue · {today} due today',
+  'start.openTasks': 'Open task list',
+  'start.total': 'Total',
+  'start.overdue.title': 'Overdue',
+  'start.overdue.hint': 'Past their due date and still open',
+  'start.overdue.none': 'Nothing overdue. Impressive.',
+  'start.today.title': 'Due today',
+  'start.today.hint': 'Land these before midnight',
+  'start.today.none': 'Nothing due today.',
+  'start.empty.title': 'All clear',
+  'start.empty.body': 'Nothing overdue, nothing due today. The machines approve.',
 
   // ---- tasks view: header + controls ----
   'tasks.layout.list': 'List',
