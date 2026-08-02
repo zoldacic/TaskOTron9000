@@ -5,7 +5,7 @@ import {
   AskEvent, AskMessage, BankAccount, Categories, DateKind, ImportCommitRow, ImportRow, Main,
   Report, SavedQuery, Sub, TaskQuery, TitleDefault, Todo,
 } from '../models';
-import { matches, sortTodos, isDueToday, isOverdue, Filter } from './todo-util';
+import { matches, sortTodos, isDoneToday, isDueToday, isOverdue, Filter } from './todo-util';
 import { emptyQuery, isEmptyQuery, matchesQuery } from './task-query';
 import { duplicateRowKeys } from './import-dup';
 import { toISO, addDays, startOfToday, diffDays } from './date-util';
@@ -235,10 +235,12 @@ export class TaskStore {
 
   readonly queryActive = computed(() => this.activeQuery() !== null);
 
-  // Start page: the two things that need attention now. Independent of `filter` / `activeQuery`
-  // so the landing view always shows the real picture, whatever the task list is filtered to.
+  // Start page: what needs attention now, plus what today already got done. Independent of
+  // `filter` / `activeQuery` so the landing view always shows the real picture, whatever the
+  // task list is filtered to.
   readonly overdueTodos = computed(() => sortTodos(this.todos().filter(isOverdue)));
   readonly dueTodayTodos = computed(() => sortTodos(this.todos().filter(isDueToday)));
+  readonly doneTodayTodos = computed(() => sortTodos(this.todos().filter(isDoneToday)));
 
   readonly pendingCount = computed(() => this.todos().filter((t) => !t.done).length);
 

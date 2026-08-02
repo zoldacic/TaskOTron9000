@@ -97,13 +97,28 @@ git checkout main; if ($?) { git pull }
 ```
 
 - `--merge` (merge commit) is what this repo uses; `--squash` only on request.
-- `--delete-branch` drops the remote branch, and `gh` fast-forwards the local
-  `main` too — so the `git pull` usually reports "Already up to date".
+- `--delete-branch` drops the remote branch **and the local feature branch**, and
+  `gh` fast-forwards the local `main` too — so the `git pull` usually reports
+  "Already up to date".
 - `git checkout main && git pull` is a **bash-ism**; `&&` is a parser error in
   PowerShell 5.1. Chain with `; if ($?) { … }`.
-- The local feature branch survives the merge. Remove it with
-  `git branch -d <branch>` if the user wants it gone.
 - Report the fast-forward range (e.g. `4c06ada..6bd8f65`) along with the merge.
+
+Then clean up the branch refs:
+
+```powershell
+git branch -a       # <branch> should be gone, locally and under remotes/origin
+git fetch --prune   # delete remote-tracking refs whose remote branch is gone
+```
+
+- Do **not** run `git branch -d <branch>` as a routine follow-up — `gh` already
+  deleted it, so the command just fails with
+  `error: branch '<branch>' not found`. Keep it as a fallback for the rare case
+  `git branch -a` still lists the branch, e.g. the PR was merged from GitHub's
+  web UI instead of via `gh`.
+- Stale `remotes/origin/<merged-branch>` refs **do** linger locally; nothing in
+  the merge prunes them, and they pile up over many PRs (ten dead refs in one
+  sweep here). `git fetch --prune` is what clears them.
 
 The standalone **merge-to-main** skill covers this same flow for when a PR
 already exists from an earlier session.

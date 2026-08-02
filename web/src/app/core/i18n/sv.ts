@@ -34,13 +34,15 @@ export const sv: Record<TranslationKey, string> = {
 
   // ---- start view ----
   'start.title': 'Kräver åtgärd',
-  'start.sub': '{overdue} försenade · {today} förfaller idag',
+  'start.sub': '{overdue} försenade · {today} förfaller idag · {done} klara idag',
   'start.openTasks': 'Öppna uppgiftslistan',
   'start.total': 'Totalt',
   'start.overdue.title': 'Försenade',
   'start.overdue.hint': 'Har passerat sitt förfallodatum och är fortfarande öppna',
   'start.today.title': 'Förfaller idag',
   'start.today.hint': 'Få de här gjorda före midnatt',
+  'start.done.title': 'Klara idag',
+  'start.done.hint': 'Avklarade, och daterade idag',
   'start.empty.title': 'Allt klart',
   'start.empty.body': 'Inget försenat, inget som förfaller idag. Maskinerna godkänner.',
 
