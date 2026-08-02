@@ -351,6 +351,29 @@ export const en = {
   'ask.error': 'Couldn’t get an answer. Check the backend log and try again.',
   'ask.notConfigured': 'No Anthropic API key on the server. Set ANTHROPIC_API_KEY (or the Anthropic:ApiKey user secret) and restart the backend.',
   'ask.hint': 'The whole conversation is sent with each question. Your tasks are queried on demand rather than sent wholesale, so cost doesn’t grow with the size of your database. Nothing is stored server-side.',
+
+  // ---- voice capture ----
+  'tasks.voice': 'Speak',
+  'tasks.voiceHint': 'Add a task by voice',
+  'dialog.voice.title': 'Speak a task',
+  'dialog.voice.sub': 'Say it plainly — the date, amount and category are picked out for you.',
+  'dialog.voice.spokenLanguage': 'Language you speak',
+  'dialog.voice.lang.en': 'English',
+  'dialog.voice.lang.sv': 'Svenska',
+  'dialog.voice.listening': 'Listening…',
+  'dialog.voice.idle': 'Mic off',
+  'dialog.voice.example': 'Try: “Buy milk tomorrow 45 kr groceries”',
+  'dialog.voice.useIt': 'Use it',
+  'dialog.voice.retry': 'Try again',
+  'dialog.voice.unsupported': 'This browser can’t listen. Chrome or Edge can — until then, type the task instead.',
+  'dialog.task.heard': 'Heard: “{text}”',
+  'voice.error.notAllowed': 'Microphone access was blocked. Allow it in the browser’s site settings and try again.',
+  'voice.error.noSpeech': 'Didn’t catch anything. Try again, a bit closer to the mic.',
+  'voice.error.audioCapture': 'No microphone found. Plug one in (or pick one in the system settings) and try again.',
+  'voice.error.network': 'Speech recognition needs the network and couldn’t reach it. Check your connection and try again.',
+  'voice.error.language': 'This browser can’t recognise the selected language. Switch language and try again.',
+  'voice.error.generic': 'Speech recognition failed. Try again.',
+  'common.close': 'Close',
 } as const;
 
 export type TranslationKey = keyof typeof en;
