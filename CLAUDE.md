@@ -29,11 +29,20 @@ dotnet ef migrations add <Name> --project src/TaskOTron.Api   # after changing a
 
 Frontend (run from `web/`):
 ```bash
-ng serve            # http://localhost:4200, proxies /api -> :5249 (proxy.conf.json), no CORS
+ng serve            # https://localhost:4200, proxies /api -> :5249 (proxy.conf.json), no CORS
 ng test             # Vitest via @angular/build:unit-test; *.spec.ts colocated with source
 ng build            # production build to web/dist/
 npx vitest run src/app/core/bank-import.spec.ts   # single spec
 ```
+
+The dev server serves **HTTPS** using the ASP.NET dev certificate, exported to `web/.certs/`
+(gitignored, per-machine). The backend stays on plain HTTP — the browser never talks to it directly,
+the dev-server proxy does. To recreate the cert on a new machine:
+```bash
+dotnet dev-certs https --export-path web/.certs/localhost.pem --format Pem --no-password
+```
+Trust it once (`dotnet dev-certs https --trust`, needs your confirmation in a Windows dialog) or the
+browser and any `curl`/`Invoke-WebRequest` health check will reject it — use `curl -k` if untrusted.
 
 Prefer the project skills for routine ops: `/start-app`, `/restart-backend`, `/verify-ui`,
 `/commit-and-pr`, `/merge-to-main`. The backend does **not** survive being launched from a

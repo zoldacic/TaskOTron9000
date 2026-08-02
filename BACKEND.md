@@ -46,7 +46,7 @@ dotnet run --project src/TaskOTron.Api
 cd web && ng serve
 ```
 
-Then open http://localhost:4200. `ng test` runs the frontend unit tests; `ng build` produces `web/dist/`.
+Then open https://localhost:4200. `ng test` runs the frontend unit tests; `ng build` produces `web/dist/`.
 
 ### Notes
 - Deleting a main cascades to its subs and strips them from tasks and title defaults.

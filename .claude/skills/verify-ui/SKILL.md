@@ -26,7 +26,7 @@ The point of this skill is to *see the change working in the real app*, not just
 Check the ports before doing anything:
 
 ```bash
-curl -s -o /dev/null -w "frontend %{http_code}\n" http://localhost:4200; curl -s -o /dev/null -w "backend %{http_code}\n" http://localhost:5249/api/todos
+curl -sk -o /dev/null -w "frontend %{http_code}\n" https://localhost:4200; curl -s -o /dev/null -w "backend %{http_code}\n" http://localhost:5249/api/todos
 ```
 
 - Both `200` → you're ready, go to Step 2.
@@ -39,7 +39,7 @@ The MCP server launches and manages its own Chrome instance with a throwaway pro
 
 ```
 list_pages                                              # reuse a tab if one is already open
-new_page      { "url": "http://localhost:4200/import" } # or navigate_page on an existing tab
+new_page      { "url": "https://localhost:4200/import" } # or navigate_page on an existing tab
 ```
 
 Known routes: `/tasks` (default — `/` redirects here), `/categories`, `/import`, `/reports`, plus dialogs that open over the current view (task, category-rename, import-cat, import-split, confirm, save-query).
