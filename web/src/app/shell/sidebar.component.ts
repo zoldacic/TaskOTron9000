@@ -15,6 +15,9 @@ import { IconComponent } from '../shared/icon.component';
     <aside class="sidebar om-scroll" [class.open]="store.sidebarOpen()">
       <!-- nav -->
       <nav class="section rule-2">
+        <a class="nav" routerLink="/start" routerLinkActive="active" (click)="store.closeSidebar()">
+          <app-icon name="home" /><span>{{ store.t('nav.start') }}</span>
+        </a>
         <a class="nav" routerLink="/tasks" routerLinkActive="active" (click)="store.closeSidebar()">
           <app-icon name="tasks" /><span>{{ store.t('nav.tasks') }}</span>
         </a>

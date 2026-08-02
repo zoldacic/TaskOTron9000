@@ -4,6 +4,7 @@ import { TranslationKey } from './en';
 // key fails the build rather than silently falling back at runtime.
 export const sv: Record<TranslationKey, string> = {
   // ---- sidebar: nav ----
+  'nav.start': 'Start',
   'nav.tasks': 'Uppgifter',
   'nav.categories': 'Hantera kategorier',
   'nav.import': 'Importera bankfil',
@@ -30,6 +31,20 @@ export const sv: Record<TranslationKey, string> = {
   'titlebar.close': 'Stäng',
   'titlebar.menu': 'Meny',
   'sidebar.close': 'Stäng meny',
+
+  // ---- start view ----
+  'start.title': 'Kräver åtgärd',
+  'start.sub': '{overdue} försenade · {today} förfaller idag',
+  'start.openTasks': 'Öppna uppgiftslistan',
+  'start.total': 'Totalt',
+  'start.overdue.title': 'Försenade',
+  'start.overdue.hint': 'Har passerat sitt förfallodatum och är fortfarande öppna',
+  'start.overdue.none': 'Inget försenat. Imponerande.',
+  'start.today.title': 'Förfaller idag',
+  'start.today.hint': 'Få de här gjorda före midnatt',
+  'start.today.none': 'Inget förfaller idag.',
+  'start.empty.title': 'Allt klart',
+  'start.empty.body': 'Inget försenat, inget som förfaller idag. Maskinerna godkänner.',
 
   // ---- tasks view: header + controls ----
   'tasks.layout.list': 'Lista',
