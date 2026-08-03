@@ -103,6 +103,8 @@ public class ReportBuilderTests
         // All in-range tasks whose main is "personal" (the freelance +650 counts here
         // only, not under Work, even though it carries a "wr" sub).
         Assert.Equal(4200m + 650m - 84.5m - 18.99m - 15.99m - 120m - 39m, personal.Net);
+        // The row carries its main id so the frontend can drill into it.
+        Assert.Equal("personal", personal.Id);
 
         // Work has no amount-bearing July task as its main → no breakdown row.
         Assert.DoesNotContain(r.CategoryBreakdown, c => c.Name == "Work");
@@ -122,5 +124,23 @@ public class ReportBuilderTests
         Assert.Equal(-15.99m - 18.99m, r.CategoryBreakdown.Single(c => c.Name == "pl").Net);
         // Emitted in sub display order: pf before pl.
         Assert.Equal("pf", r.CategoryBreakdown[0].Name);
+        // Each row carries its sub id.
+        Assert.Equal(["pf", "pl"], r.CategoryBreakdown.Select(c => c.Id));
+    }
+
+    [Fact]
+    public void Uncategorized_row_carries_the_none_id()
+    {
+        List<ReportTask> tasks = [new(new DateOnly(2026, 7, 4), -60m, null, [])];
+
+        var byMain = ReportBuilder.Build(tasks,
+            new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31),
+            repSel: null, groupBy: "main", Mains, Subs);
+        var bySub = ReportBuilder.Build(tasks,
+            new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31),
+            repSel: null, groupBy: "sub", Mains, Subs);
+
+        Assert.Equal(ReportBuilder.Uncategorized, Assert.Single(byMain.CategoryBreakdown).Id);
+        Assert.Equal(ReportBuilder.Uncategorized, Assert.Single(bySub.CategoryBreakdown).Id);
     }
 }

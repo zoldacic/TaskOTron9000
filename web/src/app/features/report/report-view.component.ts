@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { TaskStore } from '../../core/task.store';
 import { fmtMoney } from '../../core/money-util';
-import { ReportBucket } from '../../models';
+import { ReportBucket, ReportCategory } from '../../models';
+import { UNCATEGORIZED } from '../../core/report-drill';
 
 @Component({
   selector: 'app-report-view',
@@ -189,12 +190,13 @@ import { ReportBucket } from '../../models';
             </div>
 
             @if (store.repCatChart() === 'bars') {
-              @for (c of r.categoryBreakdown; track c.name; let i = $index) {
-                <div class="cat-bar">
+              @for (c of r.categoryBreakdown; track c.id; let i = $index) {
+                <button type="button" class="cat-bar" (click)="store.openRepDrill(c)"
+                        [attr.aria-label]="store.t('report.showTransactions', { name: catLabel(c) })">
                   @if (multiColor()) {
                     <span class="swatch" [style.background]="catColor(i)"></span>
                   }
-                  <span class="cat-name">{{ c.name }}</span>
+                  <span class="cat-name">{{ catLabel(c) }}</span>
                   <div class="track">
                     <div class="track-axis"></div>
                     <div class="cbar" [class.pos]="c.net >= 0" [class.neg]="c.net < 0"
@@ -203,7 +205,7 @@ import { ReportBucket } from '../../models';
                          [style.left]="c.net >= 0 ? '50%' : null" [style.right]="c.net < 0 ? '50%' : null"></div>
                   </div>
                   <span class="cat-net" [class.in]="c.net >= 0" [class.out]="c.net < 0">{{ fmt(c.net) }}</span>
-                </div>
+                </button>
               }
             } @else if (donut(); as d) {
               <div class="donut-wrap">
@@ -219,12 +221,15 @@ import { ReportBucket } from '../../models';
                   <text class="donut-center-val" x="21" y="23.6" [style.font-size.px]="d.centerFs" [class.in]="d.total >= 0" [class.out]="d.total < 0">{{ fmt(d.total) }}</text>
                 </svg>
                 <ul class="donut-legend">
-                  @for (s of d.slices; track s.name) {
+                  @for (s of d.slices; track s.id) {
                     <li>
-                      <span class="swatch" [style.background]="s.color"></span>
-                      <span class="cat-name l-name">{{ s.name }}</span>
-                      <span class="l-pct">{{ s.pct }}% {{ store.t('report.chart.share') }}</span>
-                      <span class="cat-net" [class.in]="s.net >= 0" [class.out]="s.net < 0">{{ fmt(s.net) }}</span>
+                      <button type="button" class="legend-row" (click)="store.openRepDrill(s.cat)"
+                              [attr.aria-label]="store.t('report.showTransactions', { name: s.name })">
+                        <span class="swatch" [style.background]="s.color"></span>
+                        <span class="cat-name l-name">{{ s.name }}</span>
+                        <span class="l-pct">{{ s.pct }}% {{ store.t('report.chart.share') }}</span>
+                        <span class="cat-net" [class.in]="s.net >= 0" [class.out]="s.net < 0">{{ fmt(s.net) }}</span>
+                      </button>
                     </li>
                   }
                 </ul>
@@ -305,10 +310,18 @@ import { ReportBucket } from '../../models';
     .donut-center-val.in { fill: var(--color-income); }
     .donut-center-val.out { fill: var(--color-danger); }
     .donut-legend { list-style: none; display: flex; flex-direction: column; gap: 7px; flex: 1; min-width: 240px; }
-    .donut-legend li { display: flex; align-items: center; gap: 10px; }
+    .donut-legend li { display: flex; }
+    .legend-row { flex: 1; display: flex; align-items: center; gap: 10px; padding: 3px 6px; margin: 0 -6px; }
     .l-name { width: auto; flex: 1; text-align: left; }
     .l-pct { font-family: var(--font-mono); font-size: 12px; color: var(--muted); flex: none; }
-    .cat-bar { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+    /* Padded + pulled back out so the hover tint extends past the row content. */
+    .cat-bar { display: flex; align-items: center; gap: 12px; padding: 6px 8px; margin: 0 -8px; width: calc(100% + 16px); }
+    /* Both breakdown rows drill into the transactions behind them, so they are buttons. */
+    .cat-bar, .legend-row {
+      background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer;
+    }
+    .cat-bar:hover, .legend-row:hover { background: var(--tint-hover); }
+    .cat-bar:focus-visible, .legend-row:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
     .swatch { width: 10px; height: 10px; flex: none; border-radius: 2px; }
     .cat-name { width: 110px; flex: none; text-align: right; font-size: 13px; }
     .track { flex: 1; position: relative; height: 22px; background: var(--tint-surface); }
@@ -349,6 +362,11 @@ export class ReportViewComponent implements OnInit {
   isSel(id: string): boolean {
     const sel = this.store.repSel();
     return sel === null ? true : sel.includes(id);
+  }
+
+  /** The server names the uncategorized row in English; translate that one, pass the rest through. */
+  catLabel(c: ReportCategory): string {
+    return c.id === UNCATEGORIZED ? this.store.t('report.uncategorized') : c.name;
   }
 
   granLabel(g: string): string {
@@ -413,7 +431,7 @@ export class ReportViewComponent implements OnInit {
     if (multi) {
       cats.forEach((c, ci) => {
         if (!keep.has(ci)) return;
-        series.push({ name: c.name, color: this.catColor(ci), total: false, vals: runSeries((b) => b.parts[ci] ?? 0) });
+        series.push({ name: this.catLabel(c), color: this.catColor(ci), total: false, vals: runSeries((b) => b.parts[ci] ?? 0) });
       });
       if (fold) {
         series.push({
@@ -517,7 +535,9 @@ export class ReportViewComponent implements OnInit {
     const slices = cats.map((c, i) => {
       const share = (Math.abs(c.net) / totalAbs) * 100;
       const slice = {
-        name: c.name,
+        id: c.id,
+        cat: c, // the breakdown row itself, so the legend can drill into it
+        name: this.catLabel(c),
         net: c.net,
         color: this.catColor(i),
         pct: Math.round(share),

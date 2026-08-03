@@ -11,6 +11,7 @@ import { ImportSplitDialogComponent } from './dialogs/import-split-dialog.compon
 import { ConfirmDialogComponent } from './dialogs/confirm-dialog.component';
 import { SaveQueryDialogComponent } from './dialogs/save-query-dialog.component';
 import { VoiceDialogComponent } from './dialogs/voice-dialog.component';
+import { ReportDrillDialogComponent } from './dialogs/report-drill-dialog.component';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +20,7 @@ import { VoiceDialogComponent } from './dialogs/voice-dialog.component';
     RouterOutlet, TitleBarComponent, SidebarComponent,
     TaskDialogComponent, CategoryRenameDialogComponent, MoveSubDialogComponent,
     ImportCatDialogComponent, ImportSplitDialogComponent, ConfirmDialogComponent,
-    SaveQueryDialogComponent, VoiceDialogComponent,
+    SaveQueryDialogComponent, VoiceDialogComponent, ReportDrillDialogComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

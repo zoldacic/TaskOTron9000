@@ -85,7 +85,7 @@ public record AskStatusDto(bool Configured, string Model);
 
 // ---- Reports ----
 public record BucketDto(string Label, decimal Net, List<decimal> Parts);
-public record CategoryNetDto(string Name, decimal Net);
+public record CategoryNetDto(string Id, string Name, decimal Net);
 public record ReportDto(
     decimal MoneyIn,
     decimal MoneyOut,

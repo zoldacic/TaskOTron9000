@@ -11,7 +11,9 @@ public record ReportSub(string Id, string Name, string MainId);
 /// <param name="Parts">Per-category net for this bucket, aligned index-for-index with
 /// <see cref="ReportResult.CategoryBreakdown"/> so the frontend can color segments to match.</param>
 public record ReportBucket(string Label, decimal Net, IReadOnlyList<decimal> Parts);
-public record ReportCategory(string Name, decimal Net);
+/// <param name="Id">The main id, sub id, or <see cref="ReportBuilder.Uncategorized"/> this row
+/// aggregates — lets the frontend map a bar back to its category (e.g. to list its tasks).</param>
+public record ReportCategory(string Id, string Name, decimal Net);
 
 public record ReportResult(
     decimal MoneyIn,
@@ -94,9 +96,9 @@ public static class ReportBuilder
             }
             foreach (var s in subs)
                 if (sums.TryGetValue(s.Id, out var v))
-                { catAgg.Add(new ReportCategory(s.Name, v)); catKeys.Add(s.Id); }
+                { catAgg.Add(new ReportCategory(s.Id, s.Name, v)); catKeys.Add(s.Id); }
             if (anyUncat)
-            { catAgg.Add(new ReportCategory("Uncategorized", uncatSum)); catKeys.Add(Uncategorized); }
+            { catAgg.Add(new ReportCategory(Uncategorized, "Uncategorized", uncatSum)); catKeys.Add(Uncategorized); }
         }
         else
         {
@@ -104,12 +106,12 @@ public static class ReportBuilder
             {
                 var items = repTasks.Where(t => t.MainId == m.Id).ToList();
                 if (items.Count > 0)
-                { catAgg.Add(new ReportCategory(m.Name, items.Sum(t => t.Amount))); catKeys.Add(m.Id); }
+                { catAgg.Add(new ReportCategory(m.Id, m.Name, items.Sum(t => t.Amount))); catKeys.Add(m.Id); }
             }
             // Defensive: legacy tasks with no main (should not occur post-backfill).
             var uncat = repTasks.Where(t => string.IsNullOrEmpty(t.MainId)).ToList();
             if (uncat.Count > 0)
-            { catAgg.Add(new ReportCategory("Uncategorized", uncat.Sum(t => t.Amount))); catKeys.Add(Uncategorized); }
+            { catAgg.Add(new ReportCategory(Uncategorized, "Uncategorized", uncat.Sum(t => t.Amount))); catKeys.Add(Uncategorized); }
         }
 
         var catIndex = new Dictionary<string, int>();
