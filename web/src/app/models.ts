@@ -126,6 +126,7 @@ export interface ReportBucket {
 }
 
 export interface ReportCategory {
+  id: string; // main id, sub id, or '__none__' — maps a bar back to its category
   name: string;
   net: number;
 }

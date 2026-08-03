@@ -195,6 +195,15 @@ export const sv: Record<TranslationKey, string> = {
   'dialog.importSplit.hint': 'Del 2 får det som återstår av ursprungsbeloppet. Varje del blir en egen rad — tilldela kategorier till dem separat efteråt.',
   'dialog.importSplit.apply': 'Dela',
 
+  // ---- report drill-down dialog ----
+  'dialog.reportDrill.range': '{from} → {to}',
+  'dialog.reportDrill.countOne': '1 transaktion',
+  'dialog.reportDrill.count': '{count} transaktioner',
+  'dialog.reportDrill.total': 'Totalt',
+  'dialog.reportDrill.noSub': 'Ingen underkategori',
+  'dialog.reportDrill.noDate': 'Inget datum',
+  'dialog.reportDrill.empty': 'Inget kvar i den här kategorin — intervallet eller kategorierna ändrades.',
+
   // ---- save-query dialog ----
   'dialog.saveQuery.title': 'Spara sökning',
   'dialog.saveQuery.msg': 'Namnge den här sökningen så att du kan använda den igen från sidofältet.',
@@ -345,6 +354,7 @@ export const sv: Record<TranslationKey, string> = {
   'report.otherCats': 'Övriga kategorier',
   'report.netByCategory': 'Netto per kategori',
   'report.netBySubcategory': 'Netto per underkategori',
+  'report.showTransactions': 'Visa transaktionerna i {name}',
   'report.gran.daily': 'dagligen',
   'report.gran.weekly': 'veckovis',
   'report.gran.monthly': 'månadsvis',

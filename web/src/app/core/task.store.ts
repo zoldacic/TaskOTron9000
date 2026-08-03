@@ -3,11 +3,12 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 import {
   AskEvent, AskMessage, BankAccount, Categories, DateKind, ImportCommitRow, ImportRow, Main,
-  Report, SavedQuery, Sub, TaskQuery, TitleDefault, Todo,
+  Report, ReportCategory, SavedQuery, Sub, TaskQuery, TitleDefault, Todo,
 } from '../models';
 import { matches, sortTodos, isDoneToday, isDoneYesterday, isDueToday, isOverdue, Filter } from './todo-util';
 import { emptyQuery, isEmptyQuery, matchesQuery } from './task-query';
 import { duplicateRowKeys } from './import-dup';
+import { drillCategory } from './report-drill';
 import { toISO, addDays, startOfToday, diffDays } from './date-util';
 import { parseVoiceCommand } from './voice-command';
 import { SpeechService } from './speech.service';
@@ -223,6 +224,8 @@ export class TaskStore {
   // Category-breakdown chart style; also purely presentational.
   readonly repCatChart = signal<'bars' | 'donut'>('bars');
   readonly report = signal<Report | null>(null);
+  // Non-null => the "what's in this bar" dialog is open for that breakdown row.
+  readonly repDrill = signal<ReportCategory | null>(null);
 
   // ---- computed ----
   readonly visibleTodos = computed(() => {
@@ -1105,9 +1108,26 @@ export class TaskStore {
 
   // ---- reports ----
   async loadReport(): Promise<void> {
+    // Any reload can reshape the bars, so a drill-down open over the old ones is stale.
+    this.repDrill.set(null);
     this.report.set(await firstValueFrom(
       this.api.getReport(this.repStart(), this.repEnd(), this.repSel(), this.repMode())));
   }
+  /** Open the "which transactions are in this bar" dialog for a breakdown row. */
+  openRepDrill(cat: ReportCategory): void { this.repDrill.set(cat); }
+  /** The tasks behind the drilled-into bar, computed from the same rules the server used. */
+  readonly repDrillRows = computed<Todo[]>(() => {
+    const cat = this.repDrill();
+    if (!cat) return [];
+    const mode = this.repMode();
+    return drillCategory(this.todos(), cat.id, {
+      start: this.repStart(),
+      end: this.repEnd(),
+      mode,
+      sel: this.repSel(),
+      universe: mode === 'main' ? this.mains().map((m) => m.id) : this.allSubIds(),
+    });
+  });
   allSubIds(): string[] { return this.subs().map((s) => s.id); }
   /** Every selectable id in the current grain, plus the "uncategorized" pseudo-id. */
   private repUniverse(): string[] {

@@ -47,7 +47,7 @@ public static class ReportEndpoints
                 r.MoneyIn, r.MoneyOut, r.Net, r.Granularity,
                 r.Buckets.Select(b => new BucketDto(b.Label, b.Net, b.Parts.ToList())).ToList(),
                 r.DailyBuckets.Select(b => new BucketDto(b.Label, b.Net, b.Parts.ToList())).ToList(),
-                r.CategoryBreakdown.Select(c => new CategoryNetDto(c.Name, c.Net)).ToList()));
+                r.CategoryBreakdown.Select(c => new CategoryNetDto(c.Id, c.Name, c.Net)).ToList()));
         });
     }
 

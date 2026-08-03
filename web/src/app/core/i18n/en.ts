@@ -195,6 +195,15 @@ export const en = {
   'dialog.importSplit.hint': 'Part 2 gets whatever is left of the original amount. Each part becomes its own row — assign categories to them separately afterwards.',
   'dialog.importSplit.apply': 'Split',
 
+  // ---- report drill-down dialog ----
+  'dialog.reportDrill.range': '{from} → {to}',
+  'dialog.reportDrill.countOne': '1 transaction',
+  'dialog.reportDrill.count': '{count} transactions',
+  'dialog.reportDrill.total': 'Total',
+  'dialog.reportDrill.noSub': 'No sub category',
+  'dialog.reportDrill.noDate': 'No date',
+  'dialog.reportDrill.empty': 'Nothing left in this category — the range or the categories changed.',
+
   // ---- save-query dialog ----
   'dialog.saveQuery.title': 'Save query',
   'dialog.saveQuery.msg': 'Name this query so you can reapply it later from the sidebar.',
@@ -345,6 +354,7 @@ export const en = {
   'report.otherCats': 'Other categories',
   'report.netByCategory': 'Net by category',
   'report.netBySubcategory': 'Net by sub-category',
+  'report.showTransactions': 'Show the transactions in {name}',
   'report.gran.daily': 'daily',
   'report.gran.weekly': 'weekly',
   'report.gran.monthly': 'monthly',
