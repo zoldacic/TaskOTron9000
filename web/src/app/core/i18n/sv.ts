@@ -41,6 +41,8 @@ export const sv: Record<TranslationKey, string> = {
   'start.overdue.hint': 'Har passerat sitt förfallodatum och är fortfarande öppna',
   'start.today.title': 'Förfaller idag',
   'start.today.hint': 'Få de här gjorda före midnatt',
+  'start.coming.title': 'På väg',
+  'start.coming.hint': 'Förfaller inom {days} dagar',
   'start.done.title': 'Klara idag',
   'start.done.hint': 'Avbockade idag, oavsett förfallodatum',
   'start.yesterday.title': 'Klara igår',

@@ -1,5 +1,6 @@
 import {
-  amountTotals, isDoneToday, isDoneYesterday, isDueToday, isOverdue, matches, sortTodos,
+  amountTotals, COMING_DAYS, isComing, isDoneToday, isDoneYesterday, isDueToday, isOverdue,
+  matches, sortTodos,
 } from './todo-util';
 import { addDays, startOfToday, toISO } from './date-util';
 import { Todo } from '../models';
@@ -62,6 +63,37 @@ describe('isOverdue / isDueToday / isDoneToday (start page)', () => {
     expect(isDueToday(todo({ due: iso(0), dateKind: 'transaction' }))).toBe(false);
     expect(isOverdue(todo({ due: null }))).toBe(false);
     expect(isDueToday(todo({ due: null }))).toBe(false);
+  });
+
+  it('isComing: open, due-dated, inside the week after today', () => {
+    expect(isComing(todo({ due: iso(1) }))).toBe(true);
+    expect(isComing(todo({ due: iso(COMING_DAYS) }))).toBe(true);
+    expect(isComing(todo({ due: iso(COMING_DAYS + 1) }))).toBe(false);
+    expect(isComing(todo({ due: iso(0) }))).toBe(false);
+    expect(isComing(todo({ due: iso(-1) }))).toBe(false);
+  });
+
+  it('isComing ignores completed, transaction-dated and undated tasks', () => {
+    expect(isComing(todo({ due: iso(2), done: true }))).toBe(false);
+    expect(isComing(todo({ due: iso(2), dateKind: 'transaction' }))).toBe(false);
+    expect(isComing(todo({ due: null }))).toBe(false);
+  });
+
+  it('isComing never overlaps isOverdue or isDueToday', () => {
+    const list = [
+      todo({ id: 1, due: iso(-1) }), todo({ id: 2, due: iso(0) }),
+      todo({ id: 3, due: iso(1) }), todo({ id: 4, due: iso(30) }),
+    ];
+    expect(list.filter(isOverdue).map((t) => t.id)).toEqual([1]);
+    expect(list.filter(isDueToday).map((t) => t.id)).toEqual([2]);
+    expect(list.filter(isComing).map((t) => t.id)).toEqual([3]);
+  });
+
+  it('isComing is a subset of the upcoming smart list', () => {
+    const list = [todo({ id: 1, due: iso(3) }), todo({ id: 2, due: iso(30) })];
+    const upcoming = list.filter((t) => matches(t, 'upcoming')).map((t) => t.id);
+    expect(upcoming).toEqual([1, 2]);
+    expect(list.filter(isComing).map((t) => t.id)).toEqual([1]);
   });
 
   it('isDoneToday: completed, and stamped done today', () => {

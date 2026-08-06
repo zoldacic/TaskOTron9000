@@ -41,6 +41,8 @@ export const en = {
   'start.overdue.hint': 'Past their due date and still open',
   'start.today.title': 'Due today',
   'start.today.hint': 'Land these before midnight',
+  'start.coming.title': 'Coming up',
+  'start.coming.hint': 'Due within the next {days} days',
   'start.done.title': 'Done today',
   'start.done.hint': 'Ticked off today, whatever their due date',
   'start.yesterday.title': 'Done yesterday',
