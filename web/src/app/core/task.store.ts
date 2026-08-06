@@ -5,7 +5,7 @@ import {
   AskEvent, AskMessage, BankAccount, Categories, DateKind, ImportCommitRow, ImportRow, Main,
   Report, ReportCategory, SavedQuery, Sub, TaskQuery, TitleDefault, Todo,
 } from '../models';
-import { matches, sortTodos, isDoneToday, isDoneYesterday, isDueToday, isOverdue, Filter } from './todo-util';
+import { matches, sortTodos, isComing, isDoneToday, isDoneYesterday, isDueToday, isOverdue, Filter } from './todo-util';
 import { emptyQuery, isEmptyQuery, matchesQuery } from './task-query';
 import { duplicateRowKeys } from './import-dup';
 import { drillCategory } from './report-drill';
@@ -243,6 +243,7 @@ export class TaskStore {
   // task list is filtered to.
   readonly overdueTodos = computed(() => sortTodos(this.todos().filter(isOverdue)));
   readonly dueTodayTodos = computed(() => sortTodos(this.todos().filter(isDueToday)));
+  readonly comingTodos = computed(() => sortTodos(this.todos().filter(isComing)));
   readonly doneTodayTodos = computed(() => sortTodos(this.todos().filter(isDoneToday)));
   readonly doneYesterdayTodos = computed(() => sortTodos(this.todos().filter(isDoneYesterday)));
 

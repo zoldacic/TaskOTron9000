@@ -35,6 +35,19 @@ export function isDueToday(t: Todo): boolean {
   return actionable(t) && diffDays(t.due!) === 0;
 }
 
+/** How far ahead the start page looks. Beyond this the Upcoming smart list takes over. */
+export const COMING_DAYS = 7;
+
+/**
+ * Open, due-dated, and due within the next week — what is about to land. Starts the day after
+ * today so it never overlaps "Due today".
+ */
+export function isComing(t: Todo): boolean {
+  if (!actionable(t)) return false;
+  const d = diffDays(t.due!);
+  return d > 0 && d <= COMING_DAYS;
+}
+
 /**
  * Completed today — today's wins, the counterpart of isDueToday. Keyed on the server-stamped
  * completion day, so the due date (or the lack of one) doesn't matter. Tasks completed before
