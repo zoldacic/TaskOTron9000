@@ -3,9 +3,13 @@ obj/
 *.db
 *.db-shm
 *.db-wal
+*.db.backup-*
 
 # Bank statement exports (personal data)
 Extracts/
+
+# Migration bundles (contain the database + personal data)
+taskotron-migration-*.zip
 
 # Claude Code local (per-machine) settings
 .claude/settings.local.json
