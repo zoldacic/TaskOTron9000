@@ -14,6 +14,8 @@ import { ConfirmDialogComponent } from './dialogs/confirm-dialog.component';
 import { SaveQueryDialogComponent } from './dialogs/save-query-dialog.component';
 import { VoiceDialogComponent } from './dialogs/voice-dialog.component';
 import { ReportDrillDialogComponent } from './dialogs/report-drill-dialog.component';
+import { BudgetDialogComponent } from './dialogs/budget-dialog.component';
+import { BudgetItemDialogComponent } from './dialogs/budget-item-dialog.component';
 
 @Component({
   selector: 'app-root',
@@ -23,6 +25,7 @@ import { ReportDrillDialogComponent } from './dialogs/report-drill-dialog.compon
     TaskDialogComponent, CategoryRenameDialogComponent, MoveSubDialogComponent,
     ImportCatDialogComponent, ImportSplitDialogComponent, ConfirmDialogComponent,
     SaveQueryDialogComponent, VoiceDialogComponent, ReportDrillDialogComponent,
+    BudgetDialogComponent, BudgetItemDialogComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

@@ -2,13 +2,15 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 import {
-  AskEvent, AskMessage, BankAccount, Categories, DateKind, ImportCommitRow, ImportRow, Main,
+  AskEvent, AskMessage, BankAccount, Budget, BudgetCompare, BudgetItemWrite, BudgetSummary,
+  Categories, DateKind, ImportCommitRow, ImportRow, Main,
   Report, ReportCategory, SavedQuery, Sub, TaskQuery, TitleDefault, Todo,
 } from '../models';
 import { matches, sortTodos, isComing, isDoneToday, isDoneYesterday, isDueToday, isOverdue, Filter } from './todo-util';
 import { emptyQuery, isEmptyQuery, matchesQuery } from './task-query';
 import { duplicateRowKeys } from './import-dup';
 import { drillCategory } from './report-drill';
+import { itemAmount, parseNum, plannedIn, plannedOut, plannedTotal } from './budget-util';
 import { toISO, addDays, startOfToday, diffDays } from './date-util';
 import { parseVoiceCommand } from './voice-command';
 import { SpeechService } from './speech.service';
@@ -64,6 +66,23 @@ export interface ImportSplitDraft {
   aTitle: string;
   aAmount: string; // kept as a string so the input edits freely (blank, '-', '.')
   bTitle: string;
+}
+export interface BudgetDraft {
+  id: string | null;
+  name: string;
+  from: string; // ISO yyyy-MM-dd
+  to: string;
+}
+export interface BudgetItemDraft {
+  id: number | null;
+  title: string;
+  /** Kept as strings so the inputs edit freely (blank, '-', '.'); parsed on save. */
+  amountStr: string;
+  qtyStr: string;
+  priceStr: string;
+  mainId: string | null; // optional, unlike a task's
+  catIds: string[];
+  note: string;
 }
 export interface Confirm {
   title: string;
@@ -142,6 +161,17 @@ export class TaskStore {
   readonly titleDefaults = signal<TitleDefault[]>([]);
   readonly bankAccounts = signal<BankAccount[]>([]);
   readonly savedQueries = signal<SavedQuery[]>([]);
+
+  // ---- budgets ----
+  // Planned money. It lives in its own table server-side, so nothing here ever reaches
+  // `todos`, the smart lists, the report or import — only `budgetCompare` reads both, read-only.
+  readonly budgets = signal<BudgetSummary[]>([]);
+  readonly activeBudget = signal<Budget | null>(null);
+  readonly budgetCompare = signal<BudgetCompare | null>(null);
+  readonly budgetCompareMode = signal<'main' | 'sub'>('main');
+  readonly budgetDialog = signal<BudgetDraft | null>(null);
+  readonly budgetItemDialog = signal<BudgetItemDraft | null>(null);
+  readonly budgetError = signal<string | null>(null);
 
   // ---- view state ----
   readonly filter = signal<Filter>('all');
@@ -292,7 +322,7 @@ export class TaskStore {
   async loadAll(): Promise<void> {
     await Promise.all([
       this.refreshTodos(), this.refreshCategories(), this.refreshTitleDefaults(),
-      this.refreshBankAccounts(), this.refreshSavedQueries(),
+      this.refreshBankAccounts(), this.refreshSavedQueries(), this.refreshBudgets(),
     ]);
     if (this.selectedMain() === null) this.selectedMain.set(this.mains()[0]?.id ?? null);
   }
@@ -316,6 +346,9 @@ export class TaskStore {
   }
   async refreshSavedQueries(): Promise<void> {
     this.savedQueries.set(await firstValueFrom(this.api.getSavedQueries()));
+  }
+  async refreshBudgets(): Promise<void> {
+    this.budgets.set(await firstValueFrom(this.api.getBudgets()));
   }
 
   // ---- confirm ----
@@ -395,6 +428,219 @@ export class TaskStore {
       confirmLabel: this.t('confirm.deleteSavedQuery.confirm'),
       run: () => this.removeSavedQuery(id),
     });
+  }
+
+  // ---- budgets ----
+  // Planned money only. Nothing below writes a task, and the only thing that reads one is
+  // `budgetCompare`, which the server computes read-only from the same data as the report.
+
+  readonly budgetItems = computed(() => this.activeBudget()?.items ?? []);
+  readonly budgetPlannedTotal = computed(() => plannedTotal(this.budgetItems()));
+  readonly budgetPlannedIn = computed(() => plannedIn(this.budgetItems()));
+  readonly budgetPlannedOut = computed(() => plannedOut(this.budgetItems()));
+
+  /** Load one budget and its planned-vs-actual figures for the detail view. */
+  async openBudget(id: string): Promise<void> {
+    this.budgetError.set(null);
+    this.activeBudget.set(null);
+    this.budgetCompare.set(null);
+    try {
+      const [budget, compare] = await Promise.all([
+        firstValueFrom(this.api.getBudget(id)),
+        firstValueFrom(this.api.getBudgetComparison(id, this.budgetCompareMode())),
+      ]);
+      this.activeBudget.set(budget);
+      this.budgetCompare.set(compare);
+    } catch {
+      this.budgetError.set(this.t('budget.error.load'));
+    }
+  }
+  closeBudget(): void {
+    this.activeBudget.set(null);
+    this.budgetCompare.set(null);
+    this.budgetError.set(null);
+  }
+  async refreshBudgetCompare(): Promise<void> {
+    const b = this.activeBudget();
+    if (!b) return;
+    this.budgetCompare.set(
+      await firstValueFrom(this.api.getBudgetComparison(b.id, this.budgetCompareMode())));
+  }
+  setBudgetCompareMode(mode: 'main' | 'sub'): void {
+    this.budgetCompareMode.set(mode);
+    void this.refreshBudgetCompare();
+  }
+  /** Re-read the open budget plus everything derived from it, after a write. */
+  private async refreshActiveBudget(): Promise<void> {
+    const b = this.activeBudget();
+    if (!b) return;
+    this.activeBudget.set(await firstValueFrom(this.api.getBudget(b.id)));
+    await Promise.all([this.refreshBudgetCompare(), this.refreshBudgets()]);
+  }
+
+  openNewBudget(): void {
+    // Default to the current month — the commonest plan, and it matches the report's quick range.
+    const now = startOfToday();
+    this.budgetError.set(null);
+    this.budgetDialog.set({
+      id: null,
+      name: '',
+      from: toISO(new Date(now.getFullYear(), now.getMonth(), 1)),
+      to: toISO(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
+    });
+  }
+  openEditBudget(id: string): void {
+    const active = this.activeBudget();
+    const b = active?.id === id ? active : this.budgets().find((x) => x.id === id);
+    if (!b) return;
+    this.budgetError.set(null);
+    this.budgetDialog.set({ id: b.id, name: b.name, from: b.from, to: b.to });
+  }
+  updateBudgetDialog(patch: Partial<BudgetDraft>): void {
+    const d = this.budgetDialog();
+    if (d) this.budgetDialog.set({ ...d, ...patch });
+  }
+  /** True while the draft can't be saved — blank name, missing or inverted range. */
+  budgetDraftInvalid(): boolean {
+    const d = this.budgetDialog();
+    return !d || !d.name.trim() || !d.from || !d.to || d.from > d.to;
+  }
+  /** Returns the saved budget's id, so a fresh one can be opened straight away. */
+  async saveBudget(): Promise<string | null> {
+    const d = this.budgetDialog();
+    if (!d || this.budgetDraftInvalid()) return null;
+    const body = { name: d.name.trim(), from: d.from, to: d.to };
+    try {
+      const saved = d.id == null
+        ? await firstValueFrom(this.api.addBudget(body))
+        : await firstValueFrom(this.api.updateBudget(d.id, body));
+      this.budgetDialog.set(null);
+      await this.refreshBudgets();
+      if (this.activeBudget()?.id === saved.id) await this.refreshActiveBudget();
+      return saved.id;
+    } catch {
+      this.budgetError.set(this.t('budget.error.save'));
+      return null;
+    }
+  }
+  async removeBudget(id: string): Promise<void> {
+    await firstValueFrom(this.api.deleteBudget(id));
+    if (this.activeBudget()?.id === id) this.closeBudget();
+    await this.refreshBudgets();
+  }
+  /** `after` lets the detail view navigate back to the list once the delete goes through. */
+  askRemoveBudget(id: string, after?: () => void): void {
+    const active = this.activeBudget();
+    const b = active?.id === id ? active : this.budgets().find((x) => x.id === id);
+    const name = b?.name ? `“${b.name}”` : this.t('confirm.thisBudget');
+    const count = active?.id === id ? active.items.length : (b as BudgetSummary | undefined)?.itemCount ?? 0;
+    const note = count === 0
+      ? ''
+      : this.t(count === 1 ? 'confirm.deleteBudget.noteOne' : 'confirm.deleteBudget.noteMany', { count });
+    this.ask({
+      title: this.t('confirm.deleteBudget.title'),
+      message: this.t('confirm.deleteBudget.message', { name, note }),
+      confirmLabel: this.t('confirm.deleteBudget.confirm'),
+      run: async () => {
+        await this.removeBudget(id);
+        after?.();
+      },
+    });
+  }
+
+  openNewBudgetItem(): void {
+    if (!this.activeBudget()) return;
+    this.expandedMains.set(new Set());
+    // No default category: guessing one would quietly skew the planned-vs-actual breakdown.
+    this.budgetItemDialog.set({
+      id: null, title: '', amountStr: '', qtyStr: '', priceStr: '',
+      mainId: null, catIds: [], note: '',
+    });
+  }
+  openEditBudgetItem(itemId: number): void {
+    const item = this.activeBudget()?.items.find((i) => i.id === itemId);
+    if (!item) return;
+    this.expandedMains.set(this.mainsWithSelection(item.catIds));
+    this.budgetItemDialog.set({
+      id: item.id,
+      title: item.title,
+      amountStr: String(item.amount),
+      qtyStr: item.quantity == null ? '' : String(item.quantity),
+      priceStr: item.unitPrice == null ? '' : String(item.unitPrice),
+      mainId: item.mainId,
+      catIds: [...item.catIds],
+      note: item.note ?? '',
+    });
+  }
+  updateBudgetItemDialog(patch: Partial<BudgetItemDraft>): void {
+    const d = this.budgetItemDialog();
+    if (d) this.budgetItemDialog.set({ ...d, ...patch });
+  }
+  /** Radio behaviour, but clicking the selected main again clears it (the category is optional). */
+  setBudgetItemMain(mainId: string): void {
+    const d = this.budgetItemDialog();
+    if (d) this.updateBudgetItemDialog({ mainId: d.mainId === mainId ? null : mainId });
+  }
+  toggleBudgetItemCat(subId: string): void {
+    const d = this.budgetItemDialog();
+    if (!d) return;
+    const has = d.catIds.includes(subId);
+    this.updateBudgetItemDialog({ catIds: has ? d.catIds.filter((x) => x !== subId) : [...d.catIds, subId] });
+  }
+  /** The amount the item would be saved with — drives the dialog's live preview. */
+  budgetItemAmount(): number | null {
+    const d = this.budgetItemDialog();
+    return d ? itemAmount(d.qtyStr, d.priceStr, d.amountStr) : null;
+  }
+  async saveBudgetItem(): Promise<void> {
+    const b = this.activeBudget();
+    const d = this.budgetItemDialog();
+    if (!b || !d || !d.title.trim()) return;
+    const amount = this.budgetItemAmount();
+    if (amount === null) return;
+    const qty = parseNum(d.qtyStr);
+    const price = parseNum(d.priceStr);
+    const priced = qty !== null && price !== null;
+    const body: BudgetItemWrite = {
+      title: d.title.trim(),
+      amount,
+      quantity: priced ? qty : null,
+      unitPrice: priced ? price : null,
+      mainId: d.mainId,
+      catIds: d.catIds,
+      note: d.note.trim() || null,
+    };
+    try {
+      if (d.id == null) await firstValueFrom(this.api.addBudgetItem(b.id, body));
+      else await firstValueFrom(this.api.updateBudgetItem(b.id, d.id, body));
+      this.budgetItemDialog.set(null);
+      await this.refreshActiveBudget();
+    } catch {
+      this.budgetError.set(this.t('budget.error.save'));
+    }
+  }
+  async removeBudgetItem(itemId: number): Promise<void> {
+    const b = this.activeBudget();
+    if (!b) return;
+    await firstValueFrom(this.api.deleteBudgetItem(b.id, itemId));
+    await this.refreshActiveBudget();
+  }
+  askRemoveBudgetItem(itemId: number): void {
+    const item = this.activeBudget()?.items.find((i) => i.id === itemId);
+    const name = item?.title.trim() ? `“${item.title.trim()}”` : this.t('confirm.thisBudgetItem');
+    this.ask({
+      title: this.t('confirm.deleteBudgetItem.title'),
+      message: this.t('confirm.deleteBudgetItem.message', { name }),
+      confirmLabel: this.t('confirm.deleteBudgetItem.confirm'),
+      run: () => this.removeBudgetItem(itemId),
+    });
+  }
+  /** Delete from inside the item dialog: close it, then ask, like the task dialog does. */
+  deleteBudgetItemFromDialog(): void {
+    const id = this.budgetItemDialog()?.id;
+    if (id == null) return;
+    this.budgetItemDialog.set(null);
+    this.askRemoveBudgetItem(id);
   }
 
   // ---- selection ----

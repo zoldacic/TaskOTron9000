@@ -11,4 +11,5 @@ public class Sub
     public Main Main { get; set; } = default!;
     public ICollection<Todo> Todos { get; set; } = new List<Todo>();
     public ICollection<TitleDefault> TitleDefaults { get; set; } = new List<TitleDefault>();
+    public ICollection<BudgetItem> BudgetItems { get; set; } = new List<BudgetItem>();
 }

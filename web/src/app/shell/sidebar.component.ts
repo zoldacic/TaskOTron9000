@@ -27,6 +27,9 @@ import { IconComponent } from '../shared/icon.component';
         <a class="nav" routerLink="/import" routerLinkActive="active" (click)="store.closeSidebar()">
           <app-icon name="upload" /><span>{{ store.t('nav.import') }}</span>
         </a>
+        <a class="nav" routerLink="/budgets" routerLinkActive="active" (click)="store.closeSidebar()">
+          <app-icon name="target" /><span>{{ store.t('nav.budgets') }}</span>
+        </a>
         <a class="nav" routerLink="/reports" routerLinkActive="active" (click)="store.closeSidebar()">
           <app-icon name="bar-chart" /><span>{{ store.t('nav.reports') }}</span>
         </a>

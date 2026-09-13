@@ -11,6 +11,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<TitleDefault> TitleDefaults => Set<TitleDefault>();
     public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
     public DbSet<SavedQuery> SavedQueries => Set<SavedQuery>();
+    public DbSet<Budget> Budgets => Set<Budget>();
+    public DbSet<BudgetItem> BudgetItems => Set<BudgetItem>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -60,6 +62,34 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasMany(t => t.Categories)
                 .WithMany(s => s.Todos)
                 .UsingEntity("TodoSub");
+        });
+
+        b.Entity<Budget>(e =>
+        {
+            e.Property(bu => bu.Id).ValueGeneratedNever();
+        });
+
+        b.Entity<BudgetItem>(e =>
+        {
+            // Preserve decimal precision on SQLite, like Todo.Amount.
+            e.Property(i => i.Amount).HasColumnType("TEXT");
+            e.Property(i => i.Quantity).HasColumnType("TEXT");
+            e.Property(i => i.UnitPrice).HasColumnType("TEXT");
+            // Deleting a budget deletes its items.
+            e.HasOne(i => i.Budget)
+                .WithMany(bu => bu.Items)
+                .HasForeignKey(i => i.BudgetId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // Deliberately SetNull, unlike Todo.Main (Restrict): a plan must not block category
+            // management — deleting a main just leaves the item uncategorized.
+            e.HasOne(i => i.Main)
+                .WithMany()
+                .HasForeignKey(i => i.MainId)
+                .OnDelete(DeleteBehavior.SetNull);
+            // Deleting a sub strips it from every budget item (join rows cascade automatically).
+            e.HasMany(i => i.Categories)
+                .WithMany(s => s.BudgetItems)
+                .UsingEntity("BudgetItemSub");
         });
 
         b.Entity<TitleDefault>(e =>

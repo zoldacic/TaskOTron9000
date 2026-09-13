@@ -56,6 +56,73 @@ export interface TitleDefault {
   mainId: string | null; // remembered required main category (null if not remembered)
 }
 
+// ---- budgets ----
+// Planned money, kept in its own table so it can never reach the spending report, the smart
+// lists, saved queries or import. Amounts are signed like Todo.amount: negative = planned
+// spend, positive = planned income.
+
+export interface BudgetSummary {
+  id: string;
+  name: string;
+  from: string; // ISO yyyy-MM-dd
+  to: string; // ISO yyyy-MM-dd
+  itemCount: number;
+  plannedTotal: number;
+}
+
+export interface BudgetItem {
+  id: number;
+  title: string;
+  amount: number;
+  quantity: number | null; // null unless priced as quantity x unit price
+  unitPrice: number | null;
+  mainId: string | null; // optional, unlike a task's
+  catIds: string[];
+  note: string | null;
+  sortOrder: number;
+}
+
+export interface Budget {
+  id: string;
+  name: string;
+  from: string;
+  to: string;
+  items: BudgetItem[];
+}
+
+export interface BudgetWrite {
+  name: string;
+  from: string;
+  to: string;
+}
+
+/** Amount is ignored by the server when quantity and unitPrice are both set. */
+export interface BudgetItemWrite {
+  title: string;
+  amount: number | null;
+  quantity: number | null;
+  unitPrice: number | null;
+  mainId: string | null;
+  catIds: string[];
+  note: string | null;
+}
+
+export interface BudgetCompareRow {
+  id: string; // main id, sub id, or '__none__'
+  name: string;
+  planned: number;
+  actual: number;
+  diff: number; // actual − planned: negative = over the plan, positive = under it
+}
+
+export interface BudgetCompare {
+  groupBy: 'main' | 'sub';
+  planned: number;
+  actual: number;
+  diff: number;
+  rows: BudgetCompareRow[];
+}
+
 export type QueryDateKind = 'any' | 'due' | 'transaction';
 export type QueryAmountKind = 'any' | 'has' | 'none' | 'income' | 'spend';
 

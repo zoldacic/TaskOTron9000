@@ -133,6 +133,7 @@ app.MapSavedQueryEndpoints();
 app.MapTitleDefaultEndpoints();
 app.MapImportEndpoints();
 app.MapReportEndpoints();
+app.MapBudgetEndpoints();
 app.MapAskEndpoints();
 
 // Always-on health check (used by the start-app/restart-backend skills), kept off "/" itself
