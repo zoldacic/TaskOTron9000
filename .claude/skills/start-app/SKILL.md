@@ -7,7 +7,7 @@ description: Start the TASK-O-TRON 9000 app locally — the .NET 10 backend (por
 
 The app has two processes that run together:
 
-- **Backend** — `.NET 10` API in `src/TaskOTron.Api`. SQLite, seeds the DB on startup, listens on **http://localhost:5249**.
+- **Backend** — `.NET 10` API in `src/TaskOTron.Api`. SQLite, seeds the DB on startup, listens on **http://0.0.0.0:5249** (all interfaces — reachable from LAN devices too).
 - **Frontend** — `Angular 22` SPA in `web/`. Listens on **https://localhost:4200** and proxies `/api` → `:5249` via `web/proxy.conf.json` (so no CORS setup needed). TLS uses the ASP.NET dev cert exported to `web/.certs/` (gitignored); if that folder is missing, recreate it with `dotnet dev-certs https --export-path web/.certs/localhost.pem --format Pem --no-password`.
 
 Both must be running for the app to work. Start the backend first (the frontend proxies to it).
