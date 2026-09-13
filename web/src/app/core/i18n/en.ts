@@ -30,7 +30,17 @@ export const en = {
   'titlebar.maximize': 'Maximize',
   'titlebar.close': 'Close',
   'titlebar.menu': 'Menu',
+  'titlebar.logout': 'Log out',
   'sidebar.close': 'Close menu',
+
+  // ---- login screen ----
+  'login.title': 'TASK-O-TRON 9000',
+  'login.sub': 'Accessed from outside the local network — sign in to continue.',
+  'login.username': 'Username',
+  'login.password': 'Password',
+  'login.submit': 'Log in',
+  'login.error': 'Wrong username or password.',
+  'login.error.notConfigured': 'No login is configured on the server yet.',
 
   // ---- start view ----
   'start.title': 'Today at a glance',

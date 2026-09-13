@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { TaskStore } from './core/task.store';
+import { AuthService } from './core/auth.service';
+import { LoginViewComponent } from './features/auth/login-view.component';
 import { TitleBarComponent } from './shell/title-bar.component';
 import { SidebarComponent } from './shell/sidebar.component';
 import { TaskDialogComponent } from './dialogs/task-dialog.component';
@@ -17,7 +19,7 @@ import { ReportDrillDialogComponent } from './dialogs/report-drill-dialog.compon
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RouterOutlet, TitleBarComponent, SidebarComponent,
+    RouterOutlet, LoginViewComponent, TitleBarComponent, SidebarComponent,
     TaskDialogComponent, CategoryRenameDialogComponent, MoveSubDialogComponent,
     ImportCatDialogComponent, ImportSplitDialogComponent, ConfirmDialogComponent,
     SaveQueryDialogComponent, VoiceDialogComponent, ReportDrillDialogComponent,
@@ -27,8 +29,18 @@ import { ReportDrillDialogComponent } from './dialogs/report-drill-dialog.compon
 })
 export class App implements OnInit {
   private store = inject(TaskStore);
+  auth = inject(AuthService);
+
+  constructor() {
+    // Loads the real data only once access is established — a remote caller with no login
+    // cookie never even asks the (gated) data endpoints, and starts fetching the moment
+    // login succeeds.
+    effect(() => {
+      if (this.auth.hasAccess()) void this.store.loadAll();
+    });
+  }
 
   ngOnInit(): void {
-    void this.store.loadAll();
+    void this.auth.refreshStatus();
   }
 }

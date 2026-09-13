@@ -140,3 +140,11 @@ export interface Report {
   dailyBuckets: ReportBucket[]; // always daily; drives the line / balance chart
   categoryBreakdown: ReportCategory[];
 }
+
+/** From GET /api/auth/status. `authenticated` reflects the login cookie; a local-network
+ *  request gets full access regardless (see AuthService.hasAccess). */
+export interface AuthStatus {
+  authenticated: boolean;
+  isLocal: boolean;
+  username: string | null;
+}

@@ -1,20 +1,24 @@
-<div class="shell">
-  <app-title-bar />
-  <div class="body">
-    <app-sidebar />
-    <main class="content om-scroll">
-      <router-outlet />
-    </main>
+@if (auth.hasAccess()) {
+  <div class="shell">
+    <app-title-bar />
+    <div class="body">
+      <app-sidebar />
+      <main class="content om-scroll">
+        <router-outlet />
+      </main>
+    </div>
   </div>
-</div>
 
-<!-- global dialogs (each renders only when its store signal is set) -->
-<app-task-dialog />
-<app-category-rename-dialog />
-<app-move-sub-dialog />
-<app-import-cat-dialog />
-<app-import-split-dialog />
-<app-confirm-dialog />
-<app-save-query-dialog />
-<app-voice-dialog />
-<app-report-drill-dialog />
+  <!-- global dialogs (each renders only when its store signal is set) -->
+  <app-task-dialog />
+  <app-category-rename-dialog />
+  <app-move-sub-dialog />
+  <app-import-cat-dialog />
+  <app-import-split-dialog />
+  <app-confirm-dialog />
+  <app-save-query-dialog />
+  <app-voice-dialog />
+  <app-report-drill-dialog />
+} @else if (auth.checked()) {
+  <app-login-view />
+}

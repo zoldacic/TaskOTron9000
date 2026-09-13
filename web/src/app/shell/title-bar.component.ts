@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TaskStore } from '../core/task.store';
+import { AuthService } from '../core/auth.service';
 import { IconComponent } from '../shared/icon.component';
 
 @Component({
@@ -20,6 +21,12 @@ import { IconComponent } from '../shared/icon.component';
         </span>
       </div>
       <div class="win">
+        @if (auth.authenticated()) {
+          <button [attr.aria-label]="store.t('titlebar.logout')" [attr.title]="store.t('titlebar.logout')"
+                  (click)="auth.logout()">
+            <app-icon name="log-out" [size]="14" />
+          </button>
+        }
         <button [attr.aria-label]="store.t('titlebar.minimize')"><app-icon name="minus" [size]="14" /></button>
         <button [attr.aria-label]="store.t('titlebar.maximize')"><app-icon name="square" [size]="12" /></button>
         <button class="close" [attr.aria-label]="store.t('titlebar.close')"><app-icon name="x" [size]="14" /></button>
@@ -78,4 +85,5 @@ import { IconComponent } from '../shared/icon.component';
 })
 export class TitleBarComponent {
   store = inject(TaskStore);
+  auth = inject(AuthService);
 }

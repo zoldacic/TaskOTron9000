@@ -10,7 +10,8 @@ becomes a task), and produces a **spending report**. Two-level category tree (ma
 grouped by smart lists (Today / Upcoming / Completed / All).
 
 Two projects:
-- **Backend** — ASP.NET Core Minimal API, **.NET 10**, EF Core + SQLite, in `src/TaskOTron.Api`. No auth.
+- **Backend** — ASP.NET Core Minimal API, **.NET 10**, EF Core + SQLite, in `src/TaskOTron.Api`.
+  Single-user login, gated only for non-local-network requests — see Auth below and `BACKEND.md`.
 - **Frontend** — **Angular 22** standalone-component SPA (signals, zoneless, Vitest) in `web/`.
 
 `Tasks.dc.html` at the repo root is the original in-memory prototype and the **source of truth for
@@ -67,6 +68,11 @@ background shell — use the skills, which handle this.
   `Services/ReportBuilder.cs`) and mirrored on the client (`core/bank-import.ts`, plus report logic).
   Keep the two in sync and matched to the prototype; both have spec/unit tests asserting prototype
   outputs.
+- **New backend endpoints are gated by default.** The `app.Use(...)` middleware in `Program.cs`
+  blocks any non-local request without a login cookie for every path except `/api/auth/*` and `/`.
+  A new endpoint needs no opt-in to be protected — only add a path to that allowlist if it
+  genuinely must work for a logged-out remote caller (rare; `/api/auth/status` is the only current
+  case). See `BACKEND.md` → Auth.
 
 ## Architecture
 
@@ -86,7 +92,7 @@ background shell — use the skills, which handle this.
 - **`core/task.store.ts` is the hub** — a single `@Injectable` root store holding all state in Angular
   **signals** (todos, categories, filters, dialog drafts, import rows, report selection). Components
   read `computed` signals and call store methods; the store calls `ApiService` and updates signals.
-  `App.ngOnInit` calls `store.loadAll()`.
+  `App` calls `store.loadAll()` once `AuthService.hasAccess()` is true (local network, or logged in).
 - `core/api.service.ts` — thin typed HttpClient wrapper, one method per endpoint. `core/api-base.ts`
   exports `API_BASE` (empty in dev; the proxy handles routing).
 - `core/` pure helpers, each with a colocated `.spec.ts`: `bank-import.ts` (parse), `date-util.ts`,

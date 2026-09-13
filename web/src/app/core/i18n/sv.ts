@@ -30,7 +30,17 @@ export const sv: Record<TranslationKey, string> = {
   'titlebar.maximize': 'Maximera',
   'titlebar.close': 'Stäng',
   'titlebar.menu': 'Meny',
+  'titlebar.logout': 'Logga ut',
   'sidebar.close': 'Stäng meny',
+
+  // ---- login screen ----
+  'login.title': 'TASK-O-TRON 9000',
+  'login.sub': 'Åtkomst utanför det lokala nätverket — logga in för att fortsätta.',
+  'login.username': 'Användarnamn',
+  'login.password': 'Lösenord',
+  'login.submit': 'Logga in',
+  'login.error': 'Fel användarnamn eller lösenord.',
+  'login.error.notConfigured': 'Ingen inloggning är konfigurerad på servern än.',
 
   // ---- start view ----
   'start.title': 'Idag i korthet',
