@@ -22,7 +22,7 @@ behavior** — import parsing, report math, date logic, sort order were all port
 
 Backend (run from repo root):
 ```bash
-dotnet run --project src/TaskOTron.Api      # serves http://localhost:5249, applies migrations + seeds
+dotnet run --project src/TaskOTron.Api      # serves https://0.0.0.0:5249 (LAN-reachable), applies migrations + seeds
 dotnet test                                  # xUnit tests for ImportParser + ReportBuilder
 dotnet test --filter FullyQualifiedName~ImportParser   # single test class
 dotnet ef migrations add <Name> --project src/TaskOTron.Api   # after changing an entity
@@ -30,7 +30,7 @@ dotnet ef migrations add <Name> --project src/TaskOTron.Api   # after changing a
 
 Frontend (run from `web/`):
 ```bash
-ng serve            # https://localhost:4200, proxies /api -> :5249 (proxy.conf.json), no CORS
+ng serve            # https://localhost:4200, proxies /api -> https://localhost:5249 (proxy.conf.json), no CORS
 ng test             # Vitest via @angular/build:unit-test; *.spec.ts colocated with source
 ng build            # production build to web/dist/
 ng test --include=src/app/core/bank-import.spec.ts   # single spec
@@ -42,9 +42,12 @@ builder (`web/angular.json`), not from a standalone vitest config. The whole sui
 10s, so narrowing rarely pays; `ng test --reporters=verbose` prints individual test names when you
 need to confirm a specific spec actually ran.
 
-The dev server serves **HTTPS** using the ASP.NET dev certificate, exported to `web/.certs/`
-(gitignored, per-machine). The backend stays on plain HTTP — the browser never talks to it directly,
-the dev-server proxy does. To recreate the cert on a new machine:
+**Both servers speak HTTPS** using the ASP.NET dev certificate, exported to `web/.certs/` (gitignored,
+per-machine): `ng serve` reads it via `angular.json`, Kestrel via `Kestrel:Certificates:Default` in
+`appsettings.json`. The backend binds `https://0.0.0.0:5249`, so other LAN devices reach it at
+`https://<this PC's LAN IP>:5249` — they get a one-time certificate warning, since the cert is only
+issued for `localhost`. Plain `http://` on 5249 gets an empty reply. The backend fails to start
+without the cert files, so on a new machine create them first:
 ```bash
 dotnet dev-certs https --export-path web/.certs/localhost.pem --format Pem --no-password
 ```

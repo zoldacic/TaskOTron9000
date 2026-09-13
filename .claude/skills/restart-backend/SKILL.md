@@ -5,7 +5,7 @@ description: Restart the TASK-O-TRON 9000 .NET 10 backend API (port 5249) — st
 
 # Restart the TASK-O-TRON 9000 backend
 
-The backend is the `.NET 10` API in `src/TaskOTron.Api`. It uses SQLite, runs EF migrations on startup, and listens on **http://0.0.0.0:5249** — all interfaces, so it is reachable from other LAN devices at the PC's LAN IP (e.g. `http://192.168.1.144:5249`) as well as `localhost`. If a restart ever leaves it on `127.0.0.1` only, the `http` profile in `Properties/launchSettings.json` has been changed — see `FIREWALL.md`. This skill stops any running instance and starts a fresh one. It does **not** touch the frontend (`:4200`).
+The backend is the `.NET 10` API in `src/TaskOTron.Api`. It uses SQLite, runs EF migrations on startup, and listens on **https://0.0.0.0:5249** — HTTPS (dev cert from `web/.certs/`) on all interfaces, so it is reachable from other LAN devices at the PC's LAN IP (e.g. `https://192.168.1.144:5249`) as well as `localhost`. If a restart ever leaves it on `127.0.0.1` only, the `http` profile in `Properties/launchSettings.json` has been changed — see `FIREWALL.md`. This skill stops any running instance and starts a fresh one. It does **not** touch the frontend (`:4200`).
 
 > The SQLite DB holds the user's **real imported tasks** — startup only applies pending migrations, it does not reseed or wipe data. A restart is safe.
 
@@ -59,7 +59,7 @@ Then confirm it bound **all interfaces**, not just loopback — `LocalAddress` m
 Get-NetTCPConnection -LocalPort 5249 -State Listen | Select-Object LocalAddress, OwningProcess
 ```
 
-You can also read the background shell's output — a healthy start ends with `Now listening on: http://0.0.0.0:5249` and `Application started`.
+You can also read the background shell's output — a healthy start ends with `Now listening on: https://0.0.0.0:5249` and `Application started`.
 
 ## Notes
 

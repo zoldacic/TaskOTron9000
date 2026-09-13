@@ -119,7 +119,7 @@ Then open <https://localhost:4200>.
 
 ## Verify the move worked
 
-1. **Backend is up** — `http://localhost:5249/` returns `{"app":"TASK-O-TRON 9000 API","status":"online"}`.
+1. **Backend is up** — `https://localhost:5249/healthz` returns `{"app":"TASK-O-TRON 9000 API","status":"online"}`.
 2. **The data came across** — the task list shows your real tasks, not the demo seed. The seed only
    runs on an *empty* database, so if you see the prototype dataset, the restore did not land and
    the backend created a fresh DB. Stop it, delete `src/TaskOTron.Api/taskotron.db`, re-run

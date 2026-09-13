@@ -7,7 +7,7 @@ description: Start the TASK-O-TRON 9000 app locally — the .NET 10 backend (por
 
 The app has two processes that run together:
 
-- **Backend** — `.NET 10` API in `src/TaskOTron.Api`. SQLite, seeds the DB on startup, listens on **http://0.0.0.0:5249** (all interfaces — reachable from LAN devices too).
+- **Backend** — `.NET 10` API in `src/TaskOTron.Api`. SQLite, seeds the DB on startup, listens on **https://0.0.0.0:5249** (HTTPS with the dev cert in `web/.certs/`, all interfaces — reachable from LAN devices too).
 - **Frontend** — `Angular 22` SPA in `web/`. Listens on **https://localhost:4200** and proxies `/api` → `:5249` via `web/proxy.conf.json` (so no CORS setup needed). TLS uses the ASP.NET dev cert exported to `web/.certs/` (gitignored); if that folder is missing, recreate it with `dotnet dev-certs https --export-path web/.certs/localhost.pem --format Pem --no-password`.
 
 Both must be running for the app to work. Start the backend first (the frontend proxies to it).
@@ -25,7 +25,7 @@ Leave it running. `global.json` pins the SDK to 10.0.302 (`rollForward: latestPa
 **Wait for it before starting the frontend** — the first `dotnet run` restores + builds, so poll the health endpoint until it answers (`/healthz` returns `{"status":"online"}`; kept off `/` itself so a built Angular SPA — see BACKEND.md → Auth — can own the root path instead of this JSON blob). Don't move on until this prints `BACKEND UP`:
 
 ```powershell
-$ok=$false; for($i=0;$i -lt 30;$i++){ try { $r=Invoke-WebRequest -Uri http://localhost:5249/healthz -UseBasicParsing -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {} ; Start-Sleep -Seconds 2 }; if($ok){ Write-Output "BACKEND UP: $($r.Content)" } else { Write-Output "BACKEND NOT UP YET" }
+$ok=$false; for($i=0;$i -lt 30;$i++){ try { $r=Invoke-WebRequest -Uri https://localhost:5249/healthz -UseBasicParsing -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {} ; Start-Sleep -Seconds 2 }; if($ok){ Write-Output "BACKEND UP: $($r.Content)" } else { Write-Output "BACKEND NOT UP YET" }
 ```
 
 ## 2. Frontend
