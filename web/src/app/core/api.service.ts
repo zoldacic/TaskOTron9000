@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE } from './api-base';
 import {
-  AskEvent, AskMessage, AskStatus, BankAccount, Categories, ImportCommitRow, ImportRow, Main,
+  AskEvent, AskMessage, AskStatus, BankAccount, Budget, BudgetCompare, BudgetItem, BudgetItemWrite,
+  BudgetSummary, BudgetWrite, Categories, ImportCommitRow, ImportRow, Main,
   Report, SavedQuery, Sub, TaskQuery, TitleDefault, Todo, TodoWrite,
 } from '../models';
 
@@ -86,6 +87,37 @@ export class ApiService {
   }
   deleteSavedQuery(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/api/saved-queries/${id}`);
+  }
+
+  // ---- budgets ----
+  getBudgets(): Observable<BudgetSummary[]> {
+    return this.http.get<BudgetSummary[]>(`${this.base}/api/budgets`);
+  }
+  getBudget(id: string): Observable<Budget> {
+    return this.http.get<Budget>(`${this.base}/api/budgets/${id}`);
+  }
+  addBudget(body: BudgetWrite): Observable<Budget> {
+    return this.http.post<Budget>(`${this.base}/api/budgets`, body);
+  }
+  updateBudget(id: string, body: BudgetWrite): Observable<Budget> {
+    return this.http.put<Budget>(`${this.base}/api/budgets/${id}`, body);
+  }
+  deleteBudget(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/api/budgets/${id}`);
+  }
+  addBudgetItem(budgetId: string, body: BudgetItemWrite): Observable<BudgetItem> {
+    return this.http.post<BudgetItem>(`${this.base}/api/budgets/${budgetId}/items`, body);
+  }
+  updateBudgetItem(budgetId: string, itemId: number, body: BudgetItemWrite): Observable<BudgetItem> {
+    return this.http.put<BudgetItem>(`${this.base}/api/budgets/${budgetId}/items/${itemId}`, body);
+  }
+  deleteBudgetItem(budgetId: string, itemId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/api/budgets/${budgetId}/items/${itemId}`);
+  }
+  // Read-only planned-vs-actual: the actual side is the same data the spending report reads.
+  getBudgetComparison(id: string, groupBy: 'main' | 'sub'): Observable<BudgetCompare> {
+    const params = new HttpParams().set('groupBy', groupBy);
+    return this.http.get<BudgetCompare>(`${this.base}/api/budgets/${id}/comparison`, { params });
   }
 
   // ---- title defaults ----

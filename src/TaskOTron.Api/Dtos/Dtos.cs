@@ -66,6 +66,52 @@ public record TaskQueryDto(
 public record SavedQueryDto(string Id, string Name, TaskQueryDto Query);
 public record SavedQueryWriteDto(string Name, TaskQueryDto Query);
 
+// ---- Budgets ----
+// Planned money. Kept apart from tasks everywhere except BudgetCompareDto, which is read-only.
+// Amounts are signed like TodoDto.Amount: negative = planned spend, positive = planned income.
+public record BudgetSummaryDto(
+    string Id,
+    string Name,
+    string From,          // ISO yyyy-MM-dd
+    string To,            // ISO yyyy-MM-dd
+    int ItemCount,
+    decimal PlannedTotal);
+
+public record BudgetItemDto(
+    int Id,
+    string Title,
+    decimal Amount,
+    decimal? Quantity,    // null unless priced as quantity x unit price
+    decimal? UnitPrice,
+    string? MainId,       // optional, unlike a task's
+    List<string> CatIds,
+    string? Note,
+    int SortOrder);
+
+public record BudgetDto(string Id, string Name, string From, string To, List<BudgetItemDto> Items);
+
+public record BudgetWriteDto(string Name, string From, string To);
+
+/// <summary>Amount is required unless both Quantity and UnitPrice are given, in which case
+/// the server computes it and ignores any Amount sent.</summary>
+public record BudgetItemWriteDto(
+    string Title,
+    decimal? Amount = null,
+    decimal? Quantity = null,
+    decimal? UnitPrice = null,
+    string? MainId = null,
+    List<string>? CatIds = null,
+    string? Note = null);
+
+/// <param name="Diff">Actual − Planned: negative = over the plan, positive = under it.</param>
+public record BudgetCompareRowDto(string Id, string Name, decimal Planned, decimal Actual, decimal Diff);
+public record BudgetCompareDto(
+    string GroupBy,       // "main" | "sub"
+    decimal Planned,
+    decimal Actual,
+    decimal Diff,
+    List<BudgetCompareRowDto> Rows);
+
 // ---- Title defaults ----
 public record TitleDefaultDto(string NormalizedTitle, List<string> CatIds, string? MainId);
 public record TitleDefaultWriteDto(string Match, List<string> CatIds, string? MainId = null);

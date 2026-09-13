@@ -19,6 +19,24 @@ internal static class Mapping
         t.Note,
         t.DoneAt?.ToString("yyyy-MM-dd"));
 
+    public static BudgetItemDto ToDto(this BudgetItem i) => new(
+        i.Id,
+        i.Title,
+        i.Amount,
+        i.Quantity,
+        i.UnitPrice,
+        i.MainId,
+        i.Categories.Select(c => c.Id).OrderBy(x => x).ToList(),
+        i.Note,
+        i.SortOrder);
+
+    public static BudgetDto ToDto(this Budget b) => new(
+        b.Id,
+        b.Name,
+        b.From.ToString("yyyy-MM-dd"),
+        b.To.ToString("yyyy-MM-dd"),
+        b.Items.OrderBy(i => i.SortOrder).ThenBy(i => i.Id).Select(i => i.ToDto()).ToList());
+
     /// <summary>Parse an ISO yyyy-MM-dd string to DateOnly; blank/null → null.</summary>
     public static DateOnly? ParseDate(string? iso)
     {

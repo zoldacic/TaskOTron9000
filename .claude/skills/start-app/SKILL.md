@@ -22,10 +22,10 @@ dotnet run --project src/TaskOTron.Api
 
 Leave it running. `global.json` pins the SDK to 10.0.302 (`rollForward: latestPatch`) so the build doesn't pick up a preview SDK.
 
-**Wait for it before starting the frontend** — the first `dotnet run` restores + builds, so poll the root endpoint until it answers (it returns `{"status":"online"}`). Don't move on until this prints `BACKEND UP`:
+**Wait for it before starting the frontend** — the first `dotnet run` restores + builds, so poll the health endpoint until it answers (`/healthz` returns `{"status":"online"}`; kept off `/` itself so a built Angular SPA — see BACKEND.md → Auth — can own the root path instead of this JSON blob). Don't move on until this prints `BACKEND UP`:
 
 ```powershell
-$ok=$false; for($i=0;$i -lt 30;$i++){ try { $r=Invoke-WebRequest -Uri http://localhost:5249/ -UseBasicParsing -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {} ; Start-Sleep -Seconds 2 }; if($ok){ Write-Output "BACKEND UP: $($r.Content)" } else { Write-Output "BACKEND NOT UP YET" }
+$ok=$false; for($i=0;$i -lt 30;$i++){ try { $r=Invoke-WebRequest -Uri http://localhost:5249/healthz -UseBasicParsing -TimeoutSec 2; if($r.StatusCode -eq 200){ $ok=$true; break } } catch {} ; Start-Sleep -Seconds 2 }; if($ok){ Write-Output "BACKEND UP: $($r.Content)" } else { Write-Output "BACKEND NOT UP YET" }
 ```
 
 ## 2. Frontend

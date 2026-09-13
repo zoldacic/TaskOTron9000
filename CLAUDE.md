@@ -68,11 +68,14 @@ background shell — use the skills, which handle this.
   `Services/ReportBuilder.cs`) and mirrored on the client (`core/bank-import.ts`, plus report logic).
   Keep the two in sync and matched to the prototype; both have spec/unit tests asserting prototype
   outputs.
-- **New backend endpoints are gated by default.** The `app.Use(...)` middleware in `Program.cs`
-  blocks any non-local request without a login cookie for every path except `/api/auth/*` and `/`.
-  A new endpoint needs no opt-in to be protected — only add a path to that allowlist if it
-  genuinely must work for a logged-out remote caller (rare; `/api/auth/status` is the only current
-  case). See `BACKEND.md` → Auth.
+- **New backend endpoints under `/api/*` are gated by default.** The `app.Use(...)` middleware in
+  `Program.cs` blocks any non-local request without a login cookie for every `/api/*` path except
+  `/api/auth/*`. A new API endpoint needs no opt-in to be protected. See `BACKEND.md` → Auth —
+  including why this only works when the backend itself (not `ng serve`) is what's exposed.
+- **`Program.cs` can serve the built Angular app** (`web/dist/taskotron-web/browser`, if present)
+  directly at `/`, so the backend alone is deployable — see `BACKEND.md` → Deployment. The health
+  check the start-app/restart-backend skills poll lives at `/healthz`, not `/`, so it isn't
+  shadowed once a build is present.
 
 ## Architecture
 

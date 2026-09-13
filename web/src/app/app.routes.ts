@@ -19,6 +19,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/import/import-view.component').then((m) => m.ImportViewComponent),
   },
   {
+    path: 'budgets',
+    loadComponent: () => import('./features/budgets/budgets-view.component').then((m) => m.BudgetsViewComponent),
+  },
+  {
+    path: 'budgets/:id',
+    loadComponent: () => import('./features/budgets/budget-detail.component').then((m) => m.BudgetDetailComponent),
+  },
+  {
     path: 'reports',
     loadComponent: () => import('./features/report/report-view.component').then((m) => m.ReportViewComponent),
   },

@@ -34,17 +34,24 @@ prototype outputs.
 | Import | `POST /api/import/parse`, `POST /api/import/commit` |
 | Reports | `GET /api/report?from=YYYY-MM-DD&to=YYYY-MM-DD&categories=<csv>` |
 
-See `src/TaskOTron.Api/TaskOTron.Api.http` for ready-to-run example requests.
+See `src/TaskOTron.Api/TaskOTron.Api.http` for ready-to-run example requests. `GET /healthz`
+(always 200 `{"status":"online"}`, ungated) is a health check, not part of the app's API —
+`/` is where the built SPA lives instead (see Deployment below).
 
 ## Auth
 
 A request from the local network (10/8, 172.16/12, 192.168/16, link-local, loopback — see
 `Services/NetworkUtil.cs`) gets full access outright: this is a one-user home system, so nothing
 is gated on the LAN. A request from anywhere else must carry a valid login cookie, checked by a
-gate middleware in `Program.cs` in front of every endpoint except `/api/auth/*`. This assumes the
-app is reached remotely via a router port-forward straight to this process — there's no reverse
-proxy in front, so `HttpContext.Connection.RemoteIpAddress` is the real client IP (nothing to
-spoof via a forwarded-for header, because none is trusted).
+gate middleware in `Program.cs` in front of every `/api/*` endpoint except `/api/auth/*`.
+
+**This backend must be the thing actually exposed to the internet — not `ng serve`.** The check
+reads `HttpContext.Connection.RemoteIpAddress` directly (no reverse proxy in front, so there's no
+forwarded-for header to trust or spoof) — deliberately, since that's the real client IP *only*
+when nothing sits between the caller and this process. `ng serve`'s dev-server proxy forwards
+`/api/*` calls server-side, so if you expose `:4200` instead, the backend only ever sees that
+proxy's own loopback connection and the gate never fires for anyone, local or not. See
+Deployment below for the setup that keeps this check meaningful.
 
 Endpoints (`Endpoints/AuthEndpoints.cs`): `GET /api/auth/status` (always open — `{ authenticated,
 isLocal, username }`, so the frontend knows whether to show a login form at all), `POST
@@ -67,6 +74,27 @@ returns 500 rather than silently rejecting every attempt.
 backend) is fine on the LAN; before actually exposing the forwarded port to the internet, put
 TLS in front of it (e.g. a Caddy reverse proxy with automatic certs) — sending the password over
 plain HTTP defeats the point of the login.
+
+## Deployment (exposing this to the internet)
+
+For day-to-day local dev, keep using `ng serve` + `dotnet run` as two processes (see Frontend
+below) — the router port-forward just shouldn't point at `:4200`. To actually expose the app:
+
+```bash
+cd web && ng build              # writes web/dist/taskotron-web/browser
+dotnet run --project src/TaskOTron.Api
+```
+
+`Program.cs` looks for that `web/dist/taskotron-web/browser` folder on startup; when it's there,
+the backend serves the SPA itself — `/` and any other non-`/api` path return the Angular app
+(`index.html` for deep links like `/tasks`, real files for its JS/CSS/etc.), `/api/*` is the
+gated API, and there's no dev-server proxy in the way. Forward your router's port at **this**
+process (`:5249`, or whatever you rebind Kestrel to), not `:4200` — then put TLS in front of it
+(see above) before actually opening that port up. Without a `web/dist` build present, `/` falls
+back to the same JSON as `/healthz` (below), matching the old dev-only behavior.
+
+A version of `web/dist` a few commits stale still works — it's just what "reload the browser tab"
+looks like a bit behind. Re-run `ng build` after frontend changes you want reflected there.
 
 ## Frontend
 

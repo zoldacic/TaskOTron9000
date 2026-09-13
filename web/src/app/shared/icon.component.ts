@@ -91,6 +91,10 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
           <path d="M16 17l5-5-5-5" /><path d="M21 12H9" />
         }
+        @case ('target') {
+          <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+        }
+        @case ('arrow-left') { <path d="m12 19-7-7 7-7" /><path d="M19 12H5" /> }
         @case ('grid') {
           <rect width="7" height="7" x="3" y="3" rx="1" />
           <rect width="7" height="7" x="14" y="3" rx="1" />
