@@ -73,7 +73,7 @@ output small.
 ## 2. Get the app up
 
 ```bash
-curl -sk -o /dev/null -w "frontend %{http_code}\n" https://localhost:4200; curl -s -o /dev/null -w "backend %{http_code}\n" http://localhost:5249/api/todos
+curl -sk -o /dev/null -w "frontend %{http_code}\n" https://localhost:4200; curl -sk -o /dev/null -w "backend %{http_code}\n" https://localhost:5249/api/todos
 ```
 
 Both `200` → go to step 3. Otherwise use the **start-app** skill rather than improvising the launch
@@ -99,7 +99,7 @@ as long as you never click the final Import button.
 Take a count before and after, and state it in your report:
 
 ```bash
-$r = Invoke-RestMethod http://localhost:5249/api/todos; "todos: $($r.Count)"
+$r = Invoke-RestMethod https://localhost:5249/api/todos; "todos: $($r.Count)"
 ```
 
 When a check genuinely requires writing (you're verifying a save path), do it, then revert it through

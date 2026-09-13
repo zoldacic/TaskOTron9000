@@ -26,7 +26,7 @@ The point of this skill is to *see the change working in the real app*, not just
 Check the ports before doing anything:
 
 ```bash
-curl -sk -o /dev/null -w "frontend %{http_code}\n" https://localhost:4200; curl -s -o /dev/null -w "backend %{http_code}\n" http://localhost:5249/api/todos
+curl -sk -o /dev/null -w "frontend %{http_code}\n" https://localhost:4200; curl -sk -o /dev/null -w "backend %{http_code}\n" https://localhost:5249/api/todos
 ```
 
 - Both `200` → you're ready, go to Step 2.

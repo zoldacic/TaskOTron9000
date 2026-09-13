@@ -1,6 +1,6 @@
 # Opening the backend port to the LAN/internet
 
-The backend (`:5249`, see `BACKEND.md` → Deployment) binds to all interfaces (`http://0.0.0.0:5249`
+The backend (`:5249`, see `BACKEND.md` → Deployment) binds to all interfaces (`https://0.0.0.0:5249`
 in the `http` and `public` launch profiles in `Properties/launchSettings.json`), but Windows Firewall may still silently block inbound connections to
 it from other devices. These commands need an **elevated** PowerShell (Run as Administrator) —
 a regular session can't even read firewall rules, let alone add one.
