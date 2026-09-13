@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using TaskOTron.Api.Data;
 using TaskOTron.Api.Endpoints;
 using TaskOTron.Api.Services;
@@ -59,16 +60,31 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCors(DevCors);
+
+// Serve the built Angular SPA (after `ng build`) from this same origin/port, if present.
+// This matters for the login gate below: `ng serve`'s dev-server proxy forwards /api calls
+// server-side, so the backend only ever sees that proxy's own loopback connection — never the
+// real caller's IP — which makes the local-vs-remote check meaningless. Exposing this backend
+// directly (with the SPA served from it) instead of the dev server is what fixes that; see
+// BACKEND.md → Auth.
+var angularDist = Path.GetFullPath(Path.Combine(
+    builder.Environment.ContentRootPath, "..", "..", "web", "dist", "taskotron-web", "browser"));
+StaticFileOptions? spaFiles = Directory.Exists(angularDist)
+    ? new StaticFileOptions { FileProvider = new PhysicalFileProvider(angularDist) }
+    : null;
+if (spaFiles is not null) app.UseStaticFiles(spaFiles);
+
 app.UseAuthentication();
 
 // Single-user gate: this is a one-user system, so "authenticated" == "everything is available".
 // A request from the local network is trusted outright (no login prompt on the LAN); anything
-// else must carry a valid login cookie. /api/auth/* (login/logout/status) and the root health
-// check stay open so the frontend can always ask "am I logged in?" and show a login form.
+// else must carry a valid login cookie. Only /api/* is gated — /api/auth/* (login/logout/status)
+// stays open so the frontend can always ask "am I logged in?", and everything outside /api/* is
+// the SPA shell itself (or its assets), which the SPA's own login screen guards on the client.
 app.Use(async (ctx, next) =>
 {
     var path = ctx.Request.Path;
-    if (path.StartsWithSegments("/api/auth") || path == "/")
+    if (!path.StartsWithSegments("/api") || path.StartsWithSegments("/api/auth"))
     {
         await next();
         return;
@@ -82,6 +98,33 @@ app.Use(async (ctx, next) =>
     await ctx.Response.WriteAsJsonAsync(new { error = "unauthorized" });
 });
 
+// SPA fallback for deep-linked Angular routes (e.g. /tasks navigated to directly): if nothing
+// below matched (routing's default 404) and it's not an /api/* path, serve index.html and let
+// the Angular router take it from there. A plain middleware rather than MapFallbackToFile —
+// registering both that and UseStaticFiles above (even with separate StaticFileOptions
+// instances) makes UseStaticFiles stop serving real files, an ASP.NET Core routing quirk.
+if (spaFiles is not null)
+{
+    var spaFileProvider = spaFiles.FileProvider!; // always set just above, alongside StaticFileOptions
+    app.Use(async (ctx, next) =>
+    {
+        await next();
+        if (ctx.Response.StatusCode != StatusCodes.Status404NotFound
+            || ctx.Response.HasStarted
+            || !HttpMethods.IsGet(ctx.Request.Method)
+            || ctx.Request.Path.StartsWithSegments("/api"))
+        {
+            return;
+        }
+        var index = spaFileProvider.GetFileInfo("index.html");
+        if (!index.Exists) return;
+        ctx.Response.StatusCode = StatusCodes.Status200OK;
+        ctx.Response.ContentType = "text/html";
+        await using var stream = index.CreateReadStream();
+        await stream.CopyToAsync(ctx.Response.Body);
+    });
+}
+
 app.MapAuthEndpoints();
 app.MapTodoEndpoints();
 app.MapCategoryEndpoints();
@@ -92,7 +135,15 @@ app.MapImportEndpoints();
 app.MapReportEndpoints();
 app.MapAskEndpoints();
 
-app.MapGet("/", () => Results.Ok(new { app = "TASK-O-TRON 9000 API", status = "online" }));
+// Always-on health check (used by the start-app/restart-backend skills), kept off "/" itself
+// so a built SPA can own the root path instead of a JSON blob.
+app.MapGet("/healthz", () => Results.Ok(new { app = "TASK-O-TRON 9000 API", status = "online" }));
+// No Angular build yet (plain API dev mode, e.g. alongside `ng serve`) — "/" still answers with
+// the same JSON so visiting it in a browser or curling it isn't a surprise 404.
+if (spaFiles is null)
+{
+    app.MapGet("/", () => Results.Ok(new { app = "TASK-O-TRON 9000 API", status = "online" }));
+}
 
 app.Run();
 
