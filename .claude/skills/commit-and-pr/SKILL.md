@@ -45,10 +45,10 @@ git commit -F "<scratchpad>\commit-msg.txt"
 
 <body: what was wrong and what the change does, wrapped ~72 cols>
 
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ```
 
-**Every commit must end with the `Co-Authored-By: Claude Opus 5` trailer.**
+**Every commit must end with the `Co-Authored-By: Claude Opus 5.5` trailer.**
 
 Don't pass a multi-line message inline. A single-quoted here-string (`git commit
 -m @'…'@`) looks like it should work — `$` and backticks do stay literal — but a
