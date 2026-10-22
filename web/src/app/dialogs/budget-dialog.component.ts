@@ -45,11 +45,16 @@ import { TaskStore } from '../core/task.store';
     }
   `,
   styles: [`
-    .narrow { width: 420px; max-width: 100%; }
+    .narrow { width: 420px; }
     .mt { margin-top: var(--space-4); }
     .range { display: flex; gap: 12px; }
     .range .field { flex: 1; min-width: 0; }
-    .date { font-family: var(--font-mono); }
+    .date { font-family: var(--font-mono); min-width: 0; }
+    /* Native date inputs won't shrink below their picker width, so stack them on phones. */
+    @media (max-width: 640px) {
+      .narrow { padding: var(--space-4); }
+      .range { flex-direction: column; }
+    }
     .hint { margin: 8px 0 0; font-size: 12px; color: var(--muted-strong); line-height: 1.45; }
     .err { margin: 8px 0 0; font-family: var(--font-mono); font-size: 12px; color: var(--color-danger); }
   `],
