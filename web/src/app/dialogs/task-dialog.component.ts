@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { TaskStore } from '../core/task.store';
 import { IconComponent } from '../shared/icon.component';
+import { NoteCalcButtonComponent } from '../shared/note-calc-button.component';
 import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
 
 @Component({
   selector: 'app-task-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent],
+  imports: [IconComponent, NoteCalcButtonComponent],
   template: `
     @if (store.taskDialog(); as d) {
       <div class="dialog-backdrop" (click)="close()">
@@ -109,6 +110,7 @@ import { toISO, addDays, startOfToday, dueLabel } from '../core/date-util';
             <textarea class="input note" rows="3" [value]="d.note" [placeholder]="store.t('dialog.task.notePlaceholder')"
                       (input)="patch({ note: value($event) })"></textarea>
           </label>
+          <app-note-calc-button [note]="d.note" (calculated)="patch({ note: $event })" />
 
           <!-- apply this category to every task with a similar name (edit only) -->
           @if (d.id != null) {
