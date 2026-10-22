@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TaskStore } from '../core/task.store';
+import { NoteCalcButtonComponent } from '../shared/note-calc-button.component';
 
 @Component({
   selector: 'app-import-cat-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NoteCalcButtonComponent],
   template: `
     @if (store.importCat(); as c) {
       <div class="dialog-backdrop" (click)="close()">
@@ -41,6 +43,7 @@ import { TaskStore } from '../core/task.store';
             <textarea class="input note" rows="2" [value]="c.note" [placeholder]="store.t('dialog.importCat.notePlaceholder')"
                       (input)="store.setImportCatNote(value($event))"></textarea>
           </label>
+          <app-note-calc-button [note]="c.note" (calculated)="store.setImportCatNote($event)" />
 
           <label class="check">
             <input type="checkbox" [checked]="c.applyAll" (change)="flag('applyAll', $event)">

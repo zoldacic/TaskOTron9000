@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TaskStore } from '../core/task.store';
 import { fmtMoney } from '../core/money-util';
+import { NoteCalcButtonComponent } from '../shared/note-calc-button.component';
 
 @Component({
   selector: 'app-budget-item-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NoteCalcButtonComponent],
   template: `
     @if (store.budgetItemDialog(); as d) {
       <div class="dialog-backdrop" (click)="close()">
@@ -99,6 +101,7 @@ import { fmtMoney } from '../core/money-util';
                       [placeholder]="store.t('dialog.budgetItem.notePlaceholder')"
                       (input)="patch({ note: value($event) })"></textarea>
           </label>
+          <app-note-calc-button [note]="d.note" (calculated)="patch({ note: $event })" />
 
           @if (store.budgetError(); as e) { <p class="err">{{ e }}</p> }
 
